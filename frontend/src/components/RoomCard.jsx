@@ -93,17 +93,23 @@ export default function RoomCard({ habitacion, onClick, onLiberar, seleccionada 
         <p className="text-xs text-yellow-500/80 mt-2 truncate">📝 {habitacion.nota}</p>
       )}
 
-      {/* Botón liberar/aseo para ocupadas y en aseo */}
-      {(habitacion.estado === 'ocupado' || habitacion.estado === 'aseo') && onLiberar && (
+      {/* Botón gestionar — visible en todos los estados excepto deshabilitada */}
+      {habitacion.estado !== 'deshabilitada' && onLiberar && (
         <button
           onClick={handleLiberar}
           className={`mt-3 w-full text-xs py-1.5 rounded-lg border transition-colors font-medium ${
             habitacion.estado === 'aseo'
               ? 'border-orange-700 hover:bg-orange-900/30 text-orange-400'
-              : 'border-green-700 hover:bg-green-900/30 text-green-400'
+              : habitacion.estado === 'ocupado'
+                ? 'border-green-700 hover:bg-green-900/30 text-green-400'
+                : 'border-gray-600 hover:bg-gray-700/30 text-gray-400'
           }`}
         >
-          {habitacion.estado === 'aseo' ? '🧹 Gestionar aseo' : '🔓 Liberar / Aseo'}
+          {habitacion.estado === 'aseo'
+            ? '🧹 Gestionar aseo'
+            : habitacion.estado === 'ocupado'
+              ? '🔓 Liberar / Aseo'
+              : '⚙️ Gestionar'}
         </button>
       )}
     </div>

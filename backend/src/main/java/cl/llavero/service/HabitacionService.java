@@ -23,6 +23,9 @@ public class HabitacionService {
     @Value("${llavero.clave.operaciones}")
     private String claveOperaciones;
 
+    @Value("${llavero.clave.deshabilitar}")
+    private String claveDeshabilitacion;
+
     private final HabitacionRepository habitacionRepository;
     private final HabitacionPrecioRepository precioRepository;
     private final VentaRepository ventaRepository;
@@ -88,31 +91,37 @@ public class HabitacionService {
         return mapear(habitacion);
     }
 
-    // Cambio de estado con clave 1331 — cualquier rol
+    // Cambio de estado con clave — cualquier rol autenticado
     @Transactional
     public HabitacionResponse cambiarEstadoClave(String id, String estadoDestino, String clave) {
-        if (!claveOperaciones.equals(clave)) {
-            throw new RuntimeException("Clave incorrecta");
-        }
-
         Habitacion h = habitacionRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new RuntimeException("Habitación no encontrada"));
 
         EstadoHabitacion destino = EstadoHabitacion.valueOf(estadoDestino);
+        boolean transicionValida = false;
 
-        boolean transicionValida =
+        if (claveOperaciones.equals(clave)) {
+            // 1331: ocupado→libre, ocupado→aseo, aseo→libre
+            transicionValida =
                 (h.getEstado() == EstadoHabitacion.ocupado &&
-                        (destino == EstadoHabitacion.libre || destino == EstadoHabitacion.aseo))
+                    (destino == EstadoHabitacion.libre || destino == EstadoHabitacion.aseo))
                 || (h.getEstado() == EstadoHabitacion.aseo && destino == EstadoHabitacion.libre);
+        } else if (claveDeshabilitacion.equals(clave)) {
+            // 1221: cualquier estado → deshabilitada
+            transicionValida = destino == EstadoHabitacion.deshabilitada
+                    && h.getEstado() != EstadoHabitacion.deshabilitada;
+        } else {
+            throw new RuntimeException("Clave incorrecta");
+        }
 
         if (!transicionValida) {
-            throw new RuntimeException("Transición de estado no permitida: " +
-                    h.getEstado() + " → " + destino);
+            throw new RuntimeException("Transición no permitida: " + h.getEstado() + " → " + destino);
         }
 
         h.setEstado(destino);
         if (destino == EstadoHabitacion.libre) h.setNota(null);
         if (destino == EstadoHabitacion.aseo) h.setNota("En aseo");
+        if (destino == EstadoHabitacion.deshabilitada) h.setNota(null);
 
         habitacionRepository.save(h);
         return mapear(h);

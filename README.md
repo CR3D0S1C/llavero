@@ -45,7 +45,17 @@ Sistema POS completo para hostales y hoteles pequeños, desarrollado con Spring 
 | Rol | Acceso |
 |---|---|
 | **Jefe** | Todo: métricas, CRUD habitaciones y productos, historial completo, admin |
-| **Cajero** | Nueva venta, historial de su turno, liberación de habitaciones con clave |
+| **Cajero** | Nueva venta, historial de su turno, gestión de habitaciones con clave |
+
+#### Estados que puede asignar cada rol
+
+| Estado | Jefe (panel edición) | Cajero (con clave) |
+|---|---|---|
+| Libre | ✅ directo | ✅ clave 1331 (desde ocupado o aseo) |
+| Ocupado | ✅ directo | ✅ vía nueva venta |
+| En Aseo | ✅ directo | ✅ clave 1331 (desde ocupado) |
+| Mantención | ✅ directo | ❌ |
+| Deshabilitada | ✅ directo | ✅ clave 1221 (desde cualquier estado) |
 
 ---
 
@@ -139,11 +149,14 @@ jwt.expiration=86400000                    # 24 horas
 
 ## Claves de operación
 
-| Código | Uso |
-|---|---|
-| `7777` | Agregar ítems libres en una venta (requiere supervisor) |
-| `1271` | Anular una venta (cualquier usuario autenticado) |
-| `1331` | Liberar habitación o enviar a aseo (cualquier usuario autenticado) |
+| Código | Quién | Acción |
+|---|---|---|
+| `7777` | Supervisor | Agregar ítems de precio libre en una venta |
+| `1271` | Cualquier usuario | Anular una venta del historial |
+| `1331` | Cualquier usuario | Liberar habitación (ocupado→libre) o enviar a aseo (ocupado→aseo / aseo→libre) |
+| `1221` | Cualquier usuario | Deshabilitar una habitación desde cualquier estado |
+
+> La re-habilitación de una habitación deshabilitada solo la puede hacer el **Jefe** desde el panel de edición en Habitaciones.
 
 ---
 
