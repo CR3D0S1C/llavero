@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login } from '../services/api'
 import { useSesion } from '../context/SesionContext'
+import { toast } from '../utils/toast'
 
 const USUARIOS = ['Carlos Mendoza', 'Ana Torres', 'Luis Pérez']
 
@@ -13,10 +14,21 @@ export default function Login() {
   const { login: loginCtx, sesion } = useSesion()
   const navigate = useNavigate()
 
-  if (sesion) {
-    navigate('/dashboard', { replace: true })
-    return null
-  }
+  useEffect(() => {
+    if (sesion) navigate('/dashboard', { replace: true })
+  }, [sesion, navigate])
+
+  // Soporte de teclado físico (números + backspace + Enter)
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key >= '0' && e.key <= '9') setPin(p => p.length < 4 ? p + e.key : p)
+      else if (e.key === 'Backspace') setPin(p => p.slice(0, -1))
+      else if (e.key === 'Enter' && nombre && pin.length === 4) ingresar()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nombre, pin])
 
   const presionar = (digito) => {
     if (pin.length < 4) setPin(p => p + digito)
@@ -34,6 +46,7 @@ export default function Login() {
     try {
       const res = await login(nombre, pin)
       loginCtx(res.data)
+      toast.success(`Bienvenido, ${res.data.nombre}`)
       navigate('/dashboard')
     } catch (e) {
       setError(e.response?.data?.error || 'PIN incorrecto')

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { SesionProvider } from './context/SesionContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import ToastContainer from './components/ToastContainer'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Habitaciones from './pages/Habitaciones'
@@ -15,6 +16,7 @@ import GestionHabitaciones from './pages/GestionHabitaciones'
 export default function App() {
   return (
     <SesionProvider>
+      <ToastContainer />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Login />} />

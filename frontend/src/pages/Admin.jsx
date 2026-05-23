@@ -17,8 +17,18 @@ export default function Admin() {
   if (loading) return <div className="min-h-screen bg-bg"><Navbar /><div className="p-6 text-muted">Cargando...</div></div>
 
   const estadoColor = {
-    libre: 'text-green-400', ocupado: 'text-red-400',
-    mantenimiento: 'text-yellow-400', deshabilitada: 'text-gray-500'
+    libre:         'text-green-400',
+    ocupado:       'text-red-400',
+    aseo:          'text-orange-400',
+    mantenimiento: 'text-yellow-400',
+    deshabilitada: 'text-gray-500',
+  }
+  const estadoLabel = {
+    libre:         'Libres',
+    ocupado:       'Ocupadas',
+    aseo:          'En Aseo',
+    mantenimiento: 'Mantención',
+    deshabilitada: 'Deshabilitadas',
   }
 
   return (
@@ -53,8 +63,8 @@ export default function Admin() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {Object.entries(metricas.habitacionesPorEstado).map(([estado, count]) => (
                 <div key={estado} className="text-center">
-                  <div className={`text-3xl font-bold ${estadoColor[estado]}`}>{count}</div>
-                  <div className="text-muted text-xs capitalize mt-1">{estado}</div>
+                  <div className={`text-3xl font-bold ${estadoColor[estado] || 'text-gray-400'}`}>{count}</div>
+                  <div className="text-muted text-xs mt-1">{estadoLabel[estado] || estado}</div>
                 </div>
               ))}
             </div>

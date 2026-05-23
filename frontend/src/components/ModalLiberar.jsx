@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { operarHabitacion } from '../services/api'
+import { useModalClose } from '../hooks/useModalClose'
 
 const CLAVE_OPS   = '1331'
 const CLAVE_DESHAB = '1221'
@@ -42,9 +43,11 @@ export default function ModalLiberar({ habitacion, onExito, onCancelar }) {
   const deshabilitada = estado === 'deshabilitada'
   const puedeOperar = estado === 'ocupado' || estado === 'aseo'
 
+  useModalClose(onCancelar, !loading)
+
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-sm">
+    <div className="modal-backdrop" onClick={loading ? undefined : onCancelar}>
+      <div className="modal-panel w-full max-w-sm" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-border">
           <h2 className="text-xl font-bold">Gestionar Habitación</h2>
           <p className="text-muted text-sm mt-1">

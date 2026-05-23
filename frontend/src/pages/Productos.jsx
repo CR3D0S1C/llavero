@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import { getProductos, crearProducto, updateProducto, eliminarProducto } from '../services/api'
 import { useSesion } from '../context/SesionContext'
+import { toast } from '../utils/toast'
 
 const CATEGORIAS = ['Desayunos', 'Snacks', 'Aseo', 'Electrónica', 'Otro']
 const ICONOS = ['🥐','🍳','☕','💧','🥤','🍟','🍫','🧴','🛁','💊','🔌','🎧','🍕','🧃','🍿','🪥']
 
-const vacío = { nombre: '', precio: '', icono: '📦', categoria: 'Snacks' }
+const FORM_VACIO = { nombre: '', precio: '', icono: '📦', categoria: 'Snacks' }
 
 export default function Productos() {
   const [productos, setProductos] = useState([])
-  const [form, setForm] = useState(vacío)
+  const [form, setForm] = useState(FORM_VACIO)
   const [editId, setEditId] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const { sesion } = useSesion()
@@ -24,19 +25,24 @@ export default function Productos() {
   }
 
   const guardar = async () => {
-    if (!form.nombre || !form.precio) return
+    if (!form.nombre || !form.precio) {
+      toast.warning('Nombre y precio son obligatorios')
+      return
+    }
     try {
       if (editId) {
         await updateProducto(editId, form)
+        toast.success(`Producto "${form.nombre}" actualizado`)
       } else {
         await crearProducto(form)
+        toast.success(`Producto "${form.nombre}" creado`)
       }
       await cargar()
-      setForm(vacío)
+      setForm(FORM_VACIO)
       setEditId(null)
       setShowForm(false)
     } catch (e) {
-      alert(e.response?.data?.error || 'Error')
+      toast.error(e.response?.data?.error || 'Error al guardar')
     }
   }
 
@@ -46,10 +52,15 @@ export default function Productos() {
     setShowForm(true)
   }
 
-  const eliminar = async (id) => {
-    if (!confirm('¿Desactivar producto?')) return
-    await eliminarProducto(id)
-    await cargar()
+  const eliminar = async (id, nombre) => {
+    if (!confirm(`¿Desactivar el producto "${nombre}"?`)) return
+    try {
+      await eliminarProducto(id)
+      toast.success('Producto desactivado')
+      await cargar()
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Error al desactivar')
+    }
   }
 
   const categorias = [...new Set(productos.map(p => p.categoria))]
@@ -61,7 +72,7 @@ export default function Productos() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Catálogo de Productos</h1>
           {esJefe && (
-            <button onClick={() => { setForm(vacío); setEditId(null); setShowForm(true) }} className="btn-primary">
+            <button onClick={() => { setForm(FORM_VACIO); setEditId(null); setShowForm(true) }} className="btn-primary">
               + Nuevo Producto
             </button>
           )}
@@ -123,7 +134,7 @@ export default function Productos() {
                   {esJefe && (
                     <div className="flex flex-col gap-1">
                       <button onClick={() => editar(p)} className="text-xs text-muted hover:text-white">✏️</button>
-                      <button onClick={() => eliminar(p.id)} className="text-xs text-red-400 hover:text-red-300">🗑️</button>
+                      <button onClick={() => eliminar(p.id, p.nombre)} className="text-xs text-red-400 hover:text-red-300">🗑️</button>
                     </div>
                   )}
                 </div>

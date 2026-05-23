@@ -4,6 +4,7 @@ import RoomCard from '../components/RoomCard'
 import ModalLiberar from '../components/ModalLiberar'
 import { getHabitaciones, updateHabitacion } from '../services/api'
 import { useSesion } from '../context/SesionContext'
+import { toast } from '../utils/toast'
 
 const ESTADOS = ['libre', 'ocupado', 'aseo', 'mantenimiento', 'deshabilitada']
 
@@ -38,10 +39,11 @@ export default function Habitaciones() {
     setSaving(true)
     try {
       await updateHabitacion(seleccionada.id, editForm)
+      toast.success(`${seleccionada.numero} actualizada`)
       await cargar()
       setSeleccionada(null)
     } catch (e) {
-      alert(e.response?.data?.error || 'Error')
+      toast.error(e.response?.data?.error || 'Error al guardar')
     } finally {
       setSaving(false)
     }

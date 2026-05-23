@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import { getHabitaciones, cambiarEstadoJefe, getHabitacionLog } from '../services/api'
+import { toast } from '../utils/toast'
 
 const ESTADOS = [
   { value: 'todas',        label: 'Todas',        color: 'bg-gray-700 text-white' },
@@ -64,9 +65,10 @@ export default function GestionHabitaciones() {
     setProcesando(habitacion.id)
     try {
       await cambiarEstadoJefe(habitacion.id, nuevoEstado)
+      toast.success(`${habitacion.numero} → ${estadoLabel[nuevoEstado]}`)
       await cargar()
     } catch (e) {
-      alert(e.response?.data?.error || 'Error al cambiar estado')
+      toast.error(e.response?.data?.error || 'Error al cambiar estado')
     } finally {
       setProcesando(null)
     }

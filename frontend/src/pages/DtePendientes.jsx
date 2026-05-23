@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import { getDteTodos, marcarDteEmitido } from '../services/api'
+import { toast } from '../utils/toast'
 
 export default function DtePendientes() {
   const [dtes, setDtes] = useState([])
@@ -23,9 +24,10 @@ export default function DtePendientes() {
     if (!confirm('¿Marcar como emitido en el SII?')) return
     try {
       await marcarDteEmitido(id)
+      toast.success('DTE marcado como emitido')
       await cargar()
     } catch (e) {
-      alert(e.response?.data?.error || 'Error')
+      toast.error(e.response?.data?.error || 'Error')
     }
   }
 

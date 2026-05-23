@@ -6,6 +6,7 @@ import ModalDTE from '../components/ModalDTE'
 import ModalEarlyCheckin from '../components/ModalEarlyCheckin'
 import { getHabitaciones, getProductos, crearVenta } from '../services/api'
 import { useSesion } from '../context/SesionContext'
+import { toast } from '../utils/toast'
 
 export default function NuevaVenta() {
   const [habitaciones, setHabitaciones] = useState([])
@@ -125,9 +126,10 @@ export default function NuevaVenta() {
           receptorEmail: receptor.email,
         } : {})
       })
+      toast.success(`Venta registrada — Hab. ${habitacionSel.numero}`)
       navigate('/dashboard')
     } catch (e) {
-      alert(e.response?.data?.error || 'Error al crear venta')
+      toast.error(e.response?.data?.error || 'Error al crear venta')
     } finally {
       setLoading(false)
     }

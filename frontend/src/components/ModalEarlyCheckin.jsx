@@ -1,4 +1,8 @@
+import { useModalClose } from '../hooks/useModalClose'
+
 export default function ModalEarlyCheckin({ habitacion, onConfirmar, onCancelar }) {
+  useModalClose(onCancelar)
+
   const opciones = [
     {
       value: 'sin_costo',
@@ -27,8 +31,8 @@ export default function ModalEarlyCheckin({ habitacion, onConfirmar, onCancelar 
   ]
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-md">
+    <div className="modal-backdrop" onClick={onCancelar}>
+      <div className="modal-panel w-full max-w-md" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-border">
           <h2 className="text-xl font-bold">Tarifa Noche — Llegada temprana</h2>
           <p className="text-muted text-sm mt-1">

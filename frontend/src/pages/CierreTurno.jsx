@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { getTurnoActivo, cerrarTurno } from '../services/api'
 import { useSesion } from '../context/SesionContext'
+import { toast } from '../utils/toast'
 
 export default function CierreTurno() {
   const [turno, setTurno] = useState(null)
@@ -29,10 +30,11 @@ export default function CierreTurno() {
     setCerrando(true)
     try {
       await cerrarTurno()
+      toast.success('Turno cerrado correctamente')
       logout()
       navigate('/')
     } catch (e) {
-      alert(e.response?.data?.error || 'Error al cerrar turno')
+      toast.error(e.response?.data?.error || 'Error al cerrar turno')
       setCerrando(false)
     }
   }

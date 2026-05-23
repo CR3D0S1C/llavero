@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import { getVentas, anularVenta } from '../services/api'
 import { useSesion } from '../context/SesionContext'
+import { toast } from '../utils/toast'
 
 const FILTROS = [
   { label: 'Mi turno', value: 'turno' },
@@ -40,8 +41,9 @@ export default function Historial() {
       setVentas(prev => prev.filter(v => v.id !== id))
       setAnulando(null)
       setClaveAnul('')
+      toast.success('Venta anulada')
     } catch (e) {
-      alert(e.response?.data?.error || 'Clave incorrecta')
+      toast.error(e.response?.data?.error || 'Clave incorrecta')
       setClaveAnul('')
     }
   }

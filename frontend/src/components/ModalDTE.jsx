@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useModalClose } from '../hooks/useModalClose'
 
 function validarRut(rut) {
   if (!rut) return false
@@ -37,9 +38,11 @@ export default function ModalDTE({ total, onConfirmar, onCancelar }) {
     onConfirmar(tipo, tipo === 'factura' ? receptor : null)
   }
 
+  useModalClose(onCancelar)
+
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-lg">
+    <div className="modal-backdrop" onClick={onCancelar}>
+      <div className="modal-panel w-full max-w-lg" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-border">
           <h2 className="text-xl font-bold">Documento Tributario</h2>
           <p className="text-muted text-sm mt-1">Total a cobrar: <span className="text-green-400 font-bold">${total?.toLocaleString('es-CL')}</span></p>
