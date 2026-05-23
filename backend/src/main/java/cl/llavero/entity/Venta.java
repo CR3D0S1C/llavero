@@ -56,7 +56,7 @@ public class Venta {
     private BigDecimal total;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_dte", nullable = false, length = 10)
+    @Column(name = "tipo_dte", nullable = false, columnDefinition = "varchar(10)")
     private TipoDte tipoDte = TipoDte.boleta;
 
     @Column(name = "receptor_rut", length = 15)

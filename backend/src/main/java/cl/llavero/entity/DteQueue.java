@@ -25,7 +25,7 @@ public class DteQueue {
     private String tipoDte;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, columnDefinition = "varchar(20)")
     private EstadoDte estado = EstadoDte.pendiente;
 
     @Column(nullable = false)
