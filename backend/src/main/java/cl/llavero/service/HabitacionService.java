@@ -101,11 +101,12 @@ public class HabitacionService {
         boolean transicionValida = false;
 
         if (claveOperaciones.equals(clave)) {
-            // 1331: ocupado→libre, ocupado→aseo, aseo→libre
+            // 1331: ocupado→libre, ocupado→aseo, aseo→libre, deshabilitada→libre
             transicionValida =
                 (h.getEstado() == EstadoHabitacion.ocupado &&
                     (destino == EstadoHabitacion.libre || destino == EstadoHabitacion.aseo))
-                || (h.getEstado() == EstadoHabitacion.aseo && destino == EstadoHabitacion.libre);
+                || (h.getEstado() == EstadoHabitacion.aseo && destino == EstadoHabitacion.libre)
+                || (h.getEstado() == EstadoHabitacion.deshabilitada && destino == EstadoHabitacion.libre);
         } else if (claveDeshabilitacion.equals(clave)) {
             // 1221: cualquier estado → deshabilitada
             transicionValida = destino == EstadoHabitacion.deshabilitada

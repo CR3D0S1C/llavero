@@ -39,6 +39,7 @@ export default function ModalLiberar({ habitacion, onExito, onCancelar }) {
 
   const estado = habitacion.estado
   const desdeAseo = estado === 'aseo'
+  const deshabilitada = estado === 'deshabilitada'
   const puedeOperar = estado === 'ocupado' || estado === 'aseo'
 
   return (
@@ -117,9 +118,28 @@ export default function ModalLiberar({ habitacion, onExito, onCancelar }) {
                 </>
               )}
 
-              {claveUsada === 'ops' && !puedeOperar && (
+              {claveUsada === 'ops' && deshabilitada && (
+                <>
+                  <p className="text-sm text-muted mb-1">La habitación está deshabilitada.</p>
+                  <button
+                    onClick={() => operar('libre')}
+                    disabled={loading}
+                    className="w-full p-4 border-2 border-border hover:border-blue-500 rounded-xl text-left transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🔵</span>
+                      <div>
+                        <div className="font-semibold">Habilitar</div>
+                        <div className="text-sm text-muted">Vuelve a Libre — disponible para ventas</div>
+                      </div>
+                    </div>
+                  </button>
+                </>
+              )}
+
+              {claveUsada === 'ops' && !puedeOperar && !deshabilitada && (
                 <p className="text-yellow-500 text-sm text-center py-4">
-                  La clave 1331 solo opera habitaciones ocupadas o en aseo.
+                  La clave 1331 no permite cambios desde el estado actual.
                 </p>
               )}
 
