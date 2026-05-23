@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const estadoConfig = {
   libre:        { label: 'Libre',       color: 'border-green-500 bg-green-500/10',   dot: 'bg-green-500',  text: 'text-green-400' },
@@ -8,16 +8,30 @@ const estadoConfig = {
   deshabilitada:{ label: 'Deshabilitada',color: 'border-gray-600 bg-gray-600/10',   dot: 'bg-gray-500',   text: 'text-gray-500' },
 }
 
-function useContador(salidaEstimada) {
+function useContador(salidaEstimada, numero) {
   const [ms, setMs] = useState(null)
+  const notificadoRef = useRef(false)
 
   useEffect(() => {
     if (!salidaEstimada) return
-    const calcular = () => setMs(new Date(salidaEstimada) - new Date())
+    const calcular = () => {
+      const restante = new Date(salidaEstimada) - new Date()
+      setMs(restante)
+      if (restante > 0 && restante <= 600000 && !notificadoRef.current) {
+        notificadoRef.current = true
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification(`⚠️ Hab. ${numero} — quedan 10 minutos`, {
+            body: `Salida: ${new Date(salidaEstimada).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`,
+            tag: `llavero-hab-${numero}`,
+          })
+        }
+      }
+      if (restante > 600000) notificadoRef.current = false
+    }
     calcular()
     const t = setInterval(calcular, 1000)
     return () => clearInterval(t)
-  }, [salidaEstimada])
+  }, [salidaEstimada, numero])
 
   return ms
 }
@@ -35,7 +49,7 @@ function formatTiempo(ms) {
 
 export default function RoomCard({ habitacion, onClick, onLiberar, seleccionada = false }) {
   const cfg = estadoConfig[habitacion.estado] || estadoConfig.libre
-  const msRestante = useContador(habitacion.salidaEstimada)
+  const msRestante = useContador(habitacion.salidaEstimada, habitacion.numero)
   const tiempo = formatTiempo(msRestante)
 
   const handleLiberar = (e) => {

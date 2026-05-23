@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
@@ -164,10 +165,10 @@ public class HabitacionService {
         boolean transicionValida = false;
 
         if (claveOperaciones.equals(clave)) {
-            // 1331: ocupado→libre, ocupado→aseo, aseo→libre, deshabilitada→libre
+            // 1331: ocupado→aseo, aseo→libre, deshabilitada→libre
+            // ocupado→libre NO está permitido: debe pasar por aseo primero (o anular la venta)
             transicionValida =
-                (h.getEstado() == EstadoHabitacion.ocupado &&
-                    (destino == EstadoHabitacion.libre || destino == EstadoHabitacion.aseo))
+                (h.getEstado() == EstadoHabitacion.ocupado && destino == EstadoHabitacion.aseo)
                 || (h.getEstado() == EstadoHabitacion.aseo && destino == EstadoHabitacion.libre)
                 || (h.getEstado() == EstadoHabitacion.deshabilitada && destino == EstadoHabitacion.libre);
         } else if (claveDeshabilitacion.equals(clave)) {
@@ -190,6 +191,23 @@ public class HabitacionService {
         habitacionRepository.save(h);
         registrarLog(h, estadoAnterior, estadoDestino);
         return mapear(h);
+    }
+
+    // Llamado por el scheduler: pasa a aseo toda habitación ocupada cuya salida
+    // estimada superó hace más de 30 minutos
+    @Transactional
+    public void autoAseoVencidas() {
+        LocalDateTime limite = LocalDateTime.now().minusMinutes(30);
+        habitacionRepository.findByEstadoAndActivaTrue(EstadoHabitacion.ocupado).forEach(h ->
+            ventaRepository.findTopByHabitacionIdOrderByCreatedAtDesc(h.getId()).ifPresent(v -> {
+                if (v.getSalidaEstimada() != null && v.getSalidaEstimada().isBefore(limite)) {
+                    h.setEstado(EstadoHabitacion.aseo);
+                    h.setNota("Aseo automático — tiempo de uso vencido");
+                    habitacionRepository.save(h);
+                    registrarLog(h, "ocupado", "aseo");
+                }
+            })
+        );
     }
 
     public HabitacionResponse mapear(Habitacion h) {

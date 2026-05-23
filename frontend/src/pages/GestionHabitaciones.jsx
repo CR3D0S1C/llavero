@@ -31,8 +31,7 @@ const estadoLabel = {
 const acciones = {
   libre:         [{ estado: 'mantenimiento', label: 'Mantención', color: 'text-yellow-400 border-yellow-700 hover:bg-yellow-900/30' },
                   { estado: 'deshabilitada', label: 'Deshabilitar', color: 'text-gray-400 border-gray-600 hover:bg-gray-700/30' }],
-  ocupado:       [{ estado: 'libre',  label: 'Liberar', color: 'text-green-400 border-green-700 hover:bg-green-900/30' },
-                  { estado: 'aseo',   label: '→ Aseo',  color: 'text-orange-400 border-orange-700 hover:bg-orange-900/30' }],
+  ocupado:       [{ estado: 'aseo', label: '→ Aseo', color: 'text-orange-400 border-orange-700 hover:bg-orange-900/30' }],
   aseo:          [{ estado: 'libre',  label: 'Liberar', color: 'text-green-400 border-green-700 hover:bg-green-900/30' }],
   mantenimiento: [{ estado: 'libre',  label: 'Liberar', color: 'text-green-400 border-green-700 hover:bg-green-900/30' },
                   { estado: 'deshabilitada', label: 'Deshabilitar', color: 'text-gray-400 border-gray-600 hover:bg-gray-700/30' }],

@@ -188,10 +188,12 @@ public class VentaService {
         Venta venta = ventaRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
 
-        // Liberar habitación
+        // Al anular, liberar la habitación sin importar si está ocupada o en aseo
         Habitacion h = venta.getHabitacion();
-        if (h != null && h.getEstado() == EstadoHabitacion.ocupado) {
+        if (h != null && (h.getEstado() == EstadoHabitacion.ocupado
+                       || h.getEstado() == EstadoHabitacion.aseo)) {
             h.setEstado(EstadoHabitacion.libre);
+            h.setNota(null);
             habitacionRepository.save(h);
         }
 

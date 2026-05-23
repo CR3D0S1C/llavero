@@ -83,23 +83,27 @@ export default function ModalLiberar({ habitacion, onExito, onCancelar }) {
               {claveUsada === 'ops' && puedeOperar && (
                 <>
                   <p className="text-sm text-muted mb-1">
-                    {desdeAseo ? 'Habitación en aseo. ¿Qué hacemos?' : '¿Qué hacemos con la habitación?'}
+                    {desdeAseo ? '¿La habitación ya está lista?' : 'El cliente salió. ¿Qué hacemos?'}
                   </p>
 
-                  <button
-                    onClick={() => operar('libre')}
-                    disabled={loading}
-                    className="w-full p-4 border-2 border-border hover:border-green-500 rounded-xl text-left transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">✅</span>
-                      <div>
-                        <div className="font-semibold">Liberar</div>
-                        <div className="text-sm text-muted">Pasa a Libre — lista para vender</div>
+                  {/* Desde aseo → liberar (habitación limpia) */}
+                  {desdeAseo && (
+                    <button
+                      onClick={() => operar('libre')}
+                      disabled={loading}
+                      className="w-full p-4 border-2 border-border hover:border-green-500 rounded-xl text-left transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">✅</span>
+                        <div>
+                          <div className="font-semibold">Habitación lista</div>
+                          <div className="text-sm text-muted">Pasa a Libre — disponible para vender</div>
+                        </div>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                  )}
 
+                  {/* Desde ocupado → aseo (única opción; libre solo vía anulación) */}
                   {!desdeAseo && (
                     <button
                       onClick={() => operar('aseo')}
@@ -110,7 +114,7 @@ export default function ModalLiberar({ habitacion, onExito, onCancelar }) {
                         <span className="text-2xl">🧹</span>
                         <div>
                           <div className="font-semibold">Enviar a Aseo</div>
-                          <div className="text-sm text-muted">No disponible hasta que esté lista</div>
+                          <div className="text-sm text-muted">Para liberar, la habitación debe limpiarse primero</div>
                         </div>
                       </div>
                     </button>

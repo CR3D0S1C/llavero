@@ -11,13 +11,18 @@ export default function Dashboard() {
   const [metricas, setMetricas] = useState(null)
   const [loading, setLoading] = useState(true)
   const [habitacionALiberar, setHabitacionALiberar] = useState(null)
+  const [ahora, setAhora] = useState(new Date())
   const { sesion } = useSesion()
   const navigate = useNavigate()
 
   useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
     cargar()
     const interval = setInterval(cargar, 30000)
-    return () => clearInterval(interval)
+    const reloj = setInterval(() => setAhora(new Date()), 30000)
+    return () => { clearInterval(interval); clearInterval(reloj) }
   }, [])
 
   const cargar = async () => {
@@ -39,6 +44,12 @@ export default function Dashboard() {
   const ocupadas = habitaciones.filter(h => h.estado === 'ocupado').length
   const mant = habitaciones.filter(h => h.estado === 'mantenimiento').length
 
+  const alertas10min = habitaciones.filter(h => {
+    if (h.estado !== 'ocupado' || !h.salidaEstimada) return false
+    const ms = new Date(h.salidaEstimada) - ahora
+    return ms > 0 && ms <= 600000
+  })
+
   return (
     <div className="min-h-screen bg-bg">
       <Navbar />
@@ -52,6 +63,19 @@ export default function Dashboard() {
             + Nueva Venta
           </button>
         </div>
+
+        {/* Banner de alerta 10 min */}
+        {alertas10min.length > 0 && (
+          <div className="bg-red-900/40 border border-red-700 rounded-xl px-4 py-3 mb-4 flex items-center gap-3 animate-pulse">
+            <span className="text-red-400 text-lg">⚠️</span>
+            <span className="text-red-300 text-sm font-medium">
+              {alertas10min.length === 1
+                ? `Hab. ${alertas10min[0].numero} — menos de 10 minutos para la salida`
+                : `${alertas10min.length} habitaciones con menos de 10 min: ${alertas10min.map(h => h.numero).join(', ')}`
+              }
+            </span>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
