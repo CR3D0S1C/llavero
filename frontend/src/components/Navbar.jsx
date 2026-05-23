@@ -11,6 +11,7 @@ const links = [
 ]
 
 const linksJefe = [
+  { to: '/gestion', label: 'Gestión', icon: '🏨' },
   { to: '/dte', label: 'DTEs', icon: '🧾' },
   { to: '/admin', label: 'Admin', icon: '⚙️' },
 ]

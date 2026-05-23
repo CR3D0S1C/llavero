@@ -34,6 +34,8 @@ export const getHabitaciones = () => api.get('/habitaciones')
 export const updateHabitacion = (id, data) => api.put(`/habitaciones/${id}`, data)
 export const liberarHabitacion = (id) => api.put(`/habitaciones/${id}/liberar`)
 export const operarHabitacion = (id, estado, clave) => api.put(`/habitaciones/${id}/operar`, { estado, clave })
+export const cambiarEstadoJefe = (id, estado) => api.put(`/habitaciones/${id}/estado`, { estado })
+export const getHabitacionLog = () => api.get('/habitaciones/log')
 
 // Ventas
 export const getVentas = (params) => api.get('/ventas', { params })

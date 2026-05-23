@@ -1,18 +1,24 @@
 package cl.llavero.service;
 
+import cl.llavero.dto.HabitacionLogResponse;
 import cl.llavero.dto.HabitacionPrecioDto;
 import cl.llavero.dto.HabitacionResponse;
 import cl.llavero.dto.HabitacionUpdateRequest;
 import cl.llavero.entity.EstadoHabitacion;
 import cl.llavero.entity.Habitacion;
+import cl.llavero.entity.HabitacionLog;
 import cl.llavero.entity.HabitacionPrecio;
+import cl.llavero.repository.HabitacionLogRepository;
 import cl.llavero.repository.HabitacionPrecioRepository;
 import cl.llavero.repository.HabitacionRepository;
+import cl.llavero.repository.UsuarioRepository;
 import cl.llavero.repository.VentaRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -29,13 +35,34 @@ public class HabitacionService {
     private final HabitacionRepository habitacionRepository;
     private final HabitacionPrecioRepository precioRepository;
     private final VentaRepository ventaRepository;
+    private final HabitacionLogRepository logRepository;
+    private final UsuarioRepository usuarioRepository;
 
     public HabitacionService(HabitacionRepository habitacionRepository,
                              HabitacionPrecioRepository precioRepository,
-                             VentaRepository ventaRepository) {
+                             VentaRepository ventaRepository,
+                             HabitacionLogRepository logRepository,
+                             UsuarioRepository usuarioRepository) {
         this.habitacionRepository = habitacionRepository;
         this.precioRepository = precioRepository;
         this.ventaRepository = ventaRepository;
+        this.logRepository = logRepository;
+        this.usuarioRepository = usuarioRepository;
+    }
+
+    private void registrarLog(Habitacion h, String anterior, String nuevo) {
+        String nombre = "Sistema";
+        try {
+            String principal = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            nombre = usuarioRepository.findById(UUID.fromString(principal))
+                    .map(u -> u.getNombre()).orElse("Sistema");
+        } catch (Exception ignored) {}
+        HabitacionLog log = new HabitacionLog();
+        log.setHabitacion(h);
+        log.setEstadoAnterior(anterior);
+        log.setEstadoNuevo(nuevo);
+        log.setUsuarioNombre(nombre);
+        logRepository.save(log);
     }
 
     public List<HabitacionResponse> listar() {
@@ -85,10 +112,45 @@ public class HabitacionService {
         if (habitacion.getEstado() != EstadoHabitacion.ocupado) {
             throw new RuntimeException("La habitación no está ocupada");
         }
+        String anterior = habitacion.getEstado().name();
         habitacion.setEstado(EstadoHabitacion.libre);
         habitacion.setNota(null);
         habitacionRepository.save(habitacion);
+        registrarLog(habitacion, anterior, "libre");
         return mapear(habitacion);
+    }
+
+    // Cambio de estado directo para jefe — sin clave, cualquier transición
+    @Transactional
+    public HabitacionResponse cambiarEstadoJefe(String id, String nuevoEstado) {
+        Habitacion h = habitacionRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new RuntimeException("Habitación no encontrada"));
+        String anterior = h.getEstado().name();
+        EstadoHabitacion destino = EstadoHabitacion.valueOf(nuevoEstado);
+        h.setEstado(destino);
+        if (destino == EstadoHabitacion.libre)        h.setNota(null);
+        if (destino == EstadoHabitacion.aseo)         h.setNota("En aseo");
+        if (destino == EstadoHabitacion.deshabilitada) h.setNota(null);
+        habitacionRepository.save(h);
+        registrarLog(h, anterior, nuevoEstado);
+        return mapear(h);
+    }
+
+    public List<HabitacionLogResponse> getLogs() {
+        DateTimeFormatter fFecha = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        DateTimeFormatter fHora  = DateTimeFormatter.ofPattern("HH:mm");
+        return logRepository.findTop100ByOrderByCreatedAtDesc().stream().map(l -> {
+            HabitacionLogResponse r = new HabitacionLogResponse();
+            r.setHabitacionNumero(l.getHabitacion() != null ? l.getHabitacion().getNumero() : "—");
+            r.setHabitacionTipo(l.getHabitacion() != null && l.getHabitacion().getTipo() != null
+                    ? l.getHabitacion().getTipo().getLabel() : "");
+            r.setEstadoAnterior(l.getEstadoAnterior());
+            r.setEstadoNuevo(l.getEstadoNuevo());
+            r.setUsuarioNombre(l.getUsuarioNombre());
+            r.setFecha(l.getCreatedAt().format(fFecha));
+            r.setHora(l.getCreatedAt().format(fHora));
+            return r;
+        }).collect(Collectors.toList());
     }
 
     // Cambio de estado con clave — cualquier rol autenticado
@@ -97,6 +159,7 @@ public class HabitacionService {
         Habitacion h = habitacionRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new RuntimeException("Habitación no encontrada"));
 
+        String estadoAnterior = h.getEstado().name();
         EstadoHabitacion destino = EstadoHabitacion.valueOf(estadoDestino);
         boolean transicionValida = false;
 
@@ -125,6 +188,7 @@ public class HabitacionService {
         if (destino == EstadoHabitacion.deshabilitada) h.setNota(null);
 
         habitacionRepository.save(h);
+        registrarLog(h, estadoAnterior, estadoDestino);
         return mapear(h);
     }
 

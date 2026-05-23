@@ -1,5 +1,6 @@
 package cl.llavero.controller;
 
+import cl.llavero.dto.HabitacionLogResponse;
 import cl.llavero.dto.HabitacionResponse;
 import cl.llavero.dto.HabitacionUpdateRequest;
 import cl.llavero.service.HabitacionService;
@@ -47,7 +48,7 @@ public class HabitacionController {
         }
     }
 
-    // Cambiar estado con clave 1331 — disponible para cualquier rol autenticado
+    // Cambiar estado con clave — disponible para cualquier rol autenticado
     @PutMapping("/{id}/operar")
     public ResponseEntity<?> operar(@PathVariable String id, @RequestBody Map<String, String> body) {
         try {
@@ -57,5 +58,23 @@ public class HabitacionController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    // Cambio de estado directo para jefe — sin clave
+    @PutMapping("/{id}/estado")
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<?> cambiarEstado(@PathVariable String id, @RequestBody Map<String, String> body) {
+        try {
+            return ResponseEntity.ok(habitacionService.cambiarEstadoJefe(id, body.get("estado")));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Log de cambios de estado — solo jefe
+    @GetMapping("/log")
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<List<HabitacionLogResponse>> log() {
+        return ResponseEntity.ok(habitacionService.getLogs());
     }
 }

@@ -10,6 +10,7 @@ import Productos from './pages/Productos'
 import CierreTurno from './pages/CierreTurno'
 import Admin from './pages/Admin'
 import DtePendientes from './pages/DtePendientes'
+import GestionHabitaciones from './pages/GestionHabitaciones'
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/cierre-turno" element={<ProtectedRoute><CierreTurno /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute soloJefe><Admin /></ProtectedRoute>} />
           <Route path="/dte" element={<ProtectedRoute soloJefe><DtePendientes /></ProtectedRoute>} />
+          <Route path="/gestion" element={<ProtectedRoute soloJefe><GestionHabitaciones /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </BrowserRouter>
