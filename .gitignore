@@ -1,0 +1,31 @@
+# ===== BACKEND =====
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# ===== FRONTEND =====
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+*.suo
+*.user
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== SECRETS =====
+*.env
+application-prod.properties

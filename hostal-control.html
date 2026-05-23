@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HostalPro — Control de Ventas</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inconsolata:wght@400;500;600&family=Lato:wght@300;400;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;
+  --text:#e6edf3;--muted:#8b949e;--accent:#f0a500;
+  --green:#3fb950;--red:#f85149;--blue:#58a6ff;--purple:#bc8cff;
+  --teal:#39d353;--radius:10px;
+}
+body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── LOGIN ── */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:radial-gradient(ellipse at 60% 40%,rgba(240,165,0,.08) 0%,transparent 60%)}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:40px 36px;
+  width:100%;max-width:400px;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+.login-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;color:var(--accent);text-align:center;margin-bottom:4px}
+.login-logo span{color:var(--text);font-weight:400}
+.login-sub{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:32px}
+.login-users{display:grid;gap:10px;margin-bottom:8px}
+.login-user-btn{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+  cursor:pointer;text-align:left;transition:all .15s;color:var(--text);width:100%}
+.login-user-btn:hover{border-color:var(--accent);background:rgba(240,165,0,.06)}
+.login-user-btn .u-name{font-weight:700;font-size:.95rem}
+.login-user-btn .u-role{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.login-user-btn .u-badge{float:right;font-size:.7rem;padding:2px 8px;border-radius:20px;margin-top:2px}
+.badge-jefe{background:rgba(240,165,0,.15);color:var(--accent);border:1px solid rgba(240,165,0,.3)}
+.badge-cajero{background:rgba(88,166,255,.15);color:var(--blue);border:1px solid rgba(88,166,255,.3)}
+.pin-dots{display:flex;gap:10px;justify-content:center;margin:16px 0}
+.pin-dot{width:14px;height:14px;border-radius:50%;background:var(--border);transition:background .15s}
+.pin-dot.filled{background:var(--accent)}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.num-btn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);
+  font-size:1.1rem;font-weight:700;padding:14px;cursor:pointer;transition:all .15s;font-family:'Inconsolata',monospace}
+.num-btn:hover{background:var(--border)}.num-btn.del{color:var(--red)}
+.login-error{color:var(--red);font-size:.82rem;text-align:center;min-height:20px;margin-top:8px}
+
+/* ── HEADER ── */
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;
+  align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:100}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.25rem;color:var(--accent);letter-spacing:-.5px}
+.logo span{color:var(--text);font-weight:400}
+.header-center{display:flex;align-items:center;gap:12px}
+.header-time{font-family:'Inconsolata',monospace;font-size:.9rem;color:var(--muted);background:var(--bg3);
+  padding:4px 12px;border-radius:20px;border:1px solid var(--border)}
+.user-pill{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:20px;padding:4px 12px 4px 8px;font-size:.82rem}
+.avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700}
+.avatar-jefe{background:rgba(240,165,0,.2);color:var(--accent)}
+.avatar-cajero{background:rgba(88,166,255,.2);color:var(--blue)}
+.header-actions{display:flex;gap:8px;align-items:center}
+
+/* ── BUTTONS ── */
+.btn{font-family:'Lato',sans-serif;font-size:.82rem;font-weight:700;padding:6px 14px;border-radius:6px;
+  border:none;cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:.5px}
+.btn-accent{background:var(--accent);color:#000}.btn-accent:hover{background:#ffc040}
+.btn-ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{background:var(--border)}
+.btn-sm{padding:4px 10px;font-size:.76rem}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{background:#ff6b6b}
+.btn-success{background:var(--green);color:#000}.btn-success:hover{background:#5de873}
+.btn-blue{background:var(--blue);color:#000}.btn-blue:hover{background:#7ec8ff}
+.btn-warn{background:var(--accent);color:#000}.btn-warn:hover{background:#ffc040}
+
+/* ── TURNO BANNER ── */
+.turno-banner{background:linear-gradient(90deg,rgba(63,185,80,.1),transparent);
+  border-bottom:1px solid rgba(63,185,80,.2);padding:6px 24px;display:flex;align-items:center;gap:12px;font-size:.82rem}
+.turno-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
+
+/* ── TABS ── */
+.nav-tabs{display:flex;gap:2px;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;overflow-x:auto}
+.nav-tab{font-family:'Lato',sans-serif;font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  padding:12px 18px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;
+  transition:all .15s;background:none;border-left:none;border-right:none;border-top:none}
+.nav-tab:hover{color:var(--text)}.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.nav-tab.locked{opacity:.3;cursor:not-allowed;pointer-events:none}
+
+main{padding:24px;max-width:1400px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+
+/* ── STATS ── */
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.green::before{background:var(--green)}.stat-card.orange::before{background:var(--accent)}
+.stat-card.red::before{background:var(--red)}.stat-card.blue::before{background:var(--blue)}
+.stat-card.purple::before{background:var(--purple)}
+.stat-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.stat-value{font-family:'Inconsolata',monospace;font-size:1.6rem;font-weight:600;line-height:1}
+.stat-sub{font-size:.75rem;color:var(--muted);margin-top:4px}
+
+/* ── SECTION TITLE ── */
+.section-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── ROOMS ── */
+.rooms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:28px}
+.room-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:transform .15s,box-shadow .15s}
+.room-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.room-card.disabled{opacity:.45}.room-card.disabled:hover{transform:none;box-shadow:none}
+.room-header{padding:12px 14px 8px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.room-number{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800}
+.room-badge{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:3px 8px;border-radius:20px}
+.badge-libre{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+.badge-ocupado{background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+.badge-mantenimiento{background:rgba(240,165,0,.15);color:var(--accent);border:1px solid rgba(240,165,0,.3)}
+.badge-deshabilitada{background:rgba(139,148,158,.12);color:var(--muted);border:1px solid var(--border)}
+.room-body{padding:12px 14px}
+.room-type{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
+.room-info{font-size:.82rem;color:var(--text);line-height:1.5}
+.room-info span{color:var(--muted)}
+.room-footer{padding:10px 14px;background:var(--bg3);display:flex;gap:6px;flex-wrap:wrap}
+.room-card[data-tipo="loft"] .room-header{border-left:3px solid var(--purple)}
+.room-card[data-tipo="matrimonial-privado"] .room-header{border-left:3px solid var(--accent)}
+.room-card[data-tipo="individual-privado"] .room-header{border-left:3px solid var(--blue)}
+.room-card[data-tipo="matrimonial-compartido"] .room-header{border-left:3px solid var(--teal)}
+.room-card[data-tipo="familiar"] .room-header{border-left:3px solid #e05a00}
+.room-card[data-tipo="individual-compartido"] .room-header{border-left:3px solid var(--muted)}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;
+  align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:14px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;animation:slideUp .2s ease}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700}
+.modal-close{background:var(--bg3);border:1px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{color:var(--text);background:var(--border)}
+.modal-body{padding:20px 24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+
+/* ── FORM ── */
+.form-row{margin-bottom:16px}
+.form-label{display:block;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
+.form-control{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);
+  font-family:'Lato',sans-serif;font-size:.9rem;padding:9px 12px;outline:none;transition:border-color .15s}
+.form-control:focus{border-color:var(--accent)}
+select.form-control{cursor:pointer}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ── TABLE ── */
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--bg3)}
+th{font-family:'Lato',sans-serif;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+  color:var(--muted);padding:11px 14px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:10px 14px;font-size:.87rem;border-bottom:1px solid rgba(48,54,61,.5);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.mono{font-family:'Inconsolata',monospace}
+.text-green{color:var(--green)}.text-red{color:var(--red)}.text-muted{color:var(--muted)}
+.text-accent{color:var(--accent)}.text-blue{color:var(--blue)}
+
+/* ── PRODUCTOS ── */
+.productos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px;margin-bottom:20px}
+.producto-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;
+  display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:all .15s}
+.producto-card:hover{border-color:var(--accent);background:rgba(240,165,0,.05)}
+.producto-icon{font-size:1.8rem}
+.producto-nombre{font-weight:700;font-size:.9rem}
+.producto-precio{font-family:'Inconsolata',monospace;color:var(--accent);font-size:1rem}
+
+/* ── CAJA ── */
+.caja-wrap{display:grid;grid-template-columns:1fr 340px;gap:20px}
+.caja-header{background:var(--bg3);padding:12px 16px;font-family:'Syne',sans-serif;font-weight:700;
+  font-size:.9rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border)}
+.caja-empty{padding:40px;text-align:center;color:var(--muted);font-size:.85rem}
+.caja-item{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid rgba(48,54,61,.5);gap:10px}
+.caja-item:last-child{border-bottom:none}
+.caja-item-name{flex:1;font-size:.88rem}
+.caja-item-qty{font-family:'Inconsolata',monospace;font-size:.85rem;background:var(--bg3);padding:2px 8px;border-radius:4px;color:var(--muted)}
+.caja-item-price{font-family:'Inconsolata',monospace;font-size:.9rem;color:var(--accent);min-width:80px;text-align:right}
+.caja-item-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;padding:2px 6px;border-radius:4px}
+.caja-item-del:hover{background:rgba(248,81,73,.1)}
+.resumen-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;align-self:start;position:sticky;top:80px}
+.resumen-row{display:flex;justify-content:space-between;padding:10px 16px;font-size:.87rem;border-bottom:1px solid rgba(48,54,61,.4)}
+.resumen-total{display:flex;justify-content:space-between;padding:14px 16px;font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;background:var(--bg3)}
+.resumen-total .mono{color:var(--accent);font-family:'Inconsolata',monospace;font-size:1.3rem}
+
+/* ── FILTROS ── */
+.filtros-bar{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.filtro-btn{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:6px 14px;
+  border-radius:20px;border:1px solid var(--border);background:var(--bg2);color:var(--muted);cursor:pointer;transition:all .15s}
+.filtro-btn:hover,.filtro-btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
+
+/* ── PRECIO ROW ── */
+.precio-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg3);border-radius:6px;font-size:.85rem}
+.precio-row span:last-child{font-family:'Inconsolata',monospace;color:var(--accent);font-weight:600}
+
+/* ── NOTIF ── */
+.notif{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:14px 20px;font-size:.88rem;z-index:300;transform:translateY(80px);opacity:0;transition:all .3s ease;
+  max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.notif.show{transform:translateY(0);opacity:1}
+.notif.ok{border-left:3px solid var(--green)}.notif.err{border-left:3px solid var(--red)}
+.notif.info{border-left:3px solid var(--blue)}.notif.warn{border-left:3px solid var(--accent)}
+
+/* ── TURNO CARD ── */
+.turno-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:24px}
+.turno-card h3{font-family:'Syne',sans-serif;font-size:1.1rem;margin-bottom:16px}
+.turno-resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.tr-item{background:var(--bg3);border-radius:8px;padding:12px;text-align:center}
+.tr-item .tr-val{font-family:'Inconsolata',monospace;font-size:1.4rem;font-weight:600;color:var(--accent)}
+.tr-item .tr-lab{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+
+/* ── CODE DIGITS ── */
+.code-wrap{display:flex;gap:8px;justify-content:center;margin:16px 0}
+.code-digit{width:44px;height:52px;background:var(--bg3);border:2px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:'Inconsolata',monospace;font-size:1.4rem;text-align:center;outline:none;transition:border-color .15s}
+.code-digit:focus{border-color:var(--accent)}
+
+/* ── ALERTS ── */
+.alert{border-radius:8px;padding:12px 16px;font-size:.85rem;margin-bottom:16px;border:1px solid}
+.alert-warn{background:rgba(240,165,0,.08);border-color:rgba(240,165,0,.25);color:var(--accent)}
+.alert-info{background:rgba(88,166,255,.08);border-color:rgba(88,166,255,.25);color:var(--blue)}
+.alert-danger{background:rgba(248,81,73,.08);border-color:rgba(248,81,73,.25);color:var(--red)}
+
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+@media(max-width:768px){.caja-wrap{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}main{padding:14px}.resumen-card{position:static}}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══════════════════════════════════════════ -->
+<div id="login-screen" class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">Hostal<span>Pro</span></div>
+    <div class="login-sub">Sistema de Control de Ventas</div>
+
+    <div id="step-select">
+      <div style="font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;font-weight:700">Seleccionar usuario</div>
+      <div class="login-users" id="login-users-list"></div>
+    </div>
+
+    <div id="step-pin" style="display:none">
+      <div style="font-size:.85rem;color:var(--muted);text-align:center;margin-bottom:4px">Ingresa tu PIN</div>
+      <div id="pin-user-name" style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;text-align:center;margin-bottom:16px"></div>
+      <div class="pin-dots" id="pin-dots">
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="numpad">
+        <button class="num-btn" onclick="pinPress('1')">1</button>
+        <button class="num-btn" onclick="pinPress('2')">2</button>
+        <button class="num-btn" onclick="pinPress('3')">3</button>
+        <button class="num-btn" onclick="pinPress('4')">4</button>
+        <button class="num-btn" onclick="pinPress('5')">5</button>
+        <button class="num-btn" onclick="pinPress('6')">6</button>
+        <button class="num-btn" onclick="pinPress('7')">7</button>
+        <button class="num-btn" onclick="pinPress('8')">8</button>
+        <button class="num-btn" onclick="pinPress('9')">9</button>
+        <button class="num-btn del" onclick="pinBack()" style="grid-column:1">&#8592;</button>
+        <button class="num-btn" onclick="pinPress('0')">0</button>
+        <button class="num-btn del" onclick="pinClear()">&#10005;</button>
+      </div>
+      <div class="login-error" id="pin-error"></div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:12px" onclick="volverSelect()">&#8592; Volver</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════ -->
+<div id="app-screen" style="display:none">
+
+<header>
+  <div class="logo">Hostal<span>Pro</span></div>
+  <div class="header-center">
+    <div class="header-time" id="reloj">--:--</div>
+    <div class="user-pill" id="user-pill"></div>
+  </div>
+  <div class="header-actions" id="header-actions"></div>
+</header>
+
+<div class="turno-banner" id="turno-banner"></div>
+<nav class="nav-tabs" id="nav-tabs"></nav>
+
+<main>
+  <div id="page-dashboard" class="page active">
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="section-title">Vista general de habitaciones</div>
+    <div class="rooms-grid" id="rooms-dashboard"></div>
+  </div>
+
+  <div id="page-habitaciones" class="page">
+    <div class="filtros-bar">
+      <span style="font-size:.8rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Tipo:</span>
+      <button class="filtro-btn active" onclick="filtrarHabs(this,'todos')">Todos</button>
+      <button class="filtro-btn" onclick="filtrarHabs(this,'loft')">Loft</button>
+      <button class="filtro-btn" onclick="filtrarHabs(this,'matrimonial-privado')">Matrim. Priv.</button>
+      <button class="filtro-btn" onclick="filtrarHabs(this,'individual-privado')">Indiv. Priv.</button>
+      <button class="filtro-btn" onclick="filtrarHabs(this,'matrimonial-compartido')">Matrim. Comp.</button>
+      <button class="filtro-btn" onclick="filtrarHabs(this,'familiar')">Familiar</button>
+      <button class="filtro-btn" onclick="filtrarHabs(this,'individual-compartido')">Indiv. Comp.</button>
+    </div>
+    <div class="rooms-grid" id="rooms-habitaciones"></div>
+  </div>
+
+  <div id="page-nueva-venta" class="page">
+    <div id="nueva-venta-content"></div>
+  </div>
+
+  <div id="page-ventas" class="page">
+    <div class="filtros-bar">
+      <span style="font-size:.8rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Ver:</span>
+      <button class="filtro-btn active" onclick="filtrarVentas(this,'turno')">Este turno</button>
+      <button class="filtro-btn" onclick="filtrarVentas(this,'hoy')">Hoy</button>
+      <button class="filtro-btn" onclick="filtrarVentas(this,'semana')">Semana</button>
+      <button class="filtro-btn" onclick="filtrarVentas(this,'todo')">Todo</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Fecha/Hora</th><th>Cajero</th><th>Habitacion</th>
+          <th>Tarifa</th><th>Extras</th><th>Obs.</th><th>Total</th><th id="th-acc"></th>
+        </tr></thead>
+        <tbody id="tabla-ventas"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="page-productos" class="page">
+    <div class="section-title">Catalogo de Productos</div>
+    <div class="productos-grid" id="lista-productos"></div>
+  </div>
+
+  <div id="page-cierre" class="page">
+    <div id="cierre-content"></div>
+  </div>
+
+  <div id="page-admin" class="page">
+    <div id="admin-content"></div>
+  </div>
+</main>
+</div>
+
+<!-- ══ MODALES ═══════════════════════════════════════ -->
+
+<!-- Modal: seleccionar tarifa -->
+<div class="modal-overlay" id="modal-ocupar">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-ocupar-title">Registrar Ocupacion</span>
+      <button class="modal-close" onclick="cerrarModal('modal-ocupar')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-ocupar-info" style="margin-bottom:14px;padding:10px 14px;background:var(--bg3);border-radius:8px;font-size:.85rem;line-height:1.7"></div>
+      <div class="form-row">
+        <label class="form-label">Tarifa</label>
+        <select class="form-control" id="modal-tarifa" onchange="modalCalcPrecio()"></select>
+      </div>
+      <div id="modal-precio-preview" style="margin-top:8px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-ocupar')">Cancelar</button>
+      <button class="btn btn-accent" onclick="irAVentaDesdeModal()">Agregar a Venta</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: estado habitacion (jefe) -->
+<div class="modal-overlay" id="modal-estado">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-estado-title">Gestionar Habitacion</span>
+      <button class="modal-close" onclick="cerrarModal('modal-estado')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-estado-info" style="margin-bottom:16px;padding:12px 14px;background:var(--bg3);border-radius:8px;font-size:.85rem;line-height:1.8"></div>
+      <label class="form-label">Cambiar estado</label>
+      <select class="form-control" id="modal-nuevo-estado">
+        <option value="libre">Libre</option>
+        <option value="mantenimiento">En mantenimiento</option>
+        <option value="deshabilitada">Deshabilitada</option>
+      </select>
+      <div class="form-row" style="margin-top:12px">
+        <label class="form-label">Nota interna</label>
+        <input class="form-control" id="modal-nota" placeholder="Ej: pintura, problema electrico...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-estado')">Cancelar</button>
+      <button class="btn btn-blue" onclick="cambiarEstadoHab()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: nueva habitacion (jefe) -->
+<div class="modal-overlay" id="modal-hab">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Nueva Habitacion</span>
+      <button class="modal-close" onclick="cerrarModal('modal-hab')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Numero / Nombre</label>
+          <input class="form-control" id="new-hab-num" placeholder="101, Loft A...">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Tipo</label>
+          <select class="form-control" id="new-hab-tipo" onchange="renderNewHabPrecios()">
+            <option value="loft">Loft</option>
+            <option value="matrimonial-privado">Matrimonial Bano Privado</option>
+            <option value="individual-privado">Individual Bano Privado</option>
+            <option value="matrimonial-compartido">Matrimonial Bano Compartido</option>
+            <option value="familiar">Familiar Bano Compartido</option>
+            <option value="individual-compartido">Individual Bano Compartido</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Descripcion</label>
+        <input class="form-control" id="new-hab-desc" placeholder="Piso 2, vista al patio...">
+      </div>
+      <div id="new-hab-precios"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-hab')">Cancelar</button>
+      <button class="btn btn-accent" onclick="guardarHabitacion()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: editar precios hab (jefe) -->
+<div class="modal-overlay" id="modal-edit-hab">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-edit-hab-title">Editar Precios</span>
+      <button class="modal-close" onclick="cerrarModal('modal-edit-hab')">&#10005;</button>
+    </div>
+    <div class="modal-body" id="modal-edit-hab-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-edit-hab')">Cancelar</button>
+      <button class="btn btn-accent" onclick="guardarPreciosHab()">Guardar Precios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: producto -->
+<div class="modal-overlay" id="modal-producto">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-prod-title">Nuevo Producto</span>
+      <button class="modal-close" onclick="cerrarModal('modal-producto')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label class="form-label">Nombre</label>
+        <input class="form-control" id="prod-nombre" placeholder="Desayuno continental">
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Precio ($)</label>
+          <input class="form-control" id="prod-precio" type="number" min="0">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Icono emoji</label>
+          <input class="form-control" id="prod-icono" placeholder="&#127859;" maxlength="4">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Categoria</label>
+        <select class="form-control" id="prod-cat">
+          <option value="desayuno">Desayunos</option>
+          <option value="aseo">Aseo</option>
+          <option value="electronica">Electronica</option>
+          <option value="snack">Snacks</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-producto')">Cancelar</button>
+      <button class="btn btn-accent" onclick="guardarProducto()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: item libre con codigo supervisor -->
+<div class="modal-overlay" id="modal-item-libre">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <span class="modal-title">Item no listado</span>
+      <button class="modal-close" onclick="cerrarModal('modal-item-libre')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warn">Esta accion requiere autorizacion del supervisor.</div>
+      <div class="form-row">
+        <label class="form-label">Descripcion del item</label>
+        <input class="form-control" id="item-libre-desc" placeholder="Ej: Almuerzo especial">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Precio ($)</label>
+        <input class="form-control" id="item-libre-precio" type="number" min="0">
+      </div>
+      <div style="font-size:.82rem;color:var(--muted);margin-bottom:8px">Ingresa el codigo de supervisor (4 digitos):</div>
+      <div class="code-wrap">
+        <input class="code-digit" id="sv-d1" maxlength="1" oninput="svNext(this,'sv-d2')" type="password">
+        <input class="code-digit" id="sv-d2" maxlength="1" oninput="svNext(this,'sv-d3')" onkeydown="svBack(event,'sv-d1')" type="password">
+        <input class="code-digit" id="sv-d3" maxlength="1" oninput="svNext(this,'sv-d4')" onkeydown="svBack(event,'sv-d2')" type="password">
+        <input class="code-digit" id="sv-d4" maxlength="1" onkeydown="svBack(event,'sv-d3')" type="password">
+      </div>
+      <div class="login-error" id="sv-error"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-item-libre')">Cancelar</button>
+      <button class="btn btn-warn" onclick="validarItemLibre()">Autorizar y Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: confirmar cierre turno -->
+<div class="modal-overlay" id="modal-cierre">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <span class="modal-title">Cerrar Turno</span>
+      <button class="modal-close" onclick="cerrarModal('modal-cierre')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-danger">Esta accion cerrara el turno actual. No podras registrar mas ventas hasta abrir uno nuevo.</div>
+      <div id="modal-cierre-resumen" style="margin-bottom:16px"></div>
+      <div class="form-row">
+        <label class="form-label">Observaciones de cierre</label>
+        <textarea class="form-control" id="cierre-obs" rows="3" placeholder="Novedades del turno, efectivo en caja..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-cierre')">Cancelar</button>
+      <button class="btn btn-danger" onclick="ejecutarCierre()">Cerrar Turno Definitivamente</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Boleta o Factura -->
+<div class="modal-overlay" id="modal-dte">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <span class="modal-title">Emitir Documento Tributario</span>
+      <button class="modal-close" onclick="cerrarModal('modal-dte')"><div class="notif" id="notif"></div>#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--bg3);border-radius:8px;padding:12px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:.85rem;color:var(--muted)">Total a cobrar</span>
+        <span id="dte-total-preview" style="font-family:Inconsolata,monospace;font-size:1.4rem;font-weight:700;color:var(--accent)">$0</span>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Tipo de documento</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div id="card-boleta" onclick="selDTE('boleta')" style="border:2px solid var(--green);background:rgba(63,185,80,.08);border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:all .15s">
+            <div style="font-size:1.4rem;margin-bottom:4px"><div class="notif" id="notif"></div>#128179;</div>
+            <div style="font-weight:700;font-size:.95rem;color:var(--green)">Boleta</div>
+            <div style="font-size:.75rem;color:var(--muted);margin-top:2px">Sin datos receptor</div>
+          </div>
+          <div id="card-factura" onclick="selDTE('factura')" style="border:2px solid var(--border);background:var(--bg3);border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:all .15s">
+            <div style="font-size:1.4rem;margin-bottom:4px"><div class="notif" id="notif"></div>#128196;</div>
+            <div style="font-weight:700;font-size:.95rem">Factura</div>
+            <div style="font-size:.75rem;color:var(--muted);margin-top:2px">Requiere datos empresa</div>
+          </div>
+        </div>
+        <input type="hidden" id="dte-tipo" value="boleta">
+      </div>
+      <div id="dte-factura-campos" style="display:none">
+        <div style="height:1px;background:var(--border);margin:4px 0 16px"></div>
+        <div style="font-size:.8rem;color:var(--muted);margin-bottom:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Datos del receptor</div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label class="form-label">RUT empresa *</label>
+            <input class="form-control" id="dte-rut" placeholder="12.345.678-9" maxlength="12">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Email (opcional)</label>
+            <input class="form-control" id="dte-email" placeholder="admin@empresa.cl">
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Razon Social *</label>
+          <input class="form-control" id="dte-razon" placeholder="Empresa SpA">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Giro *</label>
+          <input class="form-control" id="dte-giro" placeholder="Servicios empresariales">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Direccion *</label>
+          <input class="form-control" id="dte-dir" placeholder="Av. Providencia 123">
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label class="form-label">Comuna *</label>
+            <input class="form-control" id="dte-comuna" placeholder="Providencia">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Ciudad *</label>
+            <input class="form-control" id="dte-ciudad" placeholder="Santiago">
+          </div>
+        </div>
+        <div class="alert alert-info" style="margin-top:4px;font-size:.8rem">Campos con * son obligatorios para emitir factura ante el SII.</div>
+      </div>
+      <div class="login-error" id="dte-error" style="text-align:left;margin-top:8px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-dte')">Cancelar</button>
+      <button class="btn btn-success" style="padding:10px 24px" onclick="emitirDTE()">Confirmar y Emitir</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<!-- ══ JAVASCRIPT ═════════════════════════════════════ -->
+<script>
+/* ── CONSTANTES ───────────────────────────────── */
+const TIPOS = {
+  'loft':                   {label:'Loft',                        bano:'Privado',    personas:[2,3,4], tarifas:['1h','2h','3h','noche'], color:'#bc8cff'},
+  'matrimonial-privado':    {label:'Matrimonial Bano Privado',    bano:'Privado',    personas:[2],     tarifas:['1h','2h','3h','noche'], color:'#f0a500'},
+  'individual-privado':     {label:'Individual Bano Privado',     bano:'Privado',    personas:[1],     tarifas:['1h','2h','3h','noche'], color:'#58a6ff'},
+  'matrimonial-compartido': {label:'Matrimonial Bano Compartido', bano:'Compartido', personas:[2],     tarifas:['1h','2h','3h','noche'], color:'#39d353'},
+  'familiar':               {label:'Familiar Bano Compartido',    bano:'Compartido', personas:[2,3,4], tarifas:['1h','2h','3h','noche'], color:'#e05a00'},
+  'individual-compartido':  {label:'Individual Bano Compartido',  bano:'Compartido', personas:[1],     tarifas:['noche'],                color:'#8b949e'},
+};
+const TL = {'1h':'1 hora','2h':'2 horas','3h':'3 horas','noche':'Noche'};
+
+/* ── USUARIOS MOCK ────────────────────────────── */
+const USUARIOS = [
+  {id:'u1', nombre:'Carlos Mendoza', rol:'jefe',   pin:'1234', av:'C'},
+  {id:'u2', nombre:'Ana Torres',     rol:'cajero',  pin:'5678', av:'A'},
+  {id:'u3', nombre:'Luis Perez',     rol:'cajero',  pin:'9012', av:'L'},
+];
+const COD_SUPERVISOR = '7777'; // codigo que el jefe le da al cajero
+
+/* ── PRECIOS DEFAULT ──────────────────────────── */
+function preciosDefault(tipo) {
+  const base = {
+    'loft':                   {'2p-1h':10000,'2p-2h':18000,'2p-3h':24000,'2p-noche':35000,'3p-1h':12000,'3p-2h':20000,'3p-3h':28000,'3p-noche':40000,'4p-1h':14000,'4p-2h':24000,'4p-3h':32000,'4p-noche':45000},
+    'matrimonial-privado':    {'2p-1h':8000,'2p-2h':14000,'2p-3h':20000,'2p-noche':30000},
+    'individual-privado':     {'1p-1h':6000,'1p-2h':10000,'1p-3h':14000,'1p-noche':22000},
+    'matrimonial-compartido': {'2p-1h':6000,'2p-2h':11000,'2p-3h':16000,'2p-noche':25000},
+    'familiar':               {'2p-1h':7000,'2p-2h':12000,'2p-3h':18000,'2p-noche':28000,'3p-1h':9000,'3p-2h':15000,'3p-3h':22000,'3p-noche':33000,'4p-1h':11000,'4p-2h':18000,'4p-3h':25000,'4p-noche':38000},
+    'individual-compartido':  {'1p-noche':15000},
+  };
+  return base[tipo]||{};
+}
+
+/* ── STORAGE ──────────────────────────────────── */
+function load(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+
+let habitaciones = load('hp2_habs',[]);
+let ventas       = load('hp2_ventas',[]);
+let productos    = load('hp2_productos',[
+  {id:1,nombre:'Desayuno continental',precio:4500,icono:'breakfast',cat:'desayuno'},
+  {id:2,nombre:'Cafe + tostadas',     precio:2500,icono:'coffee',   cat:'desayuno'},
+  {id:3,nombre:'Shampoo',             precio:1200,icono:'soap',     cat:'aseo'},
+  {id:4,nombre:'Kit de afeitado',     precio:1500,icono:'razor',    cat:'aseo'},
+  {id:5,nombre:'Pasta dental',        precio:900, icono:'tooth',    cat:'aseo'},
+  {id:6,nombre:'Cargador USB-C',      precio:2000,icono:'plug',     cat:'electronica'},
+  {id:7,nombre:'Cargador iPhone',     precio:2000,icono:'bolt',     cat:'electronica'},
+  {id:8,nombre:'Agua mineral 500ml',  precio:800, icono:'water',    cat:'snack'},
+  {id:9,nombre:'Snack mix',           precio:1500,icono:'snack',    cat:'snack'},
+]);
+let turnos = load('hp2_turnos',[]);
+
+const ICONOS = {breakfast:'&#127859;',coffee:'&#9749;',soap:'&#129529;',razor:'&#128297;',tooth:'&#129463;',
+  plug:'&#128268;',bolt:'&#9889;',water:'&#128167;',snack:'&#127851;'};
+function getIcono(p){return ICONOS[p.icono]||'&#128230;'}
+
+if(habitaciones.length===0){
+  habitaciones=[
+    {id:'h1',num:'101',tipo:'loft',desc:'Piso 1',estado:'libre',nota:'',precios:preciosDefault('loft')},
+    {id:'h2',num:'102',tipo:'loft',desc:'Piso 1 vista patio',estado:'ocupado',nota:'',precios:preciosDefault('loft')},
+    {id:'h3',num:'201',tipo:'matrimonial-privado',desc:'Piso 2',estado:'libre',nota:'',precios:preciosDefault('matrimonial-privado')},
+    {id:'h4',num:'202',tipo:'matrimonial-privado',desc:'Piso 2',estado:'libre',nota:'',precios:preciosDefault('matrimonial-privado')},
+    {id:'h5',num:'203',tipo:'individual-privado',desc:'Piso 2',estado:'mantenimiento',nota:'Pintura',precios:preciosDefault('individual-privado')},
+    {id:'h6',num:'204',tipo:'individual-privado',desc:'Piso 2',estado:'libre',nota:'',precios:preciosDefault('individual-privado')},
+    {id:'h7',num:'301',tipo:'matrimonial-compartido',desc:'Piso 3',estado:'libre',nota:'',precios:preciosDefault('matrimonial-compartido')},
+    {id:'h8',num:'302',tipo:'matrimonial-compartido',desc:'Piso 3',estado:'ocupado',nota:'',precios:preciosDefault('matrimonial-compartido')},
+    {id:'h9',num:'303',tipo:'familiar',desc:'Piso 3',estado:'libre',nota:'',precios:preciosDefault('familiar')},
+    {id:'h10',num:'304',tipo:'familiar',desc:'Piso 3',estado:'libre',nota:'',precios:preciosDefault('familiar')},
+    {id:'h11',num:'401',tipo:'individual-compartido',desc:'Piso 4',estado:'libre',nota:'',precios:preciosDefault('individual-compartido')},
+    {id:'h12',num:'402',tipo:'individual-compartido',desc:'Piso 4',estado:'deshabilitada',nota:'Problemas electricos',precios:preciosDefault('individual-compartido')},
+  ];
+  save('hp2_habs',habitaciones);
+}
+
+/* ── SESION ───────────────────────────────────── */
+let usuarioActual = null;
+let turnoActual   = null;
+
+/* ── HELPERS ──────────────────────────────────── */
+function fmt(n){return '$'+Number(n).toLocaleString('es-CL')}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5)}
+function pad(x){return x.toString().padStart(2,'0')}
+function cerrarModal(id){document.getElementById(id).classList.remove('open')}
+function abrirModal(id){document.getElementById(id).classList.add('open')}
+function esJefe(){return usuarioActual&&usuarioActual.rol==='jefe'}
+function tarifasDeHab(hab){
+  const t=TIPOS[hab.tipo]; const res=[];
+  t.personas.forEach(p=>t.tarifas.forEach(tf=>{
+    const k=`${p}p-${tf}`;
+    if(hab.precios[k]!==undefined) res.push({key:k,label:`${p} persona${p>1?'s':''} - ${TL[tf]}`,precio:hab.precios[k]});
+  }));
+  return res;
+}
+function badgeHtml(e){
+  return ({libre:'<span class="room-badge badge-libre">Libre</span>',
+    ocupado:'<span class="room-badge badge-ocupado">Ocupado</span>',
+    mantenimiento:'<span class="room-badge badge-mantenimiento">Mantenimiento</span>',
+    deshabilitada:'<span class="room-badge badge-deshabilitada">Deshabilitada</span>'})[e]||'';
+}
+
+let notifTimer;
+function notif(msg,tipo='ok'){
+  const el=document.getElementById('notif');
+  el.textContent=msg; el.className='notif '+tipo+' show';
+  clearTimeout(notifTimer); notifTimer=setTimeout(()=>el.classList.remove('show'),3200);
+}
+
+/* ── RELOJ ────────────────────────────────────── */
+function actualizarReloj(){
+  const n=new Date();
+  const el=document.getElementById('reloj');
+  if(el) el.textContent=pad(n.getHours())+':'+pad(n.getMinutes())+'  '+pad(n.getDate())+'/'+pad(n.getMonth()+1)+'/'+n.getFullYear();
+}
+actualizarReloj(); setInterval(actualizarReloj,10000);
+
+/* ══════════════════════════════════════════════
+   LOGIN
+══════════════════════════════════════════════ */
+let loginTarget = null;
+let pinBuffer   = '';
+
+function initLogin(){
+  document.getElementById('login-users-list').innerHTML=USUARIOS.map(u=>`
+    <button class="login-user-btn" onclick="seleccionarUsuario('${u.id}')">
+      <span class="u-badge ${u.rol==='jefe'?'badge-jefe':'badge-cajero'}">${u.rol==='jefe'?'Jefe':'Cajero'}</span>
+      <div class="u-name">${u.av} - ${u.nombre}</div>
+      <div class="u-role">${u.rol}</div>
+    </button>`).join('');
+}
+
+function seleccionarUsuario(id){
+  loginTarget=USUARIOS.find(u=>u.id===id);
+  pinBuffer=''; actualizarPinDots();
+  document.getElementById('pin-user-name').textContent=loginTarget.nombre;
+  document.getElementById('pin-error').textContent='';
+  document.getElementById('step-select').style.display='none';
+  document.getElementById('step-pin').style.display='block';
+}
+function volverSelect(){
+  document.getElementById('step-select').style.display='block';
+  document.getElementById('step-pin').style.display='none';
+  loginTarget=null; pinBuffer='';
+}
+function pinPress(d){
+  if(pinBuffer.length>=4) return;
+  pinBuffer+=d; actualizarPinDots();
+  if(pinBuffer.length===4) setTimeout(validarPin,150);
+}
+function pinBack(){if(pinBuffer.length>0){pinBuffer=pinBuffer.slice(0,-1);actualizarPinDots()}}
+function pinClear(){pinBuffer='';actualizarPinDots()}
+function actualizarPinDots(){
+  document.querySelectorAll('.pin-dot').forEach((d,i)=>d.classList.toggle('filled',i<pinBuffer.length));
+}
+function validarPin(){
+  if(pinBuffer===loginTarget.pin){
+    iniciarSesion(loginTarget);
+  } else {
+    document.getElementById('pin-error').textContent='PIN incorrecto. Intenta de nuevo.';
+    pinBuffer=''; actualizarPinDots();
+    setTimeout(()=>document.getElementById('pin-error').textContent='',2500);
+  }
+}
+function iniciarSesion(u){
+  usuarioActual=u;
+  turnoActual=turnos.find(t=>t.usuarioId===u.id&&!t.cerrado)||null;
+  if(!turnoActual){
+    turnoActual={id:uid(),usuarioId:u.id,nombreUsuario:u.nombre,rol:u.rol,
+      inicio:new Date().toISOString(),ventasIds:[],cerrado:false,obs:''};
+    turnos.push(turnoActual);
+    save('hp2_turnos',turnos);
+  }
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+  renderApp();
+}
+
+/* ══════════════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════════════ */
+function renderApp(){
+  const u=usuarioActual;
+  document.getElementById('user-pill').innerHTML=
+    `<span class="avatar ${u.rol==='jefe'?'avatar-jefe':'avatar-cajero'}">${u.av}</span>
+     <span>${u.nombre}</span>
+     <span style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">${u.rol}</span>`;
+
+  const ha=document.getElementById('header-actions');
+  if(esJefe()){
+    ha.innerHTML=`<button class="btn btn-ghost btn-sm" onclick="abrirModalProducto()">+ Producto</button>
+      <button class="btn btn-accent btn-sm" onclick="abrirModalHabitacion()">+ Habitacion</button>
+      <button class="btn btn-ghost btn-sm" onclick="cerrarSesion()">Salir</button>`;
+  } else {
+    ha.innerHTML=`<button class="btn btn-ghost btn-sm" onclick="cerrarSesion()">Salir</button>`;
+  }
+
+  renderTurnoBanner();
+  renderTabs();
+  showPage('dashboard');
+}
+
+function renderTurnoBanner(){
+  const ti=new Date(turnoActual.inicio);
+  const vt=ventasTurno();
+  document.getElementById('turno-banner').innerHTML=
+    `<span class="turno-dot"></span>
+     <span>Turno activo desde <b>${pad(ti.getHours())}:${pad(ti.getMinutes())}</b></span>
+     <span style="color:var(--muted)">·</span>
+     <span style="color:var(--muted)">${vt.length} venta${vt.length!==1?'s':''} | ${fmt(vt.reduce((s,v)=>s+v.total,0))}</span>`;
+}
+
+function renderTabs(){
+  const allTabs=[
+    {id:'dashboard',   label:'Dashboard',  roles:['jefe','cajero']},
+    {id:'habitaciones',label:'Habitaciones',roles:['jefe','cajero']},
+    {id:'nueva-venta', label:'Nueva Venta', roles:['jefe','cajero']},
+    {id:'ventas',      label:'Historial',   roles:['jefe','cajero']},
+    {id:'productos',   label:'Productos',   roles:['jefe']},
+    {id:'cierre',      label:'Cierre Turno',roles:['jefe','cajero']},
+    {id:'admin',       label:'Admin',       roles:['jefe']},
+  ];
+  document.getElementById('nav-tabs').innerHTML=allTabs.map(t=>{
+    const ok=t.roles.includes(usuarioActual.rol);
+    return `<button class="nav-tab${ok?'':' locked'}" data-page="${t.id}" onclick="${ok?`showPage('${t.id}')`:''}">${t.label}</button>`;
+  }).join('');
+}
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const el=document.getElementById('page-'+id); if(!el) return;
+  el.classList.add('active');
+  document.querySelectorAll('.nav-tab[data-page="'+id+'"]').forEach(t=>t.classList.add('active'));
+  if(id==='dashboard')    renderDashboard();
+  if(id==='habitaciones') renderHabitaciones();
+  if(id==='nueva-venta')  renderNuevaVenta();
+  if(id==='ventas')       renderVentas('turno');
+  if(id==='productos')    renderProductos();
+  if(id==='cierre')       renderCierre();
+  if(id==='admin')        renderAdmin();
+}
+
+function cerrarSesion(){
+  if(cajaItems.length>0&&!confirm('Hay una venta en curso. Salir de todas formas?')) return;
+  usuarioActual=null; turnoActual=null; cajaItems=[];
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  initLogin();
+}
+
+/* ══════════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════════ */
+function renderDashboard(){
+  const libre=habitaciones.filter(h=>h.estado==='libre').length;
+  const ocup=habitaciones.filter(h=>h.estado==='ocupado').length;
+  const vt=ventasTurno(); const vh=ventasHoy();
+  const totT=vt.reduce((s,v)=>s+v.total,0);
+  const totH=vh.reduce((s,v)=>s+v.total,0);
+
+  document.getElementById('stats-bar').innerHTML=`
+    <div class="stat-card green"><div class="stat-label">Libres</div><div class="stat-value">${libre}</div><div class="stat-sub">de ${habitaciones.length}</div></div>
+    <div class="stat-card red"><div class="stat-label">Ocupadas</div><div class="stat-value">${ocup}</div></div>
+    <div class="stat-card orange"><div class="stat-label">Este turno</div><div class="stat-value">${vt.length} v.</div><div class="stat-sub">${fmt(totT)}</div></div>
+    <div class="stat-card blue"><div class="stat-label">Hoy total</div><div class="stat-value">${vh.length} v.</div><div class="stat-sub">${fmt(totH)}</div></div>
+    ${esJefe()?`<div class="stat-card purple"><div class="stat-label">Turnos hoy</div><div class="stat-value">${turnosHoy().length}</div></div>`:''}`;
+
+  document.getElementById('rooms-dashboard').innerHTML=habitaciones.map(h=>roomCardHtml(h)).join('');
+}
+
+/* ══════════════════════════════════════════════
+   HABITACIONES
+══════════════════════════════════════════════ */
+let filtroHabActivo='todos';
+function renderHabitaciones(f){
+  f=f||filtroHabActivo; filtroHabActivo=f;
+  const lista=f==='todos'?habitaciones:habitaciones.filter(h=>h.tipo===f);
+  document.getElementById('rooms-habitaciones').innerHTML=lista.map(h=>roomCardHtml(h)).join('');
+}
+function filtrarHabs(btn,tipo){
+  document.querySelectorAll('#page-habitaciones .filtro-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderHabitaciones(tipo);
+}
+
+function roomCardHtml(h){
+  const t=TIPOS[h.tipo];
+  const dis=h.estado==='deshabilitada'?'disabled':'';
+  const tarifas=tarifasDeHab(h);
+  const minP=tarifas.length?Math.min(...tarifas.map(x=>x.precio)):0;
+  let acc='';
+  if(h.estado==='libre'){
+    acc=`<button class="btn btn-accent btn-sm" onclick="abrirOcupar('${h.id}');event.stopPropagation()">Vender</button>`;
+    if(esJefe()) acc+=`<button class="btn btn-ghost btn-sm" onclick="abrirEstado('${h.id}');event.stopPropagation()">Estado</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirEditHab('${h.id}');event.stopPropagation()">Precios</button>`;
+  } else if(h.estado==='ocupado'){
+    acc=`<button class="btn btn-success btn-sm" onclick="liberarHab('${h.id}');event.stopPropagation()">Liberar</button>`;
+    if(esJefe()) acc+=`<button class="btn btn-ghost btn-sm" onclick="abrirEstado('${h.id}');event.stopPropagation()">Estado</button>`;
+  } else {
+    if(esJefe()) acc=`<button class="btn btn-ghost btn-sm" onclick="abrirEstado('${h.id}');event.stopPropagation()">Gestionar</button>`;
+    else acc=`<span style="font-size:.78rem;color:var(--muted)">No disponible</span>`;
+  }
+  return `<div class="room-card ${dis}" data-tipo="${h.tipo}">
+    <div class="room-header">
+      <span class="room-number" style="color:${t.color}">Hab. ${h.num}</span>
+      ${badgeHtml(h.estado)}
+    </div>
+    <div class="room-body">
+      <div class="room-type">${t.label}</div>
+      <div class="room-info">
+        Bano: <span>${t.bano}</span><br>
+        Personas: <span>${t.personas.join('/')}</span><br>
+        ${h.desc?`Ubic.: <span>${h.desc}</span><br>`:''}
+        Desde: <span>${fmt(minP)}</span>
+        ${h.nota?`<br>Nota: <span style="color:var(--accent)">${h.nota}</span>`:''}
+      </div>
+    </div>
+    <div class="room-footer">${acc}</div>
+  </div>`;
+}
+
+let modalHabId=null;
+function abrirOcupar(habId){
+  const h=habitaciones.find(x=>x.id===habId);
+  if(!h||h.estado!=='libre') return;
+  modalHabId=habId;
+  document.getElementById('modal-ocupar-title').textContent='Hab. '+h.num+' - '+TIPOS[h.tipo].label;
+  document.getElementById('modal-ocupar-info').innerHTML=
+    `Tipo: ${TIPOS[h.tipo].label} | Bano: ${TIPOS[h.tipo].bano}${h.desc?' | '+h.desc:''}`;
+  const sel=document.getElementById('modal-tarifa');
+  sel.innerHTML='<option value="">- Elegir tarifa -</option>';
+  tarifasDeHab(h).forEach(t=>sel.innerHTML+=`<option value="${t.key}">${t.label} - ${fmt(t.precio)}</option>`);
+  document.getElementById('modal-precio-preview').innerHTML='';
+  abrirModal('modal-ocupar');
+}
+function modalCalcPrecio(){
+  const h=habitaciones.find(x=>x.id===modalHabId);
+  const key=document.getElementById('modal-tarifa').value;
+  const prev=document.getElementById('modal-precio-preview');
+  if(!key||!h){prev.innerHTML='';return}
+  prev.innerHTML=`<div class="precio-row" style="background:rgba(240,165,0,.08);border:1px solid rgba(240,165,0,.2)">
+    <span>Precio</span><span style="font-family:'Inconsolata',monospace;color:var(--accent);font-weight:700;font-size:1.1rem">${fmt(h.precios[key])}</span></div>`;
+}
+function irAVentaDesdeModal(){
+  const h=habitaciones.find(x=>x.id===modalHabId);
+  const key=document.getElementById('modal-tarifa').value;
+  if(!h||!key){notif('Selecciona una tarifa','err');return}
+  cerrarModal('modal-ocupar');
+  showPage('nueva-venta');
+  setTimeout(()=>{
+    const sel=document.getElementById('venta-hab');
+    if(sel){sel.value=h.id;actualizarVentaHab();}
+    setTimeout(()=>{
+      const st=document.getElementById('venta-tarifa');
+      if(st){st.value=key;calcularTotal();}
+    },50);
+  },100);
+}
+
+let estadoHabId=null;
+function abrirEstado(habId){
+  if(!esJefe()) return;
+  const h=habitaciones.find(x=>x.id===habId); if(!h) return;
+  estadoHabId=habId;
+  document.getElementById('modal-estado-title').textContent='Habitacion '+h.num;
+  document.getElementById('modal-estado-info').innerHTML=
+    `Tipo: ${TIPOS[h.tipo].label}<br>Estado actual: ${h.estado}${h.nota?'<br>Nota: '+h.nota:''}`;
+  document.getElementById('modal-nuevo-estado').value=h.estado==='ocupado'?'libre':h.estado;
+  document.getElementById('modal-nota').value=h.nota||'';
+  abrirModal('modal-estado');
+}
+function liberarHab(habId){
+  const h=habitaciones.find(x=>x.id===habId); if(!h) return;
+  h.estado='libre'; h.nota='';
+  save('hp2_habs',habitaciones);
+  renderDashboard(); renderHabitaciones(); renderTurnoBanner();
+  notif('Hab. '+h.num+' liberada');
+}
+function cambiarEstadoHab(){
+  const h=habitaciones.find(x=>x.id===estadoHabId); if(!h) return;
+  h.estado=document.getElementById('modal-nuevo-estado').value;
+  h.nota=document.getElementById('modal-nota').value;
+  save('hp2_habs',habitaciones);
+  cerrarModal('modal-estado'); renderDashboard(); renderHabitaciones();
+  notif('Estado de Hab. '+h.num+' actualizado');
+}
+
+function abrirModalHabitacion(){
+  if(!esJefe()) return;
+  document.getElementById('new-hab-num').value='';
+  document.getElementById('new-hab-desc').value='';
+  document.getElementById('new-hab-tipo').value='loft';
+  renderNewHabPrecios(); abrirModal('modal-hab');
+}
+function renderNewHabPrecios(){
+  const tipo=document.getElementById('new-hab-tipo').value;
+  const def=preciosDefault(tipo); const t=TIPOS[tipo];
+  let html='<div class="section-title" style="margin-top:10px;font-size:.75rem">Precios</div><div style="display:grid;gap:6px">';
+  t.personas.forEach(p=>t.tarifas.forEach(tf=>{
+    const key=`${p}p-${tf}`;
+    html+=`<div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--bg3);border-radius:6px">
+      <span style="flex:1;font-size:.82rem">${p} persona${p>1?'s':''} - ${TL[tf]}</span>
+      <input type="number" class="form-control" style="width:110px;padding:4px 8px" id="nhp-${key}" value="${def[key]||0}" min="0">
+    </div>`;
+  }));
+  html+='</div>';
+  document.getElementById('new-hab-precios').innerHTML=html;
+}
+function guardarHabitacion(){
+  const num=document.getElementById('new-hab-num').value.trim();
+  const tipo=document.getElementById('new-hab-tipo').value;
+  const desc=document.getElementById('new-hab-desc').value.trim();
+  if(!num){notif('Ingresa numero de habitacion','err');return}
+  const t=TIPOS[tipo]; const precios={};
+  t.personas.forEach(p=>t.tarifas.forEach(tf=>{
+    const key=`${p}p-${tf}`;
+    const inp=document.getElementById('nhp-'+key);
+    precios[key]=inp?Number(inp.value):0;
+  }));
+  habitaciones.push({id:uid(),num,tipo,desc,estado:'libre',nota:'',precios});
+  save('hp2_habs',habitaciones);
+  cerrarModal('modal-hab'); renderDashboard(); renderHabitaciones();
+  notif('Habitacion '+num+' agregada');
+}
+
+let editHabId=null;
+function abrirEditHab(habId){
+  if(!esJefe()) return;
+  const h=habitaciones.find(x=>x.id===habId); if(!h) return;
+  editHabId=habId;
+  document.getElementById('modal-edit-hab-title').textContent='Precios - Hab. '+h.num;
+  const t=TIPOS[h.tipo]; let html='<div style="display:grid;gap:6px">';
+  t.personas.forEach(p=>t.tarifas.forEach(tf=>{
+    const key=`${p}p-${tf}`;
+    html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:6px">
+      <span style="flex:1;font-size:.85rem">${p} persona${p>1?'s':''} - ${TL[tf]}</span>
+      <input type="number" class="form-control" style="width:120px;padding:5px 10px" id="ehp-${key}" value="${h.precios[key]||0}" min="0">
+    </div>`;
+  }));
+  html+='</div>';
+  document.getElementById('modal-edit-hab-body').innerHTML=html;
+  abrirModal('modal-edit-hab');
+}
+function guardarPreciosHab(){
+  const h=habitaciones.find(x=>x.id===editHabId); if(!h) return;
+  const t=TIPOS[h.tipo];
+  t.personas.forEach(p=>t.tarifas.forEach(tf=>{
+    const key=`${p}p-${tf}`;
+    const inp=document.getElementById('ehp-'+key);
+    if(inp) h.precios[key]=Number(inp.value);
+  }));
+  save('hp2_habs',habitaciones);
+  cerrarModal('modal-edit-hab');
+  notif('Precios de Hab. '+h.num+' actualizados');
+}
+
+/* ══════════════════════════════════════════════
+   NUEVA VENTA
+══════════════════════════════════════════════ */
+let cajaItems=[];
+
+function renderNuevaVenta(){
+  const cont=document.getElementById('nueva-venta-content');
+  if(turnoActual&&turnoActual.cerrado){
+    cont.innerHTML='<div class="alert alert-danger" style="margin-top:20px">El turno esta cerrado. No puedes registrar mas ventas.</div>';
+    return;
+  }
+  cont.innerHTML=`
+    <div class="caja-wrap">
+      <div>
+        <div class="section-title">Habitacion</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+          <div>
+            <label class="form-label">Habitacion libre</label>
+            <select class="form-control" id="venta-hab" onchange="actualizarVentaHab()">
+              <option value="">- Seleccionar -</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Tarifa</label>
+            <select class="form-control" id="venta-tarifa" onchange="calcularTotal()">
+              <option value="">- Seleccionar -</option>
+            </select>
+          </div>
+        </div>
+        <div id="precio-hab-preview" style="display:none;margin-bottom:16px">
+          <div class="precio-row" style="background:rgba(240,165,0,.08);border:1px solid rgba(240,165,0,.2)">
+            <span id="precio-hab-label">Precio</span>
+            <span id="precio-hab-valor" style="font-family:'Inconsolata',monospace;color:var(--accent);font-weight:700"></span>
+          </div>
+        </div>
+        <div class="section-title">Productos adicionales</div>
+        <div class="productos-grid" id="productos-venta"></div>
+        <button class="btn btn-ghost" style="width:100%;border-style:dashed;margin-top:4px" onclick="abrirModalItemLibre()">
+          + Item no listado (requiere codigo supervisor)
+        </button>
+      </div>
+      <div>
+        <div class="resumen-card">
+          <div class="caja-header">Detalle de Venta</div>
+          <div id="caja-lista"><div class="caja-empty">Sin items</div></div>
+          <div class="resumen-row" style="border-top:1px solid var(--border)">
+            <span>Subtotal</span><span class="mono text-muted" id="res-subtotal">$0</span>
+          </div>
+          <div class="resumen-total">
+            <span>TOTAL</span><span class="mono" id="res-total">$0</span>
+          </div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+            <div class="form-row" style="margin:0">
+              <label class="form-label">Observacion</label>
+              <input class="form-control" id="venta-obs" placeholder="Pago con tarjeta, nombre...">
+            </div>
+            <button class="btn btn-success" style="width:100%;padding:12px" onclick="confirmarVenta()">Confirmar Venta</button>
+            <button class="btn btn-ghost" style="width:100%" onclick="limpiarVenta()">Limpiar</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  const sel=document.getElementById('venta-hab');
+  habitaciones.filter(h=>h.estado==='libre').forEach(h=>{
+    sel.innerHTML+=`<option value="${h.id}">Hab. ${h.num} - ${TIPOS[h.tipo].label}</option>`;
+  });
+  document.getElementById('productos-venta').innerHTML=productos.map(p=>`
+    <div class="producto-card" onclick="agregarProductoVenta(${p.id})">
+      <div class="producto-icon">${getIcono(p)}</div>
+      <div class="producto-nombre">${p.nombre}</div>
+      <div class="producto-precio">${fmt(p.precio)}</div>
+      <div style="font-size:.75rem;color:var(--muted);text-transform:capitalize">${p.cat}</div>
+    </div>`).join('');
+  renderCaja();
+}
+
+function actualizarVentaHab(){
+  const habId=document.getElementById('venta-hab').value;
+  const sel=document.getElementById('venta-tarifa');
+  sel.innerHTML='<option value="">- Seleccionar tarifa -</option>';
+  document.getElementById('precio-hab-preview').style.display='none';
+  if(!habId) return;
+  const h=habitaciones.find(x=>x.id===habId); if(!h) return;
+  tarifasDeHab(h).forEach(t=>sel.innerHTML+=`<option value="${t.key}">${t.label} - ${fmt(t.precio)}</option>`);
+}
+function calcularTotal(){
+  const habId=document.getElementById('venta-hab')?.value;
+  const key=document.getElementById('venta-tarifa')?.value;
+  cajaItems=cajaItems.filter(i=>i.tipo!=='hab');
+  const prev=document.getElementById('precio-hab-preview');
+  if(prev) prev.style.display='none';
+  if(habId&&key){
+    const h=habitaciones.find(x=>x.id===habId);
+    if(h&&h.precios[key]!==undefined){
+      const precio=h.precios[key];
+      const tarifa=tarifasDeHab(h).find(t=>t.key===key);
+      cajaItems.unshift({tipo:'hab',id:h.id,label:'Hab. '+h.num+' - '+(tarifa?.label||key),precio,qty:1});
+      if(prev){prev.style.display='block';
+        document.getElementById('precio-hab-label').textContent='Hab. '+h.num+' - '+(tarifa?.label||key);
+        document.getElementById('precio-hab-valor').textContent=fmt(precio);}
+    }
+  }
+  renderCaja();
+}
+function agregarProductoVenta(prodId){
+  const p=productos.find(x=>x.id===prodId); if(!p) return;
+  const ex=cajaItems.find(i=>i.tipo==='prod'&&i.id===prodId);
+  if(ex) ex.qty++;
+  else cajaItems.push({tipo:'prod',id:prodId,label:getIcono(p)+' '+p.nombre,precio:p.precio,qty:1});
+  renderCaja(); notif(p.nombre+' agregado','info');
+}
+function quitarItemCaja(idx){cajaItems.splice(idx,1);renderCaja()}
+function renderCaja(){
+  const lista=document.getElementById('caja-lista'); if(!lista) return;
+  if(cajaItems.length===0){
+    lista.innerHTML='<div class="caja-empty">Sin items agregados</div>';
+    ['res-subtotal','res-total'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='$0'});
+    return;
+  }
+  let total=0;
+  lista.innerHTML=cajaItems.map((item,idx)=>{
+    const sub=item.precio*item.qty; total+=sub;
+    return `<div class="caja-item">
+      <span class="caja-item-name">${item.label}${item.libre?` <span style="font-size:.7rem;color:var(--purple);background:rgba(188,140,255,.1);padding:1px 6px;border-radius:4px">LIBRE</span>`:''}</span>
+      <span class="caja-item-qty">x${item.qty}</span>
+      <span class="caja-item-price">${fmt(sub)}</span>
+      <button class="caja-item-del" onclick="quitarItemCaja(${idx})">&#10005;</button>
+    </div>`;
+  }).join('');
+  const rs=document.getElementById('res-subtotal'); if(rs) rs.textContent=fmt(total);
+  const rt=document.getElementById('res-total'); if(rt) rt.textContent=fmt(total);
+}
+function limpiarVenta(){
+  cajaItems=[];
+  const vh=document.getElementById('venta-hab'); if(vh) vh.value='';
+  const vt=document.getElementById('venta-tarifa'); if(vt) vt.innerHTML='<option value="">- Seleccionar tarifa -</option>';
+  const pp=document.getElementById('precio-hab-preview'); if(pp) pp.style.display='none';
+  const vo=document.getElementById('venta-obs'); if(vo) vo.value='';
+  renderCaja();
+}
+function confirmarVenta(){
+  if(!turnoActual||turnoActual.cerrado){notif('Turno cerrado','err');return}
+  if(cajaItems.length===0){notif('Agrega al menos un item','err');return}
+  // Abrir modal DTE para elegir boleta o factura
+  const total=cajaItems.reduce((s,i)=>s+i.precio*i.qty,0);
+  document.getElementById('dte-total-preview').textContent=fmt(total);
+  document.getElementById('dte-tipo').value='boleta';
+  document.getElementById('dte-factura-campos').style.display='none';
+  document.getElementById('dte-rut').value='';
+  document.getElementById('dte-razon').value='';
+  document.getElementById('dte-giro').value='';
+  document.getElementById('dte-dir').value='';
+  document.getElementById('dte-comuna').value='';
+  document.getElementById('dte-ciudad').value='';
+  document.getElementById('dte-email').value='';
+  document.getElementById('dte-error').textContent='';
+  abrirModal('modal-dte');
+}
+
+function selDTE(tipo){
+  document.getElementById("dte-tipo").value=tipo;
+  const cb=document.getElementById("card-boleta");
+  const cf=document.getElementById("card-factura");
+  if(tipo==="boleta"){
+    cb.style.border="2px solid var(--green)";cb.style.background="rgba(63,185,80,.08)";
+    cf.style.border="2px solid var(--border)";cf.style.background="var(--bg3)";
+  } else {
+    cf.style.border="2px solid var(--blue)";cf.style.background="rgba(88,166,255,.08)";
+    cb.style.border="2px solid var(--border)";cb.style.background="var(--bg3)";
+  }
+  toggleDteTipo();
+}
+function toggleDteTipo(){
+  const tipo=document.getElementById('dte-tipo').value;
+  document.getElementById('dte-factura-campos').style.display=tipo==='factura'?'block':'none';
+}
+
+function validarRutCl(rut){
+  // Valida formato RUT chileno (12345678-9 o 12345678-K)
+  rut=rut.replace(/\./g,'').replace(/-/g,'');
+  if(rut.length<2) return false;
+  const cuerpo=rut.slice(0,-1);
+  const dv=rut.slice(-1).toUpperCase();
+  let suma=0, multiplo=2;
+  for(let i=cuerpo.length-1;i>=0;i--){
+    suma+=parseInt(cuerpo[i])*multiplo;
+    multiplo=multiplo===7?2:multiplo+1;
+  }
+  const dvEsp=11-(suma%11);
+  const dvReal=dvEsp===11?'0':dvEsp===10?'K':String(dvEsp);
+  return dv===dvReal;
+}
+
+function formatRut(rut){
+  rut=rut.replace(/[^0-9kK]/g,'');
+  if(rut.length<=1) return rut;
+  const dv=rut.slice(-1);
+  const cuerpo=rut.slice(0,-1).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  return cuerpo+'-'+dv.toUpperCase();
+}
+
+function onRutInput(el){
+  const v=el.value.replace(/[^0-9kK.\-]/g,'');
+  el.value=v;
+}
+
+function emitirDTE(){
+  const tipo=document.getElementById('dte-tipo').value;
+  const errEl=document.getElementById('dte-error');
+  errEl.textContent='';
+
+  let datosFactura=null;
+  if(tipo==='factura'){
+    const rut=document.getElementById('dte-rut').value.trim();
+    const razon=document.getElementById('dte-razon').value.trim();
+    const giro=document.getElementById('dte-giro').value.trim();
+    const dir=document.getElementById('dte-dir').value.trim();
+    const comuna=document.getElementById('dte-comuna').value.trim();
+    const ciudad=document.getElementById('dte-ciudad').value.trim();
+    const email=document.getElementById('dte-email').value.trim();
+
+    if(!rut){errEl.textContent='Ingresa el RUT del receptor';return}
+    if(!validarRutCl(rut)){errEl.textContent='RUT invalido — verifica el digito verificador';return}
+    if(!razon){errEl.textContent='Ingresa la razon social';return}
+    if(!giro){errEl.textContent='Ingresa el giro';return}
+    if(!dir){errEl.textContent='Ingresa la direccion';return}
+    if(!comuna){errEl.textContent='Ingresa la comuna';return}
+    if(!ciudad){errEl.textContent='Ingresa la ciudad';return}
+
+    datosFactura={rut,razon,giro,dir,comuna,ciudad,email};
+  }
+
+  // Guardar venta con datos DTE
+  const habItem=cajaItems.find(i=>i.tipo==='hab');
+  const total=cajaItems.reduce((s,i)=>s+i.precio*i.qty,0);
+  const obs=document.getElementById('venta-obs')?.value.trim()||'';
+  const ahora=new Date();
+
+  const venta={
+    id:uid(),
+    fecha:ahora.toLocaleDateString('es-CL'),
+    hora:ahora.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}),
+    ts:ahora.getTime(),
+    turnoId:turnoActual.id,
+    usuarioId:usuarioActual.id,
+    nombreUsuario:usuarioActual.nombre,
+    habId:habItem?.id||null,
+    habNum:habItem?habitaciones.find(h=>h.id===habItem.id)?.num:null,
+    tarifa:habItem?.label||'-',
+    productos:cajaItems.filter(i=>i.tipo==='prod'&&!i.libre).map(i=>({id:i.id,label:i.label,qty:i.qty,precio:i.precio})),
+    itemsLibres:cajaItems.filter(i=>i.libre).map(i=>({label:i.label,qty:i.qty,precio:i.precio})),
+    observacion:obs,
+    total,
+    tipoDTE:tipo,          // 'boleta' o 'factura'
+    receptor:datosFactura, // null si boleta
+    estadoDTE:'pendiente'  // pendiente | emitido | error
+  };
+
+  if(habItem){
+    const h=habitaciones.find(x=>x.id===habItem.id);
+    if(h){h.estado='ocupado';save('hp2_habs',habitaciones)}
+  }
+  ventas.push(venta);
+  turnoActual.ventasIds.push(venta.id);
+  save('hp2_ventas',ventas); save('hp2_turnos',turnos);
+
+  cerrarModal('modal-dte');
+
+  const tipoLabel=tipo==='boleta'?'Boleta':'Factura';
+  notif(`${tipoLabel} registrada: ${fmt(total)} ✓`);
+  limpiarVenta();
+  showPage('dashboard');
+}
+
+/* ── Item libre con codigo supervisor ──── */
+function abrirModalItemLibre(){
+  document.getElementById('item-libre-desc').value='';
+  document.getElementById('item-libre-precio').value='';
+  ['sv-d1','sv-d2','sv-d3','sv-d4'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sv-error').textContent='';
+  abrirModal('modal-item-libre');
+  setTimeout(()=>document.getElementById('item-libre-desc').focus(),200);
+}
+function svNext(el,nextId){if(el.value.length>=1)document.getElementById(nextId)?.focus()}
+function svBack(e,prevId){if(e.key==='Backspace'&&e.target.value==='')document.getElementById(prevId)?.focus()}
+function validarItemLibre(){
+  const desc=document.getElementById('item-libre-desc').value.trim();
+  const precio=Number(document.getElementById('item-libre-precio').value);
+  const code=['sv-d1','sv-d2','sv-d3','sv-d4'].map(id=>document.getElementById(id).value).join('');
+  document.getElementById('sv-error').textContent='';
+  if(!desc){document.getElementById('sv-error').textContent='Ingresa descripcion';return}
+  if(!precio||precio<=0){document.getElementById('sv-error').textContent='Ingresa precio valido';return}
+  if(code!==COD_SUPERVISOR){
+    document.getElementById('sv-error').textContent='Codigo incorrecto';
+    ['sv-d1','sv-d2','sv-d3','sv-d4'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('sv-d1').focus(); return;
+  }
+  cajaItems.push({tipo:'prod',id:'libre-'+uid(),label:'[LIBRE] '+desc,precio,qty:1,libre:true});
+  renderCaja(); cerrarModal('modal-item-libre');
+  notif('Item "'+desc+'" autorizado y agregado','warn');
+}
+
+/* ══════════════════════════════════════════════
+   HISTORIAL VENTAS
+══════════════════════════════════════════════ */
+let filtroPer='turno';
+function ventasHoy(){const h=new Date().toLocaleDateString('es-CL');return ventas.filter(v=>v.fecha===h)}
+function ventasTurno(){if(!turnoActual)return[];return ventas.filter(v=>turnoActual.ventasIds.includes(v.id))}
+function turnosHoy(){
+  const h=new Date().toLocaleDateString('es-CL');
+  return turnos.filter(t=>new Date(t.inicio).toLocaleDateString('es-CL')===h);
+}
+function ventasFiltradas(p){
+  const a=new Date();
+  if(p==='turno') return ventasTurno();
+  if(p==='hoy')   return ventas.filter(v=>v.fecha===a.toLocaleDateString('es-CL'));
+  if(p==='semana'){const i=new Date(a);i.setDate(a.getDate()-7);return ventas.filter(v=>v.ts>=i.getTime())}
+  return ventas;
+}
+function filtrarVentas(btn,p){
+  document.querySelectorAll('#page-ventas .filtro-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); filtroPer=p; renderVentas(p);
+}
+function renderVentas(p){
+  const th=document.getElementById('th-acc');
+  if(th) th.textContent=esJefe()?'Acc.':'';
+  const lista=ventasFiltradas(p).slice().reverse();
+  const tbody=document.getElementById('tabla-ventas');
+  if(!tbody) return;
+  if(lista.length===0){
+    tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">Sin ventas en este periodo</td></tr>';
+    return;
+  }
+  tbody.innerHTML=lista.map((v,i)=>{
+    const prods=[...v.productos.map(p=>p.label+' x'+p.qty),...(v.itemsLibres||[]).map(p=>'[LIBRE] '+p.label+' x'+p.qty)].join(', ')||'-';
+    const dteTipo=v.tipoDTE||'boleta';
+    const dteColor=dteTipo==='factura'?'var(--blue)':'var(--green)';
+    const dteLabel=dteTipo==='factura'?'Factura':'Boleta';
+    const dteRec=v.receptor?`<br><span style="font-size:.72rem;color:var(--muted)">${v.receptor.rut} ${v.receptor.razon}</span>`:'';
+    return `<tr>
+      <td class="mono text-muted">${lista.length-i}</td>
+      <td><span class="mono">${v.hora}</span><br><span style="font-size:.75rem;color:var(--muted)">${v.fecha}</span></td>
+      <td style="font-size:.82rem">${v.nombreUsuario||'-'}</td>
+      <td>${v.habNum?'<b>Hab. '+v.habNum+'</b>':'<span class="text-muted">-</span>'}</td>
+      <td style="font-size:.8rem;max-width:120px;word-break:break-word">${v.tarifa}</td>
+      <td><span style="font-size:.75rem;font-weight:700;color:${dteColor};background:${dteColor}1a;padding:2px 7px;border-radius:20px;border:1px solid ${dteColor}40">${dteLabel}</span>${dteRec}</td>
+      <td style="font-size:.78rem;max-width:140px;color:var(--muted)">${prods}</td>
+      <td style="font-size:.78rem;color:var(--muted)">${v.observacion||'-'}</td>
+      <td class="mono text-accent"><b>${fmt(v.total)}</b></td>
+      <td>${esJefe()?`<button class="btn btn-danger btn-sm" onclick="eliminarVenta('${v.id}')">X</button>`:''}</td>
+    </tr>`;
+  }).join('');
+}
+function eliminarVenta(id){
+  if(!esJefe()) return;
+  if(!confirm('Eliminar esta venta?')) return;
+  ventas=ventas.filter(v=>v.id!==id);
+  save('hp2_ventas',ventas); renderVentas(filtroPer); notif('Venta eliminada','err');
+}
+
+/* ══════════════════════════════════════════════
+   PRODUCTOS (solo jefe)
+══════════════════════════════════════════════ */
+let prodEditId=null;
+function renderProductos(){
+  document.getElementById('lista-productos').innerHTML=productos.map(p=>`
+    <div class="producto-card" style="cursor:default">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div class="producto-icon">${getIcono(p)}</div>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm" onclick="editarProducto(${p.id})">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="eliminarProducto(${p.id})">X</button>
+        </div>
+      </div>
+      <div class="producto-nombre">${p.nombre}</div>
+      <div class="producto-precio">${fmt(p.precio)}</div>
+      <div style="font-size:.75rem;color:var(--muted);text-transform:capitalize">${p.cat}</div>
+    </div>`).join('');
+}
+function abrirModalProducto(){
+  if(!esJefe()) return;
+  prodEditId=null;
+  document.getElementById('modal-prod-title').textContent='Nuevo Producto';
+  ['prod-nombre','prod-precio','prod-icono'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('prod-cat').value='desayuno';
+  abrirModal('modal-producto');
+}
+function editarProducto(id){
+  const p=productos.find(x=>x.id===id); if(!p) return;
+  prodEditId=id;
+  document.getElementById('modal-prod-title').textContent='Editar Producto';
+  document.getElementById('prod-nombre').value=p.nombre;
+  document.getElementById('prod-precio').value=p.precio;
+  document.getElementById('prod-icono').value=p.icono;
+  document.getElementById('prod-cat').value=p.cat;
+  abrirModal('modal-producto');
+}
+function guardarProducto(){
+  const nombre=document.getElementById('prod-nombre').value.trim();
+  const precio=Number(document.getElementById('prod-precio').value);
+  const icono=document.getElementById('prod-icono').value.trim()||'snack';
+  const cat=document.getElementById('prod-cat').value;
+  if(!nombre||!precio){notif('Completa nombre y precio','err');return}
+  if(prodEditId){Object.assign(productos.find(x=>x.id===prodEditId),{nombre,precio,icono,cat})}
+  else productos.push({id:Date.now(),nombre,precio,icono,cat});
+  save('hp2_productos',productos); cerrarModal('modal-producto'); renderProductos();
+  notif('Producto '+(prodEditId?'actualizado':'agregado'));
+}
+function eliminarProducto(id){
+  if(!confirm('Eliminar?')) return;
+  productos=productos.filter(p=>p.id!==id);
+  save('hp2_productos',productos); renderProductos(); notif('Eliminado','err');
+}
+
+/* ══════════════════════════════════════════════
+   CIERRE DE TURNO
+══════════════════════════════════════════════ */
+function renderCierre(){
+  const vt=ventasTurno();
+  const totT=vt.reduce((s,v)=>s+v.total,0);
+  const habsV=vt.filter(v=>v.habId);
+  const totHabs=habsV.reduce((s,v)=>s+v.total-v.productos.reduce((a,p)=>a+p.precio*p.qty,0)-(v.itemsLibres||[]).reduce((a,p)=>a+p.precio*p.qty,0),0);
+  const totProds=vt.reduce((s,v)=>s+v.productos.reduce((a,p)=>a+p.precio*p.qty,0),0);
+  const totLibre=vt.reduce((s,v)=>s+(v.itemsLibres||[]).reduce((a,p)=>a+p.precio*p.qty,0),0);
+  const ti=new Date(turnoActual.inicio);
+  const dur=Math.floor((Date.now()-ti.getTime())/60000);
+
+  let html=`<div class="turno-card">
+    <h3>Turno en curso - ${usuarioActual.nombre}</h3>
+    <div class="turno-resumen">
+      <div class="tr-item"><div class="tr-val">${pad(ti.getHours())}:${pad(ti.getMinutes())}</div><div class="tr-lab">Inicio</div></div>
+      <div class="tr-item"><div class="tr-val">${Math.floor(dur/60)}h ${dur%60}m</div><div class="tr-lab">Duracion</div></div>
+      <div class="tr-item"><div class="tr-val">${vt.length}</div><div class="tr-lab">Ventas</div></div>
+      <div class="tr-item"><div class="tr-val" style="font-size:1.1rem">${fmt(totT)}</div><div class="tr-lab">Total</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+      <div class="precio-row"><span>Habitaciones</span><span>${fmt(totHabs)}</span></div>
+      <div class="precio-row"><span>Productos</span><span>${fmt(totProds)}</span></div>
+      <div class="precio-row" style="border:1px solid rgba(188,140,255,.3);background:rgba(188,140,255,.06)">
+        <span>Items libres</span><span style="color:var(--purple)">${fmt(totLibre)}</span></div>
+    </div>`;
+
+  // Desglose habitaciones
+  const porTipo={};
+  habsV.forEach(v=>{
+    const h=habitaciones.find(x=>x.id===v.habId);
+    const tl=h?TIPOS[h.tipo]?.label:v.tarifa;
+    if(!porTipo[tl]) porTipo[tl]={qty:0,total:0};
+    porTipo[tl].qty++;
+    porTipo[tl].total+=v.total-v.productos.reduce((a,p)=>a+p.precio*p.qty,0)-(v.itemsLibres||[]).reduce((a,p)=>a+p.precio*p.qty,0);
+  });
+  if(Object.keys(porTipo).length){
+    html+=`<div class="section-title" style="font-size:.78rem">Desglose habitaciones</div>
+    <div class="table-wrap" style="margin-bottom:16px"><table><thead><tr><th>Tipo</th><th>Ventas</th><th>Total</th></tr></thead><tbody>
+    ${Object.entries(porTipo).map(([k,v])=>`<tr><td>${k}</td><td class="mono">${v.qty}</td><td class="mono text-accent">${fmt(v.total)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  }
+
+  // Productos del turno
+  const porProd={};
+  vt.forEach(v=>{
+    v.productos.forEach(p=>{if(!porProd[p.label])porProd[p.label]={qty:0,total:0};porProd[p.label].qty+=p.qty;porProd[p.label].total+=p.precio*p.qty});
+    (v.itemsLibres||[]).forEach(p=>{const k='[L] '+p.label;if(!porProd[k])porProd[k]={qty:0,total:0,libre:true};porProd[k].qty+=p.qty;porProd[k].total+=p.precio*p.qty});
+  });
+  if(Object.keys(porProd).length){
+    html+=`<div class="section-title" style="font-size:.78rem">Productos vendidos</div>
+    <div class="table-wrap" style="margin-bottom:16px"><table><thead><tr><th>Producto</th><th>Uds.</th><th>Total</th></tr></thead><tbody>
+    ${Object.entries(porProd).map(([k,v])=>`<tr><td>${k}${v.libre?` <span style="font-size:.7rem;color:var(--purple)">[libre]</span>`:''}</td><td class="mono">${v.qty}</td><td class="mono text-accent">${fmt(v.total)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  }
+
+  if(turnoActual.cerrado){
+    html+=`<div class="alert alert-danger">Este turno ya fue cerrado.</div>
+    <div style="background:var(--bg3);padding:12px 16px;border-radius:8px;font-size:.88rem;color:var(--muted)">${turnoActual.obs||'Sin observaciones de cierre'}</div>`;
+  } else {
+    html+=`<button class="btn btn-danger" style="width:100%;padding:12px;margin-top:4px" onclick="prepararCierre()">Cerrar Turno</button>`;
+  }
+  html+='</div>';
+
+  // Jefe ve todos los turnos del dia
+  if(esJefe()){
+    const td=turnosHoy();
+    html+=`<div class="section-title" style="margin-top:8px">Todos los turnos del dia</div>
+    <div class="table-wrap"><table><thead><tr>
+      <th>Usuario</th><th>Rol</th><th>Inicio</th><th>Estado</th><th>Ventas</th><th>Total</th>
+    </tr></thead><tbody>
+    ${td.map(t=>{
+      const tv2=ventas.filter(v=>t.ventasIds.includes(v.id));
+      const tot2=tv2.reduce((s,v)=>s+v.total,0);
+      const ti2=new Date(t.inicio);
+      return `<tr>
+        <td>${t.nombreUsuario}</td>
+        <td><span class="room-badge ${t.rol==='jefe'?'badge-mantenimiento':'badge-libre'}">${t.rol}</span></td>
+        <td class="mono">${pad(ti2.getHours())}:${pad(ti2.getMinutes())}</td>
+        <td>${t.cerrado?'<span style="color:var(--red)">Cerrado</span>':'<span style="color:var(--green)">Activo</span>'}</td>
+        <td class="mono">${tv2.length}</td>
+        <td class="mono text-accent">${fmt(tot2)}</td>
+      </tr>`;
+    }).join('')}
+    </tbody></table></div>`;
+  }
+
+  document.getElementById('cierre-content').innerHTML=html;
+}
+
+function prepararCierre(){
+  if(turnoActual.cerrado){notif('Turno ya cerrado','err');return}
+  const vt=ventasTurno(); const tot=vt.reduce((s,v)=>s+v.total,0);
+  document.getElementById('modal-cierre-resumen').innerHTML=`
+    <div class="turno-resumen">
+      <div class="tr-item"><div class="tr-val">${vt.length}</div><div class="tr-lab">Ventas</div></div>
+      <div class="tr-item"><div class="tr-val" style="font-size:1.1rem">${fmt(tot)}</div><div class="tr-lab">Total</div></div>
+    </div>`;
+  document.getElementById('cierre-obs').value='';
+  abrirModal('modal-cierre');
+}
+function ejecutarCierre(){
+  if(!turnoActual||turnoActual.cerrado) return;
+  turnoActual.cerrado=true;
+  turnoActual.fin=new Date().toISOString();
+  turnoActual.obs=document.getElementById('cierre-obs').value;
+  save('hp2_turnos',turnos);
+  cerrarModal('modal-cierre'); notif('Turno cerrado correctamente','warn');
+  renderCierre(); renderTurnoBanner();
+}
+
+/* ══════════════════════════════════════════════
+   ADMIN (solo jefe)
+══════════════════════════════════════════════ */
+function renderAdmin(){
+  const totAll=ventas.reduce((s,v)=>s+v.total,0);
+  const vh=ventasHoy(); const totH=vh.reduce((s,v)=>s+v.total,0);
+  const vsem=()=>{const a=new Date(),i=new Date(a);i.setDate(a.getDate()-7);return ventas.filter(v=>v.ts>=i.getTime())};
+  const totSem=vsem().reduce((s,v)=>s+v.total,0);
+
+  document.getElementById('admin-content').innerHTML=`
+    <div class="stats-bar" style="margin-bottom:24px">
+      <div class="stat-card green"><div class="stat-label">Ventas historico</div><div class="stat-value">${ventas.length}</div></div>
+      <div class="stat-card orange"><div class="stat-label">Total historico</div><div class="stat-value" style="font-size:1.1rem">${fmt(totAll)}</div></div>
+      <div class="stat-card blue"><div class="stat-label">Hoy</div><div class="stat-value" style="font-size:1.1rem">${fmt(totH)}</div></div>
+      <div class="stat-card purple"><div class="stat-label">Esta semana</div><div class="stat-value" style="font-size:1.1rem">${fmt(totSem)}</div></div>
+    </div>
+
+    <div class="section-title">Credenciales Mock (referencia)</div>
+    <div class="table-wrap" style="margin-bottom:20px"><table>
+      <thead><tr><th>Usuario</th><th>Rol</th><th>PIN Login</th><th>Codigo Supervisor</th><th>Permisos</th></tr></thead>
+      <tbody>
+        ${USUARIOS.map(u=>`<tr>
+          <td><b>${u.nombre}</b></td>
+          <td><span class="room-badge ${u.rol==='jefe'?'badge-mantenimiento':'badge-libre'}">${u.rol}</span></td>
+          <td class="mono" style="letter-spacing:4px">${u.pin}</td>
+          <td class="mono">${u.rol==='jefe'?COD_SUPERVISOR:'-'}</td>
+          <td style="font-size:.8rem;color:var(--muted)">${u.rol==='jefe'?'Todo':'Ventas + cierre turno'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+
+    <div class="section-title">Habitaciones</div>
+    <div class="rooms-grid">${habitaciones.map(h=>roomCardHtml(h)).join('')}</div>
+
+    <div class="section-title">Acciones de sistema</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-danger" onclick="resetearDatos()">Resetear todos los datos</button>
+      <button class="btn btn-ghost" onclick="exportarVentasCSV()">Exportar ventas CSV</button>
+    </div>`;
+}
+
+function resetearDatos(){
+  if(!confirm('RESETEAR TODOS LOS DATOS? Esto borrara habitaciones, ventas y turnos.')) return;
+  ['hp2_habs','hp2_ventas','hp2_turnos','hp2_productos'].forEach(k=>localStorage.removeItem(k));
+  location.reload();
+}
+function exportarVentasCSV(){
+  const headers='ID,Fecha,Hora,Usuario,Habitacion,Tarifa,Productos,Items Libres,Total\n';
+  const rows=ventas.map(v=>[
+    v.id,v.fecha,v.hora,v.nombreUsuario,v.habNum||'',v.tarifa,
+    v.productos.map(p=>p.label+' x'+p.qty).join('|'),
+    (v.itemsLibres||[]).map(p=>p.label+' x'+p.qty+' $'+p.precio).join('|'),
+    v.total
+  ].map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob([headers+rows],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='ventas_hostal.csv'; a.click();
+}
+
+/* ── Cerrar modal con Escape ───────────── */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
+});
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')});
+});
+
+/* ── INIT ─────────────────────────────── */
+initLogin();
+</script>
+</body>
+</html>
