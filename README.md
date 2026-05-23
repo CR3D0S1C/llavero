@@ -38,8 +38,15 @@ Sistema POS completo para hostales y hoteles pequeños, desarrollado con Spring 
 
 ### Turnos de caja
 - Apertura automática al iniciar sesión
-- Cierre de turno con resumen de ventas del período
+- **Cierre con arqueo obligatorio** firmado con PIN (wizard de 3 pasos)
 - Historial filtrable: mi turno / hoy / semana / todo
+
+#### Wizard de cierre de turno
+1. **Resumen del sistema** — total recaudado, # ventas, boletas/facturas, habitaciones operadas, limpiezas, productos top vendidos, duración
+2. **Desglose y conteo** — declarar cuánto ingresó por efectivo / transferencia / tarjeta débito / crédito / otro + conteo detallado de billetes y monedas (9 denominaciones del peso chileno) con cálculo de diferencia en tiempo real
+3. **Firma** — observación (obligatoria si hay diferencia) + PIN del cajero
+
+Todo el arqueo se guarda en la tabla `arqueos_turno` para auditoría posterior por el jefe.
 
 ### Roles
 | Rol | Acceso |

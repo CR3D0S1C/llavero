@@ -51,7 +51,8 @@ export const eliminarProducto = (id) => api.delete(`/productos/${id}`)
 
 // Turnos
 export const getTurnoActivo = () => api.get('/turnos/activo')
-export const cerrarTurno = () => api.post('/turnos/cerrar')
+export const getResumenTurno = () => api.get('/turnos/activo/resumen')
+export const cerrarTurno = (arqueo) => api.post('/turnos/cerrar', arqueo)
 export const getTurnosHoy = () => api.get('/turnos/hoy')
 
 // DTE

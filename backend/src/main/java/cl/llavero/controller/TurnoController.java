@@ -1,5 +1,7 @@
 package cl.llavero.controller;
 
+import cl.llavero.dto.ArqueoRequest;
+import cl.llavero.dto.ResumenTurnoResponse;
 import cl.llavero.dto.TurnoResponse;
 import cl.llavero.service.TurnoService;
 import org.springframework.http.ResponseEntity;
@@ -29,10 +31,21 @@ public class TurnoController {
         }
     }
 
-    @PostMapping("/cerrar")
-    public ResponseEntity<?> cerrar(Authentication auth) {
+    @GetMapping("/activo/resumen")
+    public ResponseEntity<?> getResumen(Authentication auth) {
         try {
-            TurnoResponse response = turnoService.cerrar(auth.getName());
+            ResumenTurnoResponse r = turnoService.getResumenActivo(auth.getName());
+            return ResponseEntity.ok(r);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // El cierre ahora exige arqueo firmado con PIN
+    @PostMapping("/cerrar")
+    public ResponseEntity<?> cerrar(Authentication auth, @RequestBody ArqueoRequest arqueo) {
+        try {
+            TurnoResponse response = turnoService.cerrarConArqueo(auth.getName(), arqueo);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
