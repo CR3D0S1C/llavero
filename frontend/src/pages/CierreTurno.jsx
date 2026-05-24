@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import ComprobanteCierre from '../components/ComprobanteCierre'
 import { getResumenTurno, cerrarTurno } from '../services/api'
 import { useSesion } from '../context/SesionContext'
 import { toast } from '../utils/toast'
@@ -40,6 +41,7 @@ export default function CierreTurno() {
   const [observacion, setObservacion] = useState('')
   const [pin, setPin] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [arqueoCerrado, setArqueoCerrado] = useState(null)
   const { logout } = useSesion()
   const navigate = useNavigate()
 
@@ -89,13 +91,21 @@ export default function CierreTurno() {
         pin,
       }
       await cerrarTurno(payload)
-      toast.success('Turno cerrado y arqueo registrado')
-      logout()
-      navigate('/')
+      toast.success('Turno cerrado · email enviado al jefe (si está configurado)')
+      // Mostrar comprobante para imprimir antes de cerrar sesión
+      setArqueoCerrado({
+        ...payload,
+        totalDeclarado, diferencia,
+      })
     } catch (e) {
       toast.error(e.response?.data?.error || 'Error al cerrar turno')
       setEnviando(false)
     }
+  }
+
+  const finalizar = () => {
+    logout()
+    navigate('/')
   }
 
   if (loading) return (
@@ -310,6 +320,16 @@ export default function CierreTurno() {
           </section>
         )}
       </div>
+
+      {arqueoCerrado && (
+        <ComprobanteCierre
+          resumen={resumen}
+          arqueo={arqueoCerrado}
+          emailEnviado={true}
+          onCerrar={finalizar}
+          onFinalizar={finalizar}
+        />
+      )}
     </div>
   )
 }

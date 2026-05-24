@@ -121,3 +121,55 @@ textarea:focus-visible {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* ═════════════ Impresión térmica 58mm ═════════════ */
+
+/* Estilo del comprobante en pantalla (preview) y al imprimir */
+.thermal {
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 11pt;
+  line-height: 1.35;
+  color: #000;
+  background: #fff;
+  width: 54mm;
+  padding: 2mm;
+  margin: 0 auto;
+}
+.thermal .center { text-align: center; }
+.thermal .right  { text-align: right; }
+.thermal .bold   { font-weight: bold; }
+.thermal .lg     { font-size: 13pt; }
+.thermal .sm     { font-size: 9pt; }
+.thermal .sep    { border-top: 1px dashed #000; margin: 6px 0; }
+.thermal .sep-double { border-top: 2px solid #000; margin: 6px 0; }
+.thermal .row    { display: flex; justify-content: space-between; gap: 4px; align-items: baseline; }
+.thermal .item   { margin-bottom: 4px; }
+.thermal .label-row { color: #000; font-size: 9pt; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+
+/* Cuando se imprime, ocultar TODO menos el .print-only */
+@media print {
+  @page {
+    size: 58mm auto;
+    margin: 0;
+  }
+  html, body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-only, .print-only * {
+    visibility: visible;
+  }
+  .print-only {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 58mm;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

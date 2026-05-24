@@ -50,6 +50,26 @@ Sistema POS completo para hostales y hoteles pequeños, desarrollado con Spring 
 - Cola DTE local con estado: pendiente → emitido / error
 - Página dedicada para emitir manualmente en el [portal SII MiPyme](https://mipyme.sii.cl)
 
+### Impresión y comprobantes
+- **Comprobante térmico 58mm** para cada venta — preview en pantalla + botón "Imprimir"
+- Funciona con cualquier impresora térmica USB instalada en el OS (browser usa el driver del sistema)
+- "Reimprimir" disponible desde el Historial de ventas para reimprimir comprobantes pasados
+- **Comprobante de cierre de turno** también en 58mm con el resumen del arqueo
+
+### Email del cierre de turno
+- Al cerrar el turno con arqueo firmado, se envía un email automático al jefe
+- El email lleva un PDF adjunto con el detalle completo (resumen, desglose por método, conteo de billetes, diferencia, observación)
+- Configurar SMTP en `application.properties`:
+  ```
+  spring.mail.host=smtp.gmail.com
+  spring.mail.port=587
+  spring.mail.username=tucorreo@gmail.com
+  spring.mail.password=clave-de-aplicación
+  llavero.arqueo.email.destino=jefe@miempresa.cl
+  ```
+- Para Gmail usar **clave de aplicación** (no la contraseña normal): https://myaccount.google.com/apppasswords
+- Si el email no está configurado, el cierre sigue funcionando — solo se omite el envío
+
 ### Turnos de caja
 - Apertura automática al iniciar sesión
 - **Cierre con arqueo obligatorio** firmado con PIN (wizard de 3 pasos)

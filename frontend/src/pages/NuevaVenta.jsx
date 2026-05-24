@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar'
 import RoomCard from '../components/RoomCard'
 import ModalDTE from '../components/ModalDTE'
 import ModalEarlyCheckin from '../components/ModalEarlyCheckin'
+import ComprobanteVenta from '../components/ComprobanteVenta'
 import {
   getHabitaciones, getProductos, crearVenta, buscarProductoPorCodigo
 } from '../services/api'
@@ -29,9 +30,10 @@ export default function NuevaVenta() {
   const [codError, setCodError] = useState(false)
   const [loading, setLoading] = useState(false)
   const [codigoBarras, setCodigoBarras] = useState('')
+  const [ventaConfirmada, setVentaConfirmada] = useState(null)
   const scannerRef = useRef(null)
   const navigate = useNavigate()
-  useSesion()
+  const { sesion } = useSesion()
 
   useEffect(() => {
     Promise.all([getHabitaciones(), getProductos()]).then(([h, p]) => {
@@ -192,11 +194,12 @@ export default function NuevaVenta() {
           receptorEmail: receptor.email,
         } : {})
       }
-      await crearVenta(payload)
+      const res = await crearVenta(payload)
       toast.success(modo === 'hostal'
         ? `Venta registrada — Hab. ${habitacionSel.numero}`
         : `Venta minimarket registrada — $${total.toLocaleString('es-CL')}`)
-      navigate('/dashboard')
+      // Mostrar comprobante para imprimir en lugar de navegar directo
+      setVentaConfirmada(res.data)
     } catch (e) {
       toast.error(e.response?.data?.error || 'Error al crear venta')
     } finally {
@@ -445,6 +448,14 @@ export default function NuevaVenta() {
           total={total}
           onConfirmar={(tipo, receptor) => { setShowModal(false); confirmarVenta(tipo, receptor) }}
           onCancelar={() => setShowModal(false)}
+        />
+      )}
+
+      {ventaConfirmada && (
+        <ComprobanteVenta
+          venta={{ ...ventaConfirmada, cajero: ventaConfirmada.cajero || sesion?.nombre }}
+          onCerrar={() => { setVentaConfirmada(null); navigate('/dashboard') }}
+          onContinuar={() => { setVentaConfirmada(null); navigate('/dashboard') }}
         />
       )}
     </div>

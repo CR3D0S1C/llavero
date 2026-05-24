@@ -29,19 +29,25 @@ public class TurnoService {
     private final UsuarioRepository usuarioRepository;
     private final ArqueoTurnoRepository arqueoRepository;
     private final HabitacionLogRepository habitacionLogRepository;
+    private final EmailService emailService;
+    private final PdfService pdfService;
 
     public TurnoService(TurnoRepository turnoRepository,
                         VentaService ventaService,
                         VentaRepository ventaRepository,
                         UsuarioRepository usuarioRepository,
                         ArqueoTurnoRepository arqueoRepository,
-                        HabitacionLogRepository habitacionLogRepository) {
+                        HabitacionLogRepository habitacionLogRepository,
+                        EmailService emailService,
+                        PdfService pdfService) {
         this.turnoRepository = turnoRepository;
         this.ventaService = ventaService;
         this.ventaRepository = ventaRepository;
         this.usuarioRepository = usuarioRepository;
         this.arqueoRepository = arqueoRepository;
         this.habitacionLogRepository = habitacionLogRepository;
+        this.emailService = emailService;
+        this.pdfService = pdfService;
     }
 
     public TurnoResponse getActivo(String usuarioId) {
@@ -145,6 +151,9 @@ public class TurnoService {
                 .add(BigDecimal.valueOf(50L    * nzi(req.getM50())))
                 .add(BigDecimal.valueOf(10L    * nzi(req.getM10())));
 
+        // Capturamos el resumen ANTES de cerrar para incluirlo en el email
+        ResumenTurnoResponse resumen = getResumenActivo(usuarioId);
+
         ArqueoTurno arqueo = new ArqueoTurno();
         arqueo.setTurno(turno);
         arqueo.setCajeroNombre(usuario.getNombre());
@@ -173,7 +182,32 @@ public class TurnoService {
         turno.setFin(LocalDateTime.now());
         turnoRepository.save(turno);
 
+        // Enviar email con PDF adjunto (async, no bloquea si falla)
+        emailService.enviarArqueoAsync(arqueo, resumen);
+
         return mapear(turno, true);
+    }
+
+    // Descarga del PDF del arqueo (admin)
+    public byte[] getArqueoPdf(String turnoId) {
+        ArqueoTurno arqueo = arqueoRepository.findByTurnoId(UUID.fromString(turnoId))
+                .orElseThrow(() -> new RuntimeException("Arqueo no encontrado para este turno"));
+        Turno t = arqueo.getTurno();
+        // Reconstruir un resumen "histórico" desde ventas del turno
+        ResumenTurnoResponse r = new ResumenTurnoResponse();
+        r.setCajeroNombre(arqueo.getCajeroNombre());
+        r.setTotalSistema(arqueo.getTotalSistema());
+        r.setInicio(t.getInicio());
+        r.setDuracionMinutos(t.getFin() != null
+                ? java.time.Duration.between(t.getInicio(), t.getFin()).toMinutes()
+                : 0L);
+        List<Venta> ventas = ventaRepository.findByTurnoIdOrderByCreatedAtDesc(t.getId());
+        r.setCantidadVentas(ventas.size());
+        r.setCantidadBoletas((int) ventas.stream().filter(v -> v.getTipoDte() == TipoDte.boleta).count());
+        r.setCantidadFacturas((int) ventas.stream().filter(v -> v.getTipoDte() == TipoDte.factura).count());
+        r.setMovimientosHabitaciones(0);
+        r.setLimpiezasRealizadas(0);
+        return pdfService.generarPdfArqueo(arqueo, r);
     }
 
     public List<TurnoResponse> getTurnosHoy() {

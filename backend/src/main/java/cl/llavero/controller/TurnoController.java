@@ -4,6 +4,8 @@ import cl.llavero.dto.ArqueoRequest;
 import cl.llavero.dto.ResumenTurnoResponse;
 import cl.llavero.dto.TurnoResponse;
 import cl.llavero.service.TurnoService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -56,5 +58,15 @@ public class TurnoController {
     @PreAuthorize("hasRole('JEFE')")
     public ResponseEntity<List<TurnoResponse>> getTurnosHoy() {
         return ResponseEntity.ok(turnoService.getTurnosHoy());
+    }
+
+    @GetMapping("/{id}/arqueo.pdf")
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<byte[]> descargarArqueoPdf(@PathVariable String id) {
+        byte[] pdf = turnoService.getArqueoPdf(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"arqueo-" + id + ".pdf\"")
+                .body(pdf);
     }
 }

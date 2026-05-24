@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
-import { getHabitaciones, cambiarEstadoJefe, getHabitacionLog } from '../services/api'
+import { getHabitaciones, cambiarEstadoJefe, getHabitacionLog, eliminarHabitacion } from '../services/api'
 import { toast } from '../utils/toast'
 
 const ESTADOS = [
@@ -45,6 +46,7 @@ export default function GestionHabitaciones() {
   const [filtro, setFiltro] = useState('todas')
   const [loading, setLoading] = useState(true)
   const [procesando, setProcesando] = useState(null) // id de hab en proceso
+  const navigate = useNavigate()
 
   useEffect(() => { cargar() }, [])
 
@@ -74,6 +76,20 @@ export default function GestionHabitaciones() {
     }
   }
 
+  const eliminar = async (habitacion) => {
+    if (!confirm(`¿Eliminar la habitación ${habitacion.numero}? Quedará inactiva.`)) return
+    setProcesando(habitacion.id)
+    try {
+      await eliminarHabitacion(habitacion.id)
+      toast.success(`${habitacion.numero} eliminada`)
+      await cargar()
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Error al eliminar')
+    } finally {
+      setProcesando(null)
+    }
+  }
+
   const conteo = (estado) => habitaciones.filter(h => estado === 'todas' || h.estado === estado).length
 
   const filtradas = filtro === 'todas'
@@ -84,7 +100,12 @@ export default function GestionHabitaciones() {
     <div className="min-h-screen bg-bg">
       <Navbar />
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold mb-6">Gestión de Habitaciones</h1>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <h1 className="text-2xl font-bold">Gestión de Habitaciones</h1>
+          <button onClick={() => navigate('/habitaciones')} className="btn-primary text-sm">
+            + Nueva habitación / Editar precios
+          </button>
+        </div>
 
         {/* Filtros con conteo */}
         <div className="flex flex-wrap gap-2 mb-6">
@@ -140,6 +161,16 @@ export default function GestionHabitaciones() {
                       {procesando === h.id ? '...' : a.label}
                     </button>
                   ))}
+                  {h.estado !== 'ocupado' && (
+                    <button
+                      onClick={() => eliminar(h)}
+                      disabled={procesando === h.id}
+                      className="text-xs px-2 py-1 rounded-lg border border-red-900/60 text-red-500/70 hover:text-red-400 hover:border-red-700 hover:bg-red-900/20 transition-colors ml-auto"
+                      title="Eliminar habitación"
+                    >
+                      🗑
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

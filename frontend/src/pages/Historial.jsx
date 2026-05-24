@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
+import ComprobanteVenta from '../components/ComprobanteVenta'
 import { getVentas, anularVenta } from '../services/api'
 import { useSesion } from '../context/SesionContext'
 import { toast } from '../utils/toast'
@@ -34,6 +35,7 @@ export default function Historial() {
 
   const [anulando, setAnulando] = useState(null)
   const [claveAnul, setClaveAnul] = useState('')
+  const [imprimiendo, setImprimiendo] = useState(null)
 
   const anular = async (id) => {
     try {
@@ -128,12 +130,21 @@ export default function Historial() {
                         <button onClick={() => { setAnulando(null); setClaveAnul('') }} className="text-xs text-muted hover:text-gray-300">✕</button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => { setAnulando(v.id); setClaveAnul('') }}
-                        className="text-red-400 hover:text-red-300 text-xs mt-2 block"
-                      >
-                        Anular
-                      </button>
+                      <div className="flex flex-col items-end gap-1 mt-2">
+                        <button
+                          onClick={() => setImprimiendo(v)}
+                          className="text-muted hover:text-white text-xs"
+                          title="Reimprimir comprobante"
+                        >
+                          🖨 Imprimir
+                        </button>
+                        <button
+                          onClick={() => { setAnulando(v.id); setClaveAnul('') }}
+                          className="text-red-400 hover:text-red-300 text-xs"
+                        >
+                          Anular
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -142,6 +153,14 @@ export default function Historial() {
           </div>
         )}
       </div>
+
+      {imprimiendo && (
+        <ComprobanteVenta
+          venta={imprimiendo}
+          onCerrar={() => setImprimiendo(null)}
+          onContinuar={() => setImprimiendo(null)}
+        />
+      )}
     </div>
   )
 }
