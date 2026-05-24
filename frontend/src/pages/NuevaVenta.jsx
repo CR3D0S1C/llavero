@@ -1,14 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import RoomCard from '../components/RoomCard'
 import ModalDTE from '../components/ModalDTE'
 import ModalEarlyCheckin from '../components/ModalEarlyCheckin'
-import { getHabitaciones, getProductos, crearVenta } from '../services/api'
+import {
+  getHabitaciones, getProductos, crearVenta, buscarProductoPorCodigo
+} from '../services/api'
 import { useSesion } from '../context/SesionContext'
 import { toast } from '../utils/toast'
 
+const CODIGO_SUPERVISOR = '7777'
+
 export default function NuevaVenta() {
+  const [modo, setModo] = useState('hostal') // 'hostal' | 'minimarket'
   const [habitaciones, setHabitaciones] = useState([])
   const [productos, setProductos] = useState([])
   const [habitacionSel, setHabitacionSel] = useState(null)
@@ -23,17 +28,34 @@ export default function NuevaVenta() {
   const [librePrecio, setLibrePrecio] = useState('')
   const [codError, setCodError] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { sesion } = useSesion()
+  const [codigoBarras, setCodigoBarras] = useState('')
+  const scannerRef = useRef(null)
   const navigate = useNavigate()
-
-  const CODIGO_SUPERVISOR = '7777'
+  useSesion()
 
   useEffect(() => {
     Promise.all([getHabitaciones(), getProductos()]).then(([h, p]) => {
-      setHabitaciones(h.data.filter(h => h.estado === 'libre'))
+      setHabitaciones(h.data.filter(x => x.estado === 'libre'))
       setProductos(p.data)
     })
   }, [])
+
+  // Mantener el scanner enfocado en modo minimarket
+  useEffect(() => {
+    if (modo === 'minimarket') {
+      const t = setTimeout(() => scannerRef.current?.focus(), 100)
+      return () => clearTimeout(t)
+    }
+  }, [modo, items.length])
+
+  const cambiarModo = (nuevo) => {
+    if (items.length > 0 && !confirm('Cambiar de modo descarta los ítems del carrito. ¿Continuar?')) return
+    setModo(nuevo)
+    setHabitacionSel(null)
+    setTarifaSel(null)
+    setItems([])
+    setEarlyCheckinVal(null)
+  }
 
   const seleccionarTarifa = (precio) => {
     if (!habitacionSel) return
@@ -55,12 +77,14 @@ export default function NuevaVenta() {
   }
 
   const handleConfirmarClick = () => {
-    const hora = new Date().getHours()
-    if (tarifaSel?.duracion === 'noche' && hora < 12) {
-      setShowEarlyCheckin(true)
-    } else {
-      setShowModal(true)
+    if (modo === 'hostal') {
+      const hora = new Date().getHours()
+      if (tarifaSel?.duracion === 'noche' && hora < 12) {
+        setShowEarlyCheckin(true)
+        return
+      }
     }
+    setShowModal(true)
   }
 
   const handleEarlyCheckinConfirm = (val) => {
@@ -70,15 +94,38 @@ export default function NuevaVenta() {
   }
 
   const agregarProducto = (prod) => {
+    if (prod.stock != null && prod.stock <= 0) {
+      toast.warning(`${prod.nombre} sin stock`)
+      return
+    }
     setItems(prev => {
       const existe = prev.find(i => i.descripcion === prod.nombre && i.tipo === 'producto')
       if (existe) {
+        // No permitir vender más de lo que hay en stock si está trackeado
+        if (prod.stock != null && existe.cantidad >= prod.stock) {
+          toast.warning(`Solo quedan ${prod.stock} de ${prod.nombre}`)
+          return prev
+        }
         return prev.map(i => i.descripcion === prod.nombre && i.tipo === 'producto'
           ? { ...i, cantidad: i.cantidad + 1 }
           : i)
       }
       return [...prev, { tipo: 'producto', descripcion: prod.nombre, cantidad: 1, precioUnitario: prod.precio, esLibre: false }]
     })
+  }
+
+  const escanearCodigo = async (e) => {
+    if (e.key !== 'Enter') return
+    const codigo = codigoBarras.trim()
+    if (!codigo) return
+    try {
+      const res = await buscarProductoPorCodigo(codigo)
+      agregarProducto(res.data)
+      setCodigoBarras('')
+    } catch (err) {
+      toast.error(`Código ${codigo} no encontrado`)
+      setCodigoBarras('')
+    }
   }
 
   const agregarLibre = () => {
@@ -92,10 +139,7 @@ export default function NuevaVenta() {
       esLibre: true
     }])
     setShowLibre(false)
-    setCodSuper('')
-    setLibreDesc('')
-    setLibrePrecio('')
-    setCodError(false)
+    setCodSuper(''); setLibreDesc(''); setLibrePrecio(''); setCodError(false)
   }
 
   const quitarItem = (idx) => {
@@ -104,18 +148,40 @@ export default function NuevaVenta() {
     setItems(prev => prev.filter((_, i) => i !== idx))
   }
 
+  const ajustarCantidad = (idx, delta) => {
+    setItems(prev => prev.map((it, i) => {
+      if (i !== idx) return it
+      if (it.tipo === 'habitacion') return it
+      const nueva = it.cantidad + delta
+      if (nueva <= 0) return null
+      const prod = productos.find(p => p.nombre === it.descripcion)
+      if (delta > 0 && prod?.stock != null && nueva > prod.stock) {
+        toast.warning(`Solo quedan ${prod.stock} de ${it.descripcion}`)
+        return it
+      }
+      return { ...it, cantidad: nueva }
+    }).filter(Boolean))
+  }
+
   const total = items.reduce((s, i) => s + (i.precioUnitario * i.cantidad), 0)
 
+  const puedeConfirmar = modo === 'hostal'
+    ? habitacionSel && tarifaSel
+    : items.length > 0
+
   const confirmarVenta = async (tipoDte, receptor) => {
-    if (!habitacionSel || !tarifaSel) return
+    if (!puedeConfirmar) return
     setLoading(true)
     try {
-      await crearVenta({
-        habitacionId: habitacionSel.id,
+      const payload = {
+        tipoVenta: modo,
         tipoDte,
-        duracion: tarifaSel.duracion,
-        earlyCheckin: earlyCheckinVal,
         items: items.map(i => ({ ...i })),
+        ...(modo === 'hostal' ? {
+          habitacionId: habitacionSel.id,
+          duracion: tarifaSel.duracion,
+          earlyCheckin: earlyCheckinVal,
+        } : {}),
         ...(receptor ? {
           receptorRut: receptor.rut,
           receptorRazon: receptor.razon,
@@ -125,8 +191,11 @@ export default function NuevaVenta() {
           receptorCiudad: receptor.ciudad,
           receptorEmail: receptor.email,
         } : {})
-      })
-      toast.success(`Venta registrada — Hab. ${habitacionSel.numero}`)
+      }
+      await crearVenta(payload)
+      toast.success(modo === 'hostal'
+        ? `Venta registrada — Hab. ${habitacionSel.numero}`
+        : `Venta minimarket registrada — $${total.toLocaleString('es-CL')}`)
       navigate('/dashboard')
     } catch (e) {
       toast.error(e.response?.data?.error || 'Error al crear venta')
@@ -141,72 +210,132 @@ export default function NuevaVenta() {
     <div className="min-h-screen bg-bg">
       <Navbar />
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold mb-6">Nueva Venta</h1>
+        {/* Selector de modo */}
+        <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
+          <h1 className="text-2xl font-bold">Nueva Venta</h1>
+          <div className="inline-flex p-1 bg-card border border-border rounded-xl">
+            <button
+              onClick={() => cambiarModo('hostal')}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                modo === 'hostal' ? 'bg-accent text-white' : 'text-muted hover:text-gray-200'
+              }`}
+            >
+              🏨 Hostal
+            </button>
+            <button
+              onClick={() => cambiarModo('minimarket')}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                modo === 'minimarket' ? 'bg-accent text-white' : 'text-muted hover:text-gray-200'
+              }`}
+            >
+              🏪 Minimarket
+            </button>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Izquierda: Habitación + Productos */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Habitaciones */}
-            <div className="card">
-              <h2 className="font-semibold mb-3">1. Seleccionar Habitación</h2>
-              {habitaciones.length === 0 ? (
-                <p className="text-muted text-sm">No hay habitaciones disponibles</p>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {habitaciones.map(h => (
-                    <RoomCard
-                      key={h.id}
-                      habitacion={h}
-                      seleccionada={habitacionSel?.id === h.id}
-                      onClick={() => { setHabitacionSel(h); setTarifaSel(null); setItems(prev => prev.filter(i => i.tipo !== 'habitacion')) }}
-                    />
-                  ))}
-                </div>
-              )}
+            {/* Escáner (solo minimarket) */}
+            {modo === 'minimarket' && (
+              <div className="card border-accent/40 bg-accent/5">
+                <label className="text-xs uppercase tracking-wider text-accent mb-2 block flex items-center gap-2">
+                  <span>📷</span> Escanear código de barras
+                </label>
+                <input
+                  ref={scannerRef}
+                  className="input bg-black/40 text-xl font-mono tracking-wider text-center"
+                  placeholder="Apuntá la pistola al código..."
+                  value={codigoBarras}
+                  onChange={e => setCodigoBarras(e.target.value)}
+                  onKeyDown={escanearCodigo}
+                  autoFocus
+                />
+                <p className="text-xs text-muted mt-1.5 text-center">
+                  La pistola escribe el código y presiona Enter automáticamente
+                </p>
+              </div>
+            )}
 
-              {/* Tarifas */}
-              {habitacionSel && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <h3 className="text-sm font-semibold text-muted mb-3">Tarifas — {habitacionSel.numero}</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {habitacionSel.precios?.map((p, i) => (
-                      <button
-                        key={i}
-                        onClick={() => seleccionarTarifa(p)}
-                        className={`p-3 rounded-lg border text-sm transition-all text-left ${
-                          tarifaSel === p
-                            ? 'border-accent bg-accent/10 text-accent'
-                            : 'border-border hover:border-gray-500'
-                        }`}
-                      >
-                        <div className="font-semibold">{p.duracion}</div>
-                        <div className="text-xs text-muted">{p.personas} persona{p.personas > 1 ? 's' : ''}</div>
-                        <div className="font-bold mt-1">${Number(p.precio).toLocaleString('es-CL')}</div>
-                      </button>
+            {/* Habitaciones (solo hostal) */}
+            {modo === 'hostal' && (
+              <div className="card">
+                <h2 className="font-semibold mb-3">1. Seleccionar Habitación</h2>
+                {habitaciones.length === 0 ? (
+                  <p className="text-muted text-sm">No hay habitaciones disponibles</p>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {habitaciones.map(h => (
+                      <RoomCard
+                        key={h.id}
+                        habitacion={h}
+                        seleccionada={habitacionSel?.id === h.id}
+                        onClick={() => { setHabitacionSel(h); setTarifaSel(null); setItems(prev => prev.filter(i => i.tipo !== 'habitacion')) }}
+                      />
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+
+                {habitacionSel && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <h3 className="text-sm font-semibold text-muted mb-3">Tarifas — {habitacionSel.numero}</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {habitacionSel.precios?.map((p, i) => (
+                        <button
+                          key={i}
+                          onClick={() => seleccionarTarifa(p)}
+                          className={`p-3 rounded-lg border text-sm transition-all text-left ${
+                            tarifaSel === p
+                              ? 'border-accent bg-accent/10 text-accent'
+                              : 'border-border hover:border-gray-500'
+                          }`}
+                        >
+                          <div className="font-semibold">{p.duracion}</div>
+                          <div className="text-xs text-muted">{p.personas} persona{p.personas > 1 ? 's' : ''}</div>
+                          <div className="font-bold mt-1">${Number(p.precio).toLocaleString('es-CL')}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Productos */}
             <div className="card">
-              <h2 className="font-semibold mb-3">2. Agregar Productos (opcional)</h2>
+              <h2 className="font-semibold mb-3">
+                {modo === 'hostal' ? '2. Agregar Productos (opcional)' : 'Productos'}
+              </h2>
               {categorias.map(cat => (
                 <div key={cat} className="mb-4">
-                  <p className="text-xs text-muted mb-2">{cat}</p>
+                  <p className="text-xs text-muted mb-2 uppercase tracking-wider">{cat}</p>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {productos.filter(p => p.categoria === cat).map(p => (
-                      <button
-                        key={p.id}
-                        onClick={() => agregarProducto(p)}
-                        className="p-3 border border-border rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-left"
-                      >
-                        <span className="text-xl">{p.icono}</span>
-                        <div className="text-sm font-medium mt-1 leading-tight">{p.nombre}</div>
-                        <div className="text-xs text-green-400 font-bold">${Number(p.precio).toLocaleString('es-CL')}</div>
-                      </button>
-                    ))}
+                    {productos.filter(p => p.categoria === cat).map(p => {
+                      const sinStock = p.stock != null && p.stock <= 0
+                      const bajoStock = p.stock != null && p.stock > 0 && p.stock <= (p.stockMinimo || 0)
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => agregarProducto(p)}
+                          disabled={sinStock}
+                          className={`p-3 border rounded-lg transition-all text-left relative ${
+                            sinStock
+                              ? 'border-red-900/40 bg-red-950/20 opacity-60 cursor-not-allowed'
+                              : 'border-border hover:border-accent hover:bg-accent/5'
+                          }`}
+                        >
+                          <span className="text-xl">{p.icono}</span>
+                          <div className="text-sm font-medium mt-1 leading-tight">{p.nombre}</div>
+                          <div className="text-xs text-green-400 font-bold">${Number(p.precio).toLocaleString('es-CL')}</div>
+                          {p.stock != null && (
+                            <div className={`text-[10px] mt-1 font-mono ${
+                              sinStock ? 'text-red-400' : bajoStock ? 'text-yellow-400' : 'text-muted'
+                            }`}>
+                              {sinStock ? 'Sin stock' : `${p.stock} disp.`}
+                            </div>
+                          )}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               ))}
@@ -238,26 +367,37 @@ export default function NuevaVenta() {
             </div>
           </div>
 
-          {/* Derecha: Caja */}
+          {/* Carrito derecho */}
           <div className="lg:col-span-1">
             <div className="card sticky top-20">
-              <h2 className="font-semibold mb-4">Resumen</h2>
+              <h2 className="font-semibold mb-4 flex items-center justify-between">
+                <span>Resumen</span>
+                <span className="text-xs text-muted font-normal">{items.length} ítem{items.length !== 1 ? 's' : ''}</span>
+              </h2>
 
               {items.length === 0 ? (
-                <p className="text-muted text-sm text-center py-4">Sin ítems todavía</p>
+                <p className="text-muted text-sm text-center py-6">
+                  {modo === 'hostal' ? 'Selecciona una habitación' : 'Escaneá o agregá productos'}
+                </p>
               ) : (
-                <div className="space-y-2 mb-4">
+                <div className="space-y-2 mb-4 max-h-[40vh] overflow-y-auto">
                   {items.map((item, i) => (
-                    <div key={i} className="flex items-start justify-between gap-2 text-sm">
-                      <div className="flex-1">
+                    <div key={i} className="flex items-start justify-between gap-2 text-sm border-b border-border/30 pb-2 last:border-0">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
-                          {item.esLibre && <span className="text-xs bg-yellow-900/40 text-yellow-400 px-1 rounded">LIBRE</span>}
-                          <span>{item.descripcion}</span>
+                          {item.esLibre && <span className="text-[10px] bg-yellow-900/40 text-yellow-400 px-1 rounded">LIBRE</span>}
+                          <span className="truncate">{item.descripcion}</span>
                         </div>
-                        {item.cantidad > 1 && <span className="text-xs text-muted">x{item.cantidad}</span>}
+                        {item.tipo !== 'habitacion' && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <button onClick={() => ajustarCantidad(i, -1)} className="w-6 h-6 rounded border border-border hover:border-accent text-muted hover:text-white text-xs">−</button>
+                            <span className="text-xs tabular-nums w-6 text-center">{item.cantidad}</span>
+                            <button onClick={() => ajustarCantidad(i, +1)} className="w-6 h-6 rounded border border-border hover:border-accent text-muted hover:text-white text-xs">+</button>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-green-400 font-semibold whitespace-nowrap">
+                      <div className="flex items-start gap-2">
+                        <span className="text-green-400 font-semibold whitespace-nowrap tabular-nums">
                           ${(item.precioUnitario * item.cantidad).toLocaleString('es-CL')}
                         </span>
                         <button onClick={() => quitarItem(i)} className="text-red-400 hover:text-red-300 text-xs">✕</button>
@@ -270,19 +410,19 @@ export default function NuevaVenta() {
               <div className="border-t border-border pt-3 mt-3">
                 <div className="flex justify-between items-center font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-green-400">${total.toLocaleString('es-CL')}</span>
+                  <span className="text-green-400 tabular-nums">${total.toLocaleString('es-CL')}</span>
                 </div>
               </div>
 
               <button
                 onClick={handleConfirmarClick}
-                disabled={!habitacionSel || !tarifaSel || loading}
+                disabled={!puedeConfirmar || loading}
                 className="btn-primary w-full mt-4 py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Procesando...' : 'Confirmar Venta'}
               </button>
 
-              {tarifaSel?.duracion === 'noche' && new Date().getHours() < 12 && (
+              {modo === 'hostal' && tarifaSel?.duracion === 'noche' && new Date().getHours() < 12 && (
                 <p className="text-xs text-yellow-500/70 mt-2 text-center">
                   Llegada temprana — se consultará por early check-in
                 </p>

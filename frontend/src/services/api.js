@@ -31,7 +31,10 @@ export const logout = () => api.post('/auth/logout')
 
 // Habitaciones
 export const getHabitaciones = () => api.get('/habitaciones')
+export const getTiposHabitacion = () => api.get('/habitaciones/tipos')
+export const crearHabitacion = (data) => api.post('/habitaciones', data)
 export const updateHabitacion = (id, data) => api.put(`/habitaciones/${id}`, data)
+export const eliminarHabitacion = (id) => api.delete(`/habitaciones/${id}`)
 export const liberarHabitacion = (id) => api.put(`/habitaciones/${id}/liberar`)
 export const operarHabitacion = (id, estado, clave) => api.put(`/habitaciones/${id}/operar`, { estado, clave })
 export const cambiarEstadoJefe = (id, estado) => api.put(`/habitaciones/${id}/estado`, { estado })
@@ -45,9 +48,14 @@ export const anularVenta = (id, clave) => api.post(`/ventas/${id}/anular`, { cla
 
 // Productos
 export const getProductos = () => api.get('/productos')
+export const buscarProductoPorCodigo = (codigo) => api.get(`/productos/buscar/${encodeURIComponent(codigo)}`)
 export const crearProducto = (data) => api.post('/productos', data)
 export const updateProducto = (id, data) => api.put(`/productos/${id}`, data)
 export const eliminarProducto = (id) => api.delete(`/productos/${id}`)
+export const ingresoStock = (id, data) => api.post(`/productos/${id}/stock/entrada`, data)
+export const ajustarStock = (id, data) => api.post(`/productos/${id}/stock/ajuste`, data)
+export const getMovimientosProducto = (id) => api.get(`/productos/${id}/movimientos`)
+export const getMovimientosRecientes = () => api.get('/productos/movimientos')
 
 // Turnos
 export const getTurnoActivo = () => api.get('/turnos/activo')

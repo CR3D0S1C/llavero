@@ -29,6 +29,17 @@ public class Producto {
     @Column(length = 50)
     private String categoria;
 
+    @Column(name = "codigo_barras", length = 50, unique = true)
+    private String codigoBarras;
+
+    private Integer stock;             // null = no se trackea inventario
+
+    @Column(name = "stock_minimo")
+    private Integer stockMinimo = 0;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal costo;          // costo unitario, opcional
+
     @Column(nullable = false)
     private Boolean activo = true;
 }

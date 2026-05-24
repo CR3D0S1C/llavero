@@ -33,19 +33,25 @@ public class VentaService {
     private final TurnoRepository turnoRepository;
     private final UsuarioRepository usuarioRepository;
     private final DteQueueRepository dteQueueRepository;
+    private final ProductoRepository productoRepository;
+    private final ProductoService productoService;
 
     public VentaService(VentaRepository ventaRepository,
                         VentaItemRepository itemRepository,
                         HabitacionRepository habitacionRepository,
                         TurnoRepository turnoRepository,
                         UsuarioRepository usuarioRepository,
-                        DteQueueRepository dteQueueRepository) {
+                        DteQueueRepository dteQueueRepository,
+                        ProductoRepository productoRepository,
+                        ProductoService productoService) {
         this.ventaRepository = ventaRepository;
         this.itemRepository = itemRepository;
         this.habitacionRepository = habitacionRepository;
         this.turnoRepository = turnoRepository;
         this.usuarioRepository = usuarioRepository;
         this.dteQueueRepository = dteQueueRepository;
+        this.productoRepository = productoRepository;
+        this.productoService = productoService;
     }
 
     private LocalDateTime calcularSalida(String duracion, String earlyCheckin) {
@@ -68,24 +74,38 @@ public class VentaService {
         Turno turno = turnoRepository.findByUsuarioIdAndCerradoFalse(usuario.getId())
                 .orElseThrow(() -> new RuntimeException("No hay turno activo. Inicia sesión nuevamente."));
 
-        Habitacion habitacion = habitacionRepository.findById(UUID.fromString(request.getHabitacionId()))
-                .orElseThrow(() -> new RuntimeException("Habitación no encontrada"));
+        // Tipo de venta: hostal por default
+        TipoVenta tipoVenta = request.getTipoVenta() != null
+                ? TipoVenta.valueOf(request.getTipoVenta())
+                : TipoVenta.hostal;
 
-        if (habitacion.getEstado() != EstadoHabitacion.libre) {
-            throw new RuntimeException("La habitación no está disponible");
+        // Habitación: solo obligatoria en modo hostal
+        Habitacion habitacion = null;
+        if (tipoVenta == TipoVenta.hostal) {
+            if (request.getHabitacionId() == null || request.getHabitacionId().isBlank()) {
+                throw new RuntimeException("Falta la habitación para una venta de hostal");
+            }
+            habitacion = habitacionRepository.findById(UUID.fromString(request.getHabitacionId()))
+                    .orElseThrow(() -> new RuntimeException("Habitación no encontrada"));
+            if (habitacion.getEstado() != EstadoHabitacion.libre) {
+                throw new RuntimeException("La habitación no está disponible");
+            }
         }
 
         Venta venta = new Venta();
         venta.setTurno(turno);
         venta.setUsuario(usuario);
         venta.setHabitacion(habitacion);
+        venta.setTipoVenta(tipoVenta);
         venta.setFecha(LocalDate.now());
         venta.setHora(LocalTime.now());
         venta.setCreatedAt(LocalDateTime.now());
         venta.setObservacion(request.getObservacion());
         venta.setTipoDte(TipoDte.valueOf(request.getTipoDte()));
-        venta.setDuracion(request.getDuracion());
-        venta.setSalidaEstimada(calcularSalida(request.getDuracion(), request.getEarlyCheckin()));
+        venta.setDuracion(tipoVenta == TipoVenta.hostal ? request.getDuracion() : null);
+        venta.setSalidaEstimada(tipoVenta == TipoVenta.hostal
+                ? calcularSalida(request.getDuracion(), request.getEarlyCheckin())
+                : null);
 
         if (TipoDte.factura.name().equals(request.getTipoDte())) {
             venta.setReceptorRut(request.getReceptorRut());
@@ -134,8 +154,18 @@ public class VentaService {
         }
         itemRepository.saveAll(items);
 
-        habitacion.setEstado(EstadoHabitacion.ocupado);
-        habitacionRepository.save(habitacion);
+        // Descontar stock de productos trackeados
+        for (VentaItemRequest ir : request.getItems()) {
+            if (TipoItem.producto.name().equals(ir.getTipo())) {
+                descontarStock(ir.getDescripcion(), ir.getCantidad() != null ? ir.getCantidad() : 1, venta);
+            }
+        }
+
+        // Solo cambiar el estado de la habitación si es venta de hostal
+        if (tipoVenta == TipoVenta.hostal && habitacion != null) {
+            habitacion.setEstado(EstadoHabitacion.ocupado);
+            habitacionRepository.save(habitacion);
+        }
 
         turno.setTotalTurno(turno.getTotalTurno().add(total));
         turnoRepository.save(turno);
@@ -147,6 +177,20 @@ public class VentaService {
         dteQueueRepository.save(dte);
 
         return mapear(ventaRepository.findById(venta.getId()).orElseThrow());
+    }
+
+    private void descontarStock(String descripcion, int cantidad, Venta venta) {
+        productoRepository.findByActivoTrueOrderByCategoria().stream()
+            .filter(p -> p.getNombre().equals(descripcion) && p.getStock() != null)
+            .findFirst()
+            .ifPresent(p -> {
+                int anterior = p.getStock();
+                int nuevo = Math.max(0, anterior - cantidad);
+                p.setStock(nuevo);
+                productoRepository.save(p);
+                productoService.registrarMovimiento(p, TipoMovimiento.salida, cantidad,
+                        anterior, nuevo, "Venta", venta);
+            });
     }
 
     public List<VentaResponse> listar(String turnoId, String periodo, String usuarioId, String rol) {
@@ -197,6 +241,23 @@ public class VentaService {
             habitacionRepository.save(h);
         }
 
+        // Devolver stock de productos vendidos
+        for (VentaItem item : venta.getItems()) {
+            if (item.getTipo() == TipoItem.producto) {
+                productoRepository.findByActivoTrueOrderByCategoria().stream()
+                    .filter(p -> p.getNombre().equals(item.getDescripcion()) && p.getStock() != null)
+                    .findFirst()
+                    .ifPresent(p -> {
+                        int anterior = p.getStock();
+                        int nuevo = anterior + item.getCantidad();
+                        p.setStock(nuevo);
+                        productoRepository.save(p);
+                        productoService.registrarMovimiento(p, TipoMovimiento.devolucion,
+                                item.getCantidad(), anterior, nuevo, "Anulación de venta", null);
+                    });
+            }
+        }
+
         // Restar del turno
         Turno turno = venta.getTurno();
         if (turno != null) {
@@ -218,6 +279,7 @@ public class VentaService {
         r.setObservacion(v.getObservacion());
         r.setTotal(v.getTotal());
         r.setTipoDte(v.getTipoDte().name());
+        r.setTipoVenta(v.getTipoVenta() != null ? v.getTipoVenta().name() : "hostal");
         r.setReceptorRut(v.getReceptorRut());
         r.setReceptorRazon(v.getReceptorRazon());
         r.setReceptorGiro(v.getReceptorGiro());

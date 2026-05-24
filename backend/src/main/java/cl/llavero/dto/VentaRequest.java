@@ -6,7 +6,8 @@ import java.util.List;
 
 @Data
 public class VentaRequest {
-    private String habitacionId;
+    private String habitacionId;        // null si tipoVenta = minimarket
+    private String tipoVenta;           // "hostal" (default) o "minimarket"
     private String tipoDte;
     private String observacion;
     private String duracion;

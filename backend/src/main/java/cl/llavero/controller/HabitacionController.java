@@ -1,8 +1,10 @@
 package cl.llavero.controller;
 
+import cl.llavero.dto.HabitacionCreateRequest;
 import cl.llavero.dto.HabitacionLogResponse;
 import cl.llavero.dto.HabitacionResponse;
 import cl.llavero.dto.HabitacionUpdateRequest;
+import cl.llavero.entity.TipoHabitacion;
 import cl.llavero.service.HabitacionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +26,32 @@ public class HabitacionController {
     @GetMapping
     public ResponseEntity<List<HabitacionResponse>> listar() {
         return ResponseEntity.ok(habitacionService.listar());
+    }
+
+    @GetMapping("/tipos")
+    public ResponseEntity<List<TipoHabitacion>> listarTipos() {
+        return ResponseEntity.ok(habitacionService.listarTipos());
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<?> crear(@RequestBody HabitacionCreateRequest req) {
+        try {
+            return ResponseEntity.ok(habitacionService.crear(req));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<?> eliminar(@PathVariable String id) {
+        try {
+            habitacionService.eliminar(id);
+            return ResponseEntity.ok(Map.of("mensaje", "Habitación desactivada"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PutMapping("/{id}")

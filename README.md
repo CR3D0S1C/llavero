@@ -25,11 +25,25 @@ Sistema POS completo para hostales y hoteles pequeños, desarrollado con Spring 
 - Transición de estado con clave de operaciones (1331): ocupado → libre, ocupado → aseo, aseo → libre
 
 ### Ventas
-- Tarifas por hora (1h, 2h, 3h) y tarifa noche (salida 12:00 del día siguiente)
+- **Dos modos**: Hostal (venta atada a una habitación) y Minimarket (venta walk-in sin habitación)
+- En **modo Hostal**: tarifas por hora (1h, 2h, 3h) y tarifa noche (salida 12:00 del día siguiente)
 - **Early check-in**: si se vende tarifa noche entre 00:00 y 11:59, el sistema consulta si fue sin costo, con costo (+$8.000) o si salen a las 12:00 del mismo día
+- En **modo Minimarket**: input de pistola de código de barras + grilla de productos con stock visible
 - Agregar productos con ícono y categoría
 - Ítems libres con código supervisor (7777)
-- Anulación de ventas con clave (1271) disponible para todos los usuarios
+- Anulación de ventas con clave (1271) — devuelve stock automáticamente
+
+### Inventario (minimarket)
+- Catálogo compartido con hostal: cualquier producto con stock trackeado descuenta en ambos modos
+- Stock opcional por producto (si se deja en blanco, el producto no trackea inventario)
+- Stock mínimo configurable para alertas visuales
+- Costo unitario para cálculo de valor del inventario
+- Código de barras único (acepta cualquier formato, usado por la pistola)
+- **Página /inventario (jefe)**:
+  - Lista filtrable: todos / bajo mínimo / sin stock / sin trackear
+  - Búsqueda por nombre o código
+  - Botones rápidos por producto: **Ingreso** (sumar al stock) y **Ajuste** (corregir tras conteo físico)
+  - Tabla de movimientos recientes con quién, qué, cuándo
 
 ### Documentos Tributarios
 - Generación de boleta o factura en cada venta

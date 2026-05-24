@@ -13,9 +13,10 @@ const links = [
 ]
 
 const linksJefe = [
-  { to: '/gestion', label: 'Gestión', icon: '🏨' },
-  { to: '/dte',     label: 'DTEs',    icon: '🧾' },
-  { to: '/admin',   label: 'Admin',   icon: '⚙️' },
+  { to: '/gestion',    label: 'Gestión',    icon: '🏨' },
+  { to: '/inventario', label: 'Inventario', icon: '📦' },
+  { to: '/dte',        label: 'DTEs',       icon: '🧾' },
+  { to: '/admin',      label: 'Admin',      icon: '⚙️' },
 ]
 
 export default function Navbar() {

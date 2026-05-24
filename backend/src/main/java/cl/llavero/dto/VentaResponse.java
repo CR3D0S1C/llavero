@@ -21,6 +21,7 @@ public class VentaResponse {
     private String observacion;
     private BigDecimal total;
     private String tipoDte;
+    private String tipoVenta;        // "hostal" o "minimarket"
     private String dteEstado;
     private String duracion;
     private java.time.LocalDateTime salidaEstimada;

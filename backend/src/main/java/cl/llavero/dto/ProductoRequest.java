@@ -10,4 +10,8 @@ public class ProductoRequest {
     private BigDecimal precio;
     private String icono;
     private String categoria;
+    private String codigoBarras;
+    private Integer stock;          // null = no trackear inventario
+    private Integer stockMinimo;
+    private BigDecimal costo;
 }

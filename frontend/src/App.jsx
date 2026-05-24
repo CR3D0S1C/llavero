@@ -12,6 +12,7 @@ import CierreTurno from './pages/CierreTurno'
 import Admin from './pages/Admin'
 import DtePendientes from './pages/DtePendientes'
 import GestionHabitaciones from './pages/GestionHabitaciones'
+import Inventario from './pages/Inventario'
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/admin" element={<ProtectedRoute soloJefe><Admin /></ProtectedRoute>} />
           <Route path="/dte" element={<ProtectedRoute soloJefe><DtePendientes /></ProtectedRoute>} />
           <Route path="/gestion" element={<ProtectedRoute soloJefe><GestionHabitaciones /></ProtectedRoute>} />
+          <Route path="/inventario" element={<ProtectedRoute soloJefe><Inventario /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </BrowserRouter>

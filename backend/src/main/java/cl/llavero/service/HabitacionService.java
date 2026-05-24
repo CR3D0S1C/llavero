@@ -1,5 +1,6 @@
 package cl.llavero.service;
 
+import cl.llavero.dto.HabitacionCreateRequest;
 import cl.llavero.dto.HabitacionLogResponse;
 import cl.llavero.dto.HabitacionPrecioDto;
 import cl.llavero.dto.HabitacionResponse;
@@ -8,9 +9,11 @@ import cl.llavero.entity.EstadoHabitacion;
 import cl.llavero.entity.Habitacion;
 import cl.llavero.entity.HabitacionLog;
 import cl.llavero.entity.HabitacionPrecio;
+import cl.llavero.entity.TipoHabitacion;
 import cl.llavero.repository.HabitacionLogRepository;
 import cl.llavero.repository.HabitacionPrecioRepository;
 import cl.llavero.repository.HabitacionRepository;
+import cl.llavero.repository.TipoHabitacionRepository;
 import cl.llavero.repository.UsuarioRepository;
 import cl.llavero.repository.VentaRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,17 +41,20 @@ public class HabitacionService {
     private final VentaRepository ventaRepository;
     private final HabitacionLogRepository logRepository;
     private final UsuarioRepository usuarioRepository;
+    private final TipoHabitacionRepository tipoRepository;
 
     public HabitacionService(HabitacionRepository habitacionRepository,
                              HabitacionPrecioRepository precioRepository,
                              VentaRepository ventaRepository,
                              HabitacionLogRepository logRepository,
-                             UsuarioRepository usuarioRepository) {
+                             UsuarioRepository usuarioRepository,
+                             TipoHabitacionRepository tipoRepository) {
         this.habitacionRepository = habitacionRepository;
         this.precioRepository = precioRepository;
         this.ventaRepository = ventaRepository;
         this.logRepository = logRepository;
         this.usuarioRepository = usuarioRepository;
+        this.tipoRepository = tipoRepository;
     }
 
     private void registrarLog(Habitacion h, String anterior, String nuevo) {
@@ -71,6 +77,54 @@ public class HabitacionService {
                 .stream()
                 .map(this::mapear)
                 .collect(Collectors.toList());
+    }
+
+    public List<TipoHabitacion> listarTipos() {
+        return tipoRepository.findAll();
+    }
+
+    @Transactional
+    public HabitacionResponse crear(HabitacionCreateRequest req) {
+        if (req.getNumero() == null || req.getNumero().isBlank()) {
+            throw new RuntimeException("El número es obligatorio");
+        }
+        TipoHabitacion tipo = null;
+        if (req.getTipoId() != null && !req.getTipoId().isBlank()) {
+            tipo = tipoRepository.findById(req.getTipoId())
+                    .orElseThrow(() -> new RuntimeException("Tipo de habitación no encontrado"));
+        }
+        Habitacion h = new Habitacion();
+        h.setNumero(req.getNumero().trim());
+        h.setTipo(tipo);
+        h.setDescripcion(req.getDescripcion());
+        h.setEstado(EstadoHabitacion.libre);
+        h.setActiva(true);
+        h = habitacionRepository.save(h);
+
+        if (req.getPrecios() != null) {
+            for (HabitacionPrecioDto dto : req.getPrecios()) {
+                HabitacionPrecio precio = new HabitacionPrecio();
+                precio.setHabitacion(h);
+                precio.setPersonas(dto.getPersonas());
+                precio.setDuracion(dto.getDuracion());
+                precio.setPrecio(dto.getPrecio());
+                precioRepository.save(precio);
+            }
+        }
+        registrarLog(h, "—", "creada");
+        return mapear(habitacionRepository.findById(h.getId()).orElseThrow());
+    }
+
+    @Transactional
+    public void eliminar(String id) {
+        Habitacion h = habitacionRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new RuntimeException("Habitación no encontrada"));
+        if (h.getEstado() == EstadoHabitacion.ocupado) {
+            throw new RuntimeException("No se puede eliminar una habitación ocupada");
+        }
+        h.setActiva(false);
+        habitacionRepository.save(h);
+        registrarLog(h, h.getEstado().name(), "eliminada");
     }
 
     @Transactional
