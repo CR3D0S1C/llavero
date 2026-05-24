@@ -16,40 +16,42 @@ const DENOMS = [
 
 export default function ComprobanteCierre({ resumen, arqueo, emailEnviado, onCerrar, onFinalizar }) {
   useModalClose(onCerrar, false) // No cerrar accidentalmente con ESC
-  const imprimir = () => window.print()
+  const imprimir = () => setTimeout(() => window.print(), 80)
 
   return (
-    <div className="modal-backdrop no-print">
-      <div className="modal-panel w-full max-w-md flex flex-col" style={{ maxHeight: '90vh' }}>
-        <div className="p-5 border-b border-border no-print">
-          <h2 className="text-lg font-bold">✅ Turno cerrado</h2>
-          <p className="text-muted text-xs mt-1">
-            Arqueo guardado y firmado.{' '}
-            {emailEnviado && <span className="text-green-400">Email enviado al jefe.</span>}
-          </p>
-        </div>
+    <>
+      <div className="modal-backdrop no-print">
+        <div className="modal-panel w-full max-w-md flex flex-col" style={{ maxHeight: '90vh' }}>
+          <div className="p-5 border-b border-border">
+            <h2 className="text-lg font-bold">✅ Turno cerrado</h2>
+            <p className="text-muted text-xs mt-1">
+              Arqueo guardado y firmado.{' '}
+              {emailEnviado && <span className="text-green-400">Email enviado al jefe.</span>}
+            </p>
+          </div>
 
-        <div className="p-4 bg-[#0d0d0d] flex justify-center overflow-y-auto no-print">
-          <div className="bg-white shadow-2xl rounded-sm" style={{ width: '58mm' }}>
-            <TicketCierre resumen={resumen} arqueo={arqueo} />
+          <div className="p-4 bg-[#0d0d0d] flex justify-center overflow-y-auto">
+            <div className="bg-white shadow-2xl rounded-sm" style={{ width: '58mm' }}>
+              <TicketCierre resumen={resumen} arqueo={arqueo} />
+            </div>
+          </div>
+
+          <div className="p-4 border-t border-border flex gap-2 justify-end">
+            <button onClick={onFinalizar} className="btn-ghost text-sm">
+              Salir sin imprimir
+            </button>
+            <button onClick={imprimir} className="btn-primary text-sm">
+              🖨  Imprimir 58mm
+            </button>
           </div>
         </div>
-
-        <div className="p-4 border-t border-border flex gap-2 justify-end no-print">
-          <button onClick={onFinalizar} className="btn-ghost text-sm">
-            Salir sin imprimir
-          </button>
-          <button onClick={imprimir} className="btn-primary text-sm">
-            🖨  Imprimir 58mm
-          </button>
-        </div>
       </div>
 
-      {/* Área que efectivamente se imprime */}
-      <div className="print-only">
+      {/* Hermano del modal — no se ve en pantalla pero se imprime */}
+      <div className="print-only" aria-hidden="true">
         <TicketCierre resumen={resumen} arqueo={arqueo} />
       </div>
-    </div>
+    </>
   )
 }
 

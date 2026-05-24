@@ -33,6 +33,15 @@ public class HabitacionController {
         return ResponseEntity.ok(habitacionService.listarTipos());
     }
 
+    @GetMapping("/buscar/{codigo}")
+    public ResponseEntity<?> buscarPorCodigo(@PathVariable String codigo) {
+        try {
+            return ResponseEntity.ok(habitacionService.buscarPorCodigo(codigo));
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('JEFE')")
     public ResponseEntity<?> crear(@RequestBody HabitacionCreateRequest req) {

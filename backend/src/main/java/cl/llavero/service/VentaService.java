@@ -79,18 +79,16 @@ public class VentaService {
                 ? TipoVenta.valueOf(request.getTipoVenta())
                 : TipoVenta.hostal;
 
-        // Habitación: solo obligatoria en modo hostal
+        // Habitación: SIEMPRE opcional. Si viene, se valida que esté libre.
         Habitacion habitacion = null;
-        if (tipoVenta == TipoVenta.hostal) {
-            if (request.getHabitacionId() == null || request.getHabitacionId().isBlank()) {
-                throw new RuntimeException("Falta la habitación para una venta de hostal");
-            }
+        if (request.getHabitacionId() != null && !request.getHabitacionId().isBlank()) {
             habitacion = habitacionRepository.findById(UUID.fromString(request.getHabitacionId()))
                     .orElseThrow(() -> new RuntimeException("Habitación no encontrada"));
             if (habitacion.getEstado() != EstadoHabitacion.libre) {
                 throw new RuntimeException("La habitación no está disponible");
             }
         }
+        boolean conHabitacion = habitacion != null;
 
         Venta venta = new Venta();
         venta.setTurno(turno);
@@ -102,8 +100,8 @@ public class VentaService {
         venta.setCreatedAt(LocalDateTime.now());
         venta.setObservacion(request.getObservacion());
         venta.setTipoDte(TipoDte.valueOf(request.getTipoDte()));
-        venta.setDuracion(tipoVenta == TipoVenta.hostal ? request.getDuracion() : null);
-        venta.setSalidaEstimada(tipoVenta == TipoVenta.hostal
+        venta.setDuracion(conHabitacion ? request.getDuracion() : null);
+        venta.setSalidaEstimada(conHabitacion
                 ? calcularSalida(request.getDuracion(), request.getEarlyCheckin())
                 : null);
 
@@ -161,8 +159,8 @@ public class VentaService {
             }
         }
 
-        // Solo cambiar el estado de la habitación si es venta de hostal
-        if (tipoVenta == TipoVenta.hostal && habitacion != null) {
+        // Solo cambiar el estado de la habitación si hay habitación asociada
+        if (conHabitacion) {
             habitacion.setEstado(EstadoHabitacion.ocupado);
             habitacionRepository.save(habitacion);
         }

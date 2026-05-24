@@ -6,7 +6,8 @@ import ModalDTE from '../components/ModalDTE'
 import ModalEarlyCheckin from '../components/ModalEarlyCheckin'
 import ComprobanteVenta from '../components/ComprobanteVenta'
 import {
-  getHabitaciones, getProductos, crearVenta, buscarProductoPorCodigo
+  getHabitaciones, getProductos, crearVenta,
+  buscarProductoPorCodigo, buscarHabitacionPorCodigo
 } from '../services/api'
 import { useSesion } from '../context/SesionContext'
 import { toast } from '../utils/toast'
@@ -79,9 +80,9 @@ export default function NuevaVenta() {
   }
 
   const handleConfirmarClick = () => {
-    if (modo === 'hostal') {
+    if (modo === 'hostal' && habitacionSel && tarifaSel) {
       const hora = new Date().getHours()
-      if (tarifaSel?.duracion === 'noche' && hora < 12) {
+      if (tarifaSel.duracion === 'noche' && hora < 12) {
         setShowEarlyCheckin(true)
         return
       }
@@ -120,14 +121,31 @@ export default function NuevaVenta() {
     if (e.key !== 'Enter') return
     const codigo = codigoBarras.trim()
     if (!codigo) return
+    // 1. Buscar como producto
     try {
       const res = await buscarProductoPorCodigo(codigo)
       agregarProducto(res.data)
       setCodigoBarras('')
-    } catch (err) {
-      toast.error(`Código ${codigo} no encontrado`)
-      setCodigoBarras('')
+      return
+    } catch (_) { /* sigue */ }
+    // 2. En modo hostal, buscar como habitación
+    if (modo === 'hostal') {
+      try {
+        const res = await buscarHabitacionPorCodigo(codigo)
+        if (res.data.estado !== 'libre') {
+          toast.warning(`Habitación ${res.data.numero} no disponible (${res.data.estado})`)
+        } else {
+          setHabitacionSel(res.data)
+          setTarifaSel(null)
+          setItems(prev => prev.filter(i => i.tipo !== 'habitacion'))
+          toast.success(`Habitación ${res.data.numero} seleccionada`)
+        }
+        setCodigoBarras('')
+        return
+      } catch (_) { /* fallthrough */ }
     }
+    toast.error(`Código ${codigo} no encontrado`)
+    setCodigoBarras('')
   }
 
   const agregarLibre = () => {
@@ -167,8 +185,9 @@ export default function NuevaVenta() {
 
   const total = items.reduce((s, i) => s + (i.precioUnitario * i.cantidad), 0)
 
+  // En hostal: si hay habitación seleccionada, necesita tarifa; si no, basta con items.
   const puedeConfirmar = modo === 'hostal'
-    ? habitacionSel && tarifaSel
+    ? (habitacionSel ? !!tarifaSel : items.length > 0)
     : items.length > 0
 
   const confirmarVenta = async (tipoDte, receptor) => {
@@ -179,9 +198,9 @@ export default function NuevaVenta() {
         tipoVenta: modo,
         tipoDte,
         items: items.map(i => ({ ...i })),
-        ...(modo === 'hostal' ? {
+        ...(modo === 'hostal' && habitacionSel ? {
           habitacionId: habitacionSel.id,
-          duracion: tarifaSel.duracion,
+          duracion: tarifaSel?.duracion,
           earlyCheckin: earlyCheckinVal,
         } : {}),
         ...(receptor ? {
@@ -195,9 +214,9 @@ export default function NuevaVenta() {
         } : {})
       }
       const res = await crearVenta(payload)
-      toast.success(modo === 'hostal'
+      toast.success(modo === 'hostal' && habitacionSel
         ? `Venta registrada — Hab. ${habitacionSel.numero}`
-        : `Venta minimarket registrada — $${total.toLocaleString('es-CL')}`)
+        : `Venta registrada — $${total.toLocaleString('es-CL')}`)
       // Mostrar comprobante para imprimir en lugar de navegar directo
       setVentaConfirmada(res.data)
     } catch (e) {

@@ -101,9 +101,12 @@ export default function GestionHabitaciones() {
       <Navbar />
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <h1 className="text-2xl font-bold">Gestión de Habitaciones</h1>
-          <button onClick={() => navigate('/habitaciones')} className="btn-primary text-sm">
-            + Nueva habitación / Editar precios
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted">Operación diaria</p>
+            <h1 className="text-2xl font-bold mt-1">Gestión de Habitaciones</h1>
+          </div>
+          <button onClick={() => navigate('/habitaciones')} className="btn-ghost text-sm">
+            🛏️ Configurar habitaciones
           </button>
         </div>
 

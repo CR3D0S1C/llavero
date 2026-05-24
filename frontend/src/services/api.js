@@ -32,6 +32,7 @@ export const logout = () => api.post('/auth/logout')
 // Habitaciones
 export const getHabitaciones = () => api.get('/habitaciones')
 export const getTiposHabitacion = () => api.get('/habitaciones/tipos')
+export const buscarHabitacionPorCodigo = (codigo) => api.get(`/habitaciones/buscar/${encodeURIComponent(codigo)}`)
 export const crearHabitacion = (data) => api.post('/habitaciones', data)
 export const updateHabitacion = (id, data) => api.put(`/habitaciones/${id}`, data)
 export const eliminarHabitacion = (id) => api.delete(`/habitaciones/${id}`)

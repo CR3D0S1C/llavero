@@ -8,6 +8,7 @@ import java.util.List;
 public class HabitacionResponse {
     private String id;
     private String numero;
+    private String codigoBarras;
     private String tipoId;
     private String tipoLabel;
     private String bano;

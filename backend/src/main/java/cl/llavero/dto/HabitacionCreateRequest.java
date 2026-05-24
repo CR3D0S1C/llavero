@@ -8,6 +8,7 @@ import java.util.List;
 @Getter @Setter
 public class HabitacionCreateRequest {
     private String numero;
+    private String codigoBarras;
     private String tipoId;        // referencia a TipoHabitacion (ej. "matrimonial", "individual")
     private String descripcion;
     private List<HabitacionPrecioDto> precios;

@@ -83,6 +83,12 @@ public class HabitacionService {
         return tipoRepository.findAll();
     }
 
+    public HabitacionResponse buscarPorCodigo(String codigo) {
+        Habitacion h = habitacionRepository.findByCodigoBarrasAndActivaTrue(codigo)
+                .orElseThrow(() -> new RuntimeException("Habitación no encontrada con código " + codigo));
+        return mapear(h);
+    }
+
     @Transactional
     public HabitacionResponse crear(HabitacionCreateRequest req) {
         if (req.getNumero() == null || req.getNumero().isBlank()) {
@@ -99,6 +105,9 @@ public class HabitacionService {
         h.setDescripcion(req.getDescripcion());
         h.setEstado(EstadoHabitacion.libre);
         h.setActiva(true);
+        if (req.getCodigoBarras() != null && !req.getCodigoBarras().trim().isEmpty()) {
+            h.setCodigoBarras(req.getCodigoBarras().trim());
+        }
         h = habitacionRepository.save(h);
 
         if (req.getPrecios() != null) {
@@ -140,6 +149,10 @@ public class HabitacionService {
         }
         if (request.getDescripcion() != null) {
             habitacion.setDescripcion(request.getDescripcion());
+        }
+        if (request.getCodigoBarras() != null) {
+            String cb = request.getCodigoBarras().trim();
+            habitacion.setCodigoBarras(cb.isEmpty() ? null : cb);
         }
 
         habitacionRepository.save(habitacion);
@@ -268,6 +281,7 @@ public class HabitacionService {
         HabitacionResponse r = new HabitacionResponse();
         r.setId(h.getId().toString());
         r.setNumero(h.getNumero());
+        r.setCodigoBarras(h.getCodigoBarras());
         r.setEstado(h.getEstado().name());
         r.setNota(h.getNota());
         r.setDescripcion(h.getDescripcion());

@@ -25,7 +25,10 @@ Sistema POS completo para hostales y hoteles pequeños, desarrollado con Spring 
 - Transición de estado con clave de operaciones (1331): ocupado → libre, ocupado → aseo, aseo → libre
 
 ### Ventas
-- **Dos modos**: Hostal (venta atada a una habitación) y Minimarket (venta walk-in sin habitación)
+- **Dos modos**: Hostal y Minimarket (toggle arriba de la página)
+- En **modo Hostal**: la habitación es **opcional** — podés vender productos sueltos (ej: cigarros, condones, jugos) sin asignarlo a una habitación
+- Si seleccionás habitación + tarifa: la habitación queda ocupada
+- Si no seleccionás habitación: solo se cobran los productos (igual que en minimarket)
 - En **modo Hostal**: tarifas por hora (1h, 2h, 3h) y tarifa noche (salida 12:00 del día siguiente)
 - **Early check-in**: si se vende tarifa noche entre 00:00 y 11:59, el sistema consulta si fue sin costo, con costo (+$8.000) o si salen a las 12:00 del mismo día
 - En **modo Minimarket**: input de pistola de código de barras + grilla de productos con stock visible
@@ -85,8 +88,14 @@ Todo el arqueo se guarda en la tabla `arqueos_turno` para auditoría posterior p
 ### Roles
 | Rol | Acceso |
 |---|---|
-| **Jefe** | Todo: métricas, CRUD habitaciones y productos, historial completo, admin |
-| **Cajero** | Nueva venta, historial de su turno, gestión de habitaciones con clave |
+| **Jefe** | Todo + dropdown "Administración" con: Gestión, Configurar, Productos, Inventario, DTEs, Métricas |
+| **Cajero** | Dashboard, Nueva Venta, Historial, Cierre. Gestión de habitaciones con clave |
+
+#### Estructura del menú
+- **Comunes (todos)**: Dashboard · Nueva Venta · Historial · Cierre
+- **Administración (solo jefe, dropdown)**: Gestión de habitaciones · Configurar habitaciones · Productos · Inventario · DTEs SII · Métricas
+
+Las habitaciones tienen un campo opcional de **código de barras** — si lo configurás, podés escanearlas con la pistola desde Nueva Venta (modo Hostal) para seleccionarlas rápido.
 
 #### Estados que puede asignar cada rol
 

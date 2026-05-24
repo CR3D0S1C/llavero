@@ -21,6 +21,9 @@ public class Habitacion {
     @Column(nullable = false, length = 20)
     private String numero;
 
+    @Column(name = "codigo_barras", length = 50, unique = true)
+    private String codigoBarras;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "tipo_id")
     private TipoHabitacion tipo;

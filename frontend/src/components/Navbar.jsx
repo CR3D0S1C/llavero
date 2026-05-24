@@ -1,28 +1,32 @@
-import { useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useSesion } from '../context/SesionContext'
 import { logout } from '../services/api'
 import { toast } from '../utils/toast'
 
-const links = [
+// Visibles para todos
+const linksComunes = [
   { to: '/dashboard',   label: 'Dashboard',   icon: '📊' },
   { to: '/nueva-venta', label: 'Nueva Venta', icon: '💰' },
   { to: '/historial',   label: 'Historial',   icon: '📋' },
-  { to: '/productos',   label: 'Productos',   icon: '📦' },
   { to: '/cierre-turno',label: 'Cierre',      icon: '🔒' },
 ]
 
-const linksJefe = [
-  { to: '/gestion',    label: 'Gestión',    icon: '🏨' },
-  { to: '/inventario', label: 'Inventario', icon: '📦' },
-  { to: '/dte',        label: 'DTEs',       icon: '🧾' },
-  { to: '/admin',      label: 'Admin',      icon: '⚙️' },
+// Agrupado bajo el dropdown "Administración" (solo jefe)
+const linksAdmin = [
+  { to: '/gestion',     label: 'Gestión de habitaciones', icon: '🏨', desc: 'Estados y log de cambios' },
+  { to: '/habitaciones',label: 'Configurar habitaciones', icon: '🛏️', desc: 'Agregar, eliminar, editar precios' },
+  { to: '/productos',   label: 'Productos',               icon: '📦', desc: 'Catálogo, precios e iconos' },
+  { to: '/inventario',  label: 'Inventario',              icon: '📥', desc: 'Stock, ingresos y movimientos' },
+  { to: '/dte',         label: 'DTEs SII',                icon: '🧾', desc: 'Boletas y facturas pendientes' },
+  { to: '/admin',       label: 'Métricas',                icon: '📈', desc: 'Resumen general del negocio' },
 ]
 
 export default function Navbar() {
   const { sesion, logout: logoutCtx } = useSesion()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const esJefe = sesion?.rol === 'jefe'
 
   const handleLogout = async () => {
     try { await logout() } catch (_) {}
@@ -30,8 +34,6 @@ export default function Navbar() {
     toast.info('Sesión cerrada')
     navigate('/')
   }
-
-  const allLinks = sesion?.rol === 'jefe' ? [...links, ...linksJefe] : links
 
   const linkClass = ({ isActive }) =>
     `px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
@@ -41,15 +43,18 @@ export default function Navbar() {
   return (
     <nav className="bg-card border-b border-border sticky top-0 z-40">
       <div className="px-4 py-3 flex items-center gap-2">
-        <span className="text-accent font-bold text-lg shrink-0">🔑 Llavero</span>
+        <NavLink to="/dashboard" className="text-accent font-bold text-lg shrink-0 hover:text-accent-hover">
+          🔑 Llavero
+        </NavLink>
 
-        {/* Desktop: links inline con scroll horizontal si es necesario */}
-        <div className="hidden md:flex gap-1 flex-1 overflow-x-auto scrollbar-hide ml-4">
-          {allLinks.map(link => (
+        {/* Desktop: links inline + dropdown admin */}
+        <div className="hidden md:flex gap-1 flex-1 ml-4 items-center">
+          {linksComunes.map(link => (
             <NavLink key={link.to} to={link.to} className={linkClass}>
               <span className="mr-1">{link.icon}</span>{link.label}
             </NavLink>
           ))}
+          {esJefe && <AdminDropdown />}
         </div>
 
         {/* Mobile: botón hamburguesa */}
@@ -61,11 +66,11 @@ export default function Navbar() {
           {menuOpen ? '✕' : '☰'}
         </button>
 
-        {/* Usuario + salir */}
+        {/* Usuario + salir (desktop) */}
         <div className="hidden md:flex items-center gap-3 ml-auto shrink-0">
           <span className="text-sm text-muted">
             {sesion?.nombre}
-            <span className={`ml-1 text-xs ${sesion?.rol === 'jefe' ? 'text-accent' : 'text-gray-500'}`}>
+            <span className={`ml-1 text-xs ${esJefe ? 'text-accent' : 'text-gray-500'}`}>
               ({sesion?.rol})
             </span>
           </span>
@@ -77,25 +82,24 @@ export default function Navbar() {
 
       {/* Mobile: panel desplegable */}
       {menuOpen && (
-        <div className="md:hidden border-t border-border px-4 py-3 space-y-1 animate-fade-in">
-          {allLinks.map(link => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              onClick={() => setMenuOpen(false)}
-              className={({ isActive }) =>
-                `block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive ? 'bg-accent text-white' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-                }`
-              }
-            >
-              <span className="mr-2">{link.icon}</span>{link.label}
-            </NavLink>
+        <div className="md:hidden border-t border-border px-4 py-3 space-y-1 animate-fade-in max-h-[80vh] overflow-y-auto">
+          {linksComunes.map(link => (
+            <MobileLink key={link.to} link={link} onClick={() => setMenuOpen(false)} />
           ))}
+
+          {esJefe && (
+            <>
+              <p className="text-xs uppercase tracking-wider text-muted mt-4 mb-2 px-3">Administración</p>
+              {linksAdmin.map(link => (
+                <MobileLink key={link.to} link={link} onClick={() => setMenuOpen(false)} />
+              ))}
+            </>
+          )}
+
           <div className="border-t border-border pt-3 mt-3 flex items-center justify-between">
             <span className="text-sm text-muted">
               {sesion?.nombre}
-              <span className={`ml-1 text-xs ${sesion?.rol === 'jefe' ? 'text-accent' : 'text-gray-500'}`}>
+              <span className={`ml-1 text-xs ${esJefe ? 'text-accent' : 'text-gray-500'}`}>
                 ({sesion?.rol})
               </span>
             </span>
@@ -106,5 +110,81 @@ export default function Navbar() {
         </div>
       )}
     </nav>
+  )
+}
+
+function MobileLink({ link, onClick }) {
+  return (
+    <NavLink
+      to={link.to}
+      onClick={onClick}
+      className={({ isActive }) =>
+        `block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+          isActive ? 'bg-accent text-white' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+        }`
+      }
+    >
+      <span className="mr-2">{link.icon}</span>{link.label}
+    </NavLink>
+  )
+}
+
+function AdminDropdown() {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Cerrar al hacer click fuera
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Cerrar al cambiar de ruta
+  useEffect(() => { setOpen(false) }, [location.pathname])
+
+  const activo = linksAdmin.some(l => location.pathname === l.to)
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+          activo || open
+            ? 'bg-accent/20 text-accent'
+            : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+        }`}
+      >
+        <span>⚙️</span>
+        <span>Administración</span>
+        <span className={`text-xs transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-2 w-72 bg-card border border-border rounded-xl shadow-2xl py-2 animate-fade-in">
+          {linksAdmin.map(link => (
+            <button
+              key={link.to}
+              onClick={() => { navigate(link.to); setOpen(false) }}
+              className={`w-full text-left px-4 py-2.5 flex items-start gap-3 transition-colors ${
+                location.pathname === link.to
+                  ? 'bg-accent/15 text-accent'
+                  : 'hover:bg-white/5 text-gray-300'
+              }`}
+            >
+              <span className="text-lg shrink-0 mt-0.5">{link.icon}</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium">{link.label}</div>
+                <div className="text-xs text-muted truncate">{link.desc}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

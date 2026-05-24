@@ -51,6 +51,7 @@ export default function Habitaciones() {
       estado: h.estado,
       nota: h.nota || '',
       descripcion: h.descripcion || '',
+      codigoBarras: h.codigoBarras || '',
       precios: h.precios?.map(p => ({ ...p })) || []
     })
   }
@@ -128,6 +129,13 @@ export default function Habitaciones() {
                   </div>
 
                   <div>
+                    <label className="text-xs text-muted mb-1 block">Código barras</label>
+                    <input className="input font-mono" placeholder="Opcional, para pistola"
+                      value={editForm.codigoBarras}
+                      onChange={e => setEditForm(p => ({ ...p, codigoBarras: e.target.value }))} />
+                  </div>
+
+                  <div>
                     <label className="text-xs text-muted mb-1 block">Nota interna</label>
                     <input className="input" placeholder="Opcional..." value={editForm.nota}
                       onChange={e => setEditForm(p => ({ ...p, nota: e.target.value }))} />
@@ -199,6 +207,7 @@ function ModalNuevaHabitacion({ tipos, onCerrar, onExito }) {
   const [numero, setNumero] = useState('')
   const [tipoId, setTipoId] = useState(tipos[0]?.id || '')
   const [descripcion, setDescripcion] = useState('')
+  const [codigoBarras, setCodigoBarras] = useState('')
   const [precios, setPrecios] = useState([
     { duracion: '1h',    personas: 1, precio: '' },
     { duracion: '3h',    personas: 1, precio: '' },
@@ -216,6 +225,7 @@ function ModalNuevaHabitacion({ tipos, onCerrar, onExito }) {
         numero: numero.trim(),
         tipoId,
         descripcion: descripcion.trim() || null,
+        codigoBarras: codigoBarras.trim() || null,
         precios: precios
           .filter(p => p.precio !== '' && Number(p.precio) > 0)
           .map(p => ({ ...p, precio: Number(p.precio), personas: Number(p.personas) })),
@@ -263,6 +273,12 @@ function ModalNuevaHabitacion({ tipos, onCerrar, onExito }) {
             <label className="text-xs text-muted mb-1 block">Descripción (opcional)</label>
             <input className="input" placeholder="Ej: Loft con vista al patio" value={descripcion}
               onChange={e => setDescripcion(e.target.value)} />
+          </div>
+
+          <div>
+            <label className="text-xs text-muted mb-1 block">Código de barras (opcional)</label>
+            <input className="input font-mono" placeholder="Para escanear con pistola"
+              value={codigoBarras} onChange={e => setCodigoBarras(e.target.value)} />
           </div>
 
           <div>

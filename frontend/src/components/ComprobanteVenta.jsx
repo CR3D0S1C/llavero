@@ -4,49 +4,56 @@ const fmt = (n) => Number(n || 0).toLocaleString('es-CL')
 
 export default function ComprobanteVenta({ venta, onCerrar, onContinuar }) {
   useModalClose(onCerrar)
-  const imprimir = () => window.print()
+  const imprimir = () => {
+    // Pequeño delay para asegurar render del DOM
+    setTimeout(() => window.print(), 80)
+  }
 
   const fechaCorta = venta.fecha ? venta.fecha : new Date().toLocaleDateString('es-CL')
   const horaCorta  = venta.hora ? String(venta.hora).slice(0, 5) : new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <div className="modal-backdrop no-print" onClick={onCerrar}>
-      <div className="modal-panel w-full max-w-sm" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-border flex items-center justify-between no-print">
-          <div>
-            <h2 className="text-lg font-bold">Comprobante listo</h2>
-            <p className="text-muted text-xs mt-0.5">Vista previa del ticket 58mm</p>
+    <>
+      {/* Modal en pantalla — oculto al imprimir */}
+      <div className="modal-backdrop no-print" onClick={onCerrar}>
+        <div className="modal-panel w-full max-w-sm" onClick={e => e.stopPropagation()}>
+          <div className="p-5 border-b border-border flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold">Comprobante listo</h2>
+              <p className="text-muted text-xs mt-0.5">Vista previa del ticket 58mm</p>
+            </div>
+            <button onClick={onCerrar} className="text-muted hover:text-white text-lg">✕</button>
           </div>
-          <button onClick={onCerrar} className="text-muted hover:text-white text-lg">✕</button>
-        </div>
 
-        {/* Preview con borde + área imprimible */}
-        <div className="p-4 bg-[#0d0d0d] flex justify-center no-print">
-          <div className="bg-white shadow-2xl rounded-sm" style={{ width: '58mm' }}>
-            <Ticket venta={venta} fecha={fechaCorta} hora={horaCorta} />
+          {/* Preview con fondo blanco */}
+          <div className="p-4 bg-[#0d0d0d] flex justify-center max-h-[60vh] overflow-y-auto">
+            <div className="bg-white shadow-2xl rounded-sm" style={{ width: '58mm' }}>
+              <Ticket venta={venta} fecha={fechaCorta} hora={horaCorta} />
+            </div>
           </div>
-        </div>
 
-        <div className="p-4 border-t border-border flex gap-2 justify-end no-print">
-          <button onClick={onContinuar || onCerrar} className="btn-ghost text-sm">
-            Saltar
-          </button>
-          <button onClick={imprimir} className="btn-primary text-sm">
-            🖨  Imprimir 58mm
-          </button>
+          <div className="p-4 border-t border-border flex gap-2 justify-end">
+            <button onClick={onContinuar || onCerrar} className="btn-ghost text-sm">
+              Saltar
+            </button>
+            <button onClick={imprimir} className="btn-primary text-sm">
+              🖨  Imprimir 58mm
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Área que efectivamente se imprime */}
-      <div className="print-only">
+      {/* Área que efectivamente se imprime — HERMANO del modal, no hijo */}
+      <div className="print-only" aria-hidden="true">
         <Ticket venta={venta} fecha={fechaCorta} hora={horaCorta} />
       </div>
-    </div>
+    </>
   )
 }
 
 function Ticket({ venta, fecha, hora }) {
   const esMinimarket = venta.tipoVenta === 'minimarket'
+  const sinHabitacion = !venta.habitacionNumero
   const tipoDoc = venta.tipoDte === 'factura' ? 'FACTURA' : 'BOLETA'
   return (
     <div className="thermal">
@@ -62,14 +69,16 @@ function Ticket({ venta, fecha, hora }) {
       {venta.cajero && (
         <div className="row sm"><span>Cajero:</span><span>{venta.cajero}</span></div>
       )}
-      {!esMinimarket && venta.habitacionNumero && (
-        <div className="row sm"><span>Habitación:</span><span className="bold">{venta.habitacionNumero}</span></div>
-      )}
-      {!esMinimarket && venta.duracion && (
-        <div className="row sm"><span>Tarifa:</span><span>{venta.duracion}</span></div>
-      )}
-      {!esMinimarket && venta.salidaEstimada && (
-        <div className="row sm"><span>Sale:</span><span>{new Date(venta.salidaEstimada).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span></div>
+      {!sinHabitacion && (
+        <>
+          <div className="row sm"><span>Habitación:</span><span className="bold">{venta.habitacionNumero}</span></div>
+          {venta.duracion && (
+            <div className="row sm"><span>Tarifa:</span><span>{venta.duracion}</span></div>
+          )}
+          {venta.salidaEstimada && (
+            <div className="row sm"><span>Sale:</span><span>{new Date(venta.salidaEstimada).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span></div>
+          )}
+        </>
       )}
 
       <div className="sep" />
