@@ -21,6 +21,13 @@ export default function Login() {
     getUsuariosPublicos().then(r => setUsuarios(r.data)).catch(() => {})
   }, [])
 
+  useEffect(() => {
+    if (sessionStorage.getItem('llavero_sesion_invalidada')) {
+      sessionStorage.removeItem('llavero_sesion_invalidada')
+      setError('Tu sesión se cerró. Puede que hayas iniciado en otro dispositivo o que la sesión expirara.')
+    }
+  }, [])
+
   // Soporte de teclado físico (números + backspace + Enter)
   useEffect(() => {
     const handler = (e) => {

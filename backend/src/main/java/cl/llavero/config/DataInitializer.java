@@ -46,22 +46,25 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void crearUsuarios() {
-        Usuario carlos = new Usuario();
-        carlos.setNombre("Carlos Mendoza");
-        carlos.setRol(Rol.jefe);
-        carlos.setPinHash(AuthService.sha256("1234"));
+        String pinJefe   = AuthService.sha256("1271");
+        String pinCajero = AuthService.sha256("1891");
 
-        Usuario ana = new Usuario();
-        ana.setNombre("Ana Torres");
-        ana.setRol(Rol.cajero);
-        ana.setPinHash(AuthService.sha256("5678"));
+        usuarioRepository.saveAll(List.of(
+            usuario("Abelardo Cruchaga", Rol.jefe,   pinJefe),
+            usuario("Salma Cruchaga",    Rol.jefe,   pinJefe),
+            usuario("Cesar Cruchaga",    Rol.jefe,   pinJefe),
+            usuario("cajero1",           Rol.cajero, pinCajero),
+            usuario("cajero2",           Rol.cajero, pinCajero),
+            usuario("cajero3",           Rol.cajero, pinCajero)
+        ));
+    }
 
-        Usuario luis = new Usuario();
-        luis.setNombre("Luis Pérez");
-        luis.setRol(Rol.cajero);
-        luis.setPinHash(AuthService.sha256("9012"));
-
-        usuarioRepository.saveAll(List.of(carlos, ana, luis));
+    private Usuario usuario(String nombre, Rol rol, String pinHash) {
+        Usuario u = new Usuario();
+        u.setNombre(nombre);
+        u.setRol(rol);
+        u.setPinHash(pinHash);
+        return u;
     }
 
     private void crearTiposYHabitaciones() {

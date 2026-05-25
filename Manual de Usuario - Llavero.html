@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual de Usuario · Sistema Llavero</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #1a1a2e;
+      background: #f5f5f5;
+    }
+
+    .page {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+    }
+
+    /* ====== PORTADA ====== */
+    .portada {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: white;
+      padding: 80px 60px;
+      text-align: center;
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .portada .icono {
+      font-size: 56px;
+      margin-bottom: 16px;
+    }
+
+    .portada h1 {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #c9a96e;
+      margin-bottom: 8px;
+    }
+
+    .portada .subtitulo {
+      font-size: 16px;
+      color: #a0aec0;
+      margin-bottom: 32px;
+    }
+
+    .portada .hostal {
+      font-size: 14px;
+      color: #718096;
+      border-top: 1px solid #2d3748;
+      padding-top: 20px;
+      width: 100%;
+    }
+
+    /* ====== SECCIONES ====== */
+    .contenido {
+      padding: 40px 50px;
+    }
+
+    .seccion {
+      margin-bottom: 40px;
+      page-break-inside: avoid;
+    }
+
+    .seccion-titulo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1a1a2e;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .seccion-titulo .badge {
+      background: #c9a96e;
+      color: #1a1a2e;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 100px;
+      letter-spacing: 0.5px;
+    }
+
+    .subseccion {
+      margin-bottom: 24px;
+      page-break-inside: avoid;
+    }
+
+    .subseccion h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 10px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #e8c87a;
+      display: inline-block;
+    }
+
+    /* ====== PASOS ====== */
+    .pasos {
+      list-style: none;
+      counter-reset: paso;
+    }
+
+    .pasos li {
+      counter-increment: paso;
+      display: flex;
+      gap: 12px;
+      margin-bottom: 10px;
+      align-items: flex-start;
+    }
+
+    .pasos li::before {
+      content: counter(paso);
+      min-width: 24px;
+      height: 24px;
+      background: #1a1a2e;
+      color: #c9a96e;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ====== ALERTAS ====== */
+    .alerta {
+      display: flex;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 12.5px;
+    }
+
+    .alerta-info {
+      background: #ebf8ff;
+      border-left: 4px solid #3182ce;
+      color: #1a365d;
+    }
+
+    .alerta-aviso {
+      background: #fffbeb;
+      border-left: 4px solid #d69e2e;
+      color: #744210;
+    }
+
+    .alerta-peligro {
+      background: #fff5f5;
+      border-left: 4px solid #e53e3e;
+      color: #742a2a;
+    }
+
+    .alerta-exito {
+      background: #f0fff4;
+      border-left: 4px solid #38a169;
+      color: #1c4532;
+    }
+
+    /* ====== TABLA ====== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 14px;
+      font-size: 12.5px;
+    }
+
+    th {
+      background: #1a1a2e;
+      color: #c9a96e;
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td {
+      background: #f7fafc;
+    }
+
+    /* ====== CHIP DE PANTALLA ====== */
+    .pantalla {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #2d3748;
+      color: #c9a96e;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: monospace;
+    }
+
+    /* ====== GRID DOS COLUMNAS ====== */
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .card h4 {
+      font-size: 12px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card ul {
+      list-style: none;
+      font-size: 12px;
+    }
+
+    .card ul li {
+      padding: 3px 0;
+      color: #4a5568;
+      display: flex;
+      gap: 6px;
+    }
+
+    .card ul li::before {
+      content: '→';
+      color: #c9a96e;
+      flex-shrink: 0;
+    }
+
+    /* ====== ÍNDICE ====== */
+    .indice {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 32px;
+    }
+
+    .indice h2 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #718096;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .indice ol {
+      list-style: none;
+      counter-reset: idx;
+    }
+
+    .indice ol li {
+      counter-increment: idx;
+      padding: 4px 0;
+      color: #2d3748;
+      font-size: 13px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .indice ol li::before {
+      content: counter(idx) '.';
+      color: #c9a96e;
+      font-weight: 700;
+      min-width: 18px;
+    }
+
+    /* ====== PIE ====== */
+    .pie {
+      background: #1a1a2e;
+      color: #4a5568;
+      text-align: center;
+      padding: 20px;
+      font-size: 11px;
+    }
+
+    /* ====== PRINT ====== */
+    @media print {
+      body { background: white; font-size: 12px; }
+      .page { max-width: 100%; }
+      .portada { min-height: 280px; padding: 60px 40px; }
+      .contenido { padding: 30px 40px; }
+      .seccion { page-break-inside: avoid; margin-bottom: 28px; }
+      .subseccion { page-break-inside: avoid; }
+      .grid2 { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- PORTADA -->
+  <div class="portada">
+    <div class="icono">🔑</div>
+    <h1>LLAVERO</h1>
+    <p class="subtitulo">Manual de usuario · Sistema de Hospedaje</p>
+    <div class="hostal">
+      Hostal Mi Maravilla · La Serena, Chile · 2026
+    </div>
+  </div>
+
+  <div class="contenido">
+
+    <!-- ÍNDICE -->
+    <div class="indice">
+      <h2>CONTENIDO</h2>
+      <ol>
+        <li>¿Cómo entrar al sistema?</li>
+        <li>Panel principal (Dashboard)</li>
+        <li>Habitaciones — ver y cambiar estado</li>
+        <li>Registrar una venta</li>
+        <li>Historial de ventas</li>
+        <li>Cerrar turno y hacer el arqueo</li>
+        <li>Panel del jefe (solo administrador)</li>
+        <li>Gestión de usuarios (solo jefe)</li>
+        <li>Preguntas frecuentes y solución de problemas</li>
+      </ol>
+    </div>
+
+    <!-- SECCIÓN 1: INGRESO -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <span>1</span>
+        <span>¿Cómo entrar al sistema?</span>
+      </div>
+
+      <div class="subseccion">
+        <h3>Acceso desde el computador o celular</h3>
+        <ol class="pasos">
+          <li>Abre el navegador (Chrome, Edge o Safari).</li>
+          <li>Escribe la dirección que te entregó el jefe en la barra de arriba y presiona Enter.</li>
+          <li>Verás la pantalla de inicio con los nombres de los usuarios disponibles.</li>
+          <li>Toca tu nombre en la lista.</li>
+          <li>Ingresa tu PIN de 4 dígitos usando el teclado de la pantalla (o el teclado físico).</li>
+          <li>Presiona <strong>Ingresar</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="alerta alerta-aviso">
+        <span>⚠️</span>
+        <div><strong>Importante sobre la sesión:</strong> Si ingresas desde un dispositivo nuevo (por ejemplo, el celular) mientras ya estás conectado en el computador, la sesión del computador se cierra automáticamente. Solo puede haber una sesión activa por usuario a la vez.</div>
+      </div>
+
+      <div class="alerta alerta-info">
+        <span>💡</span>
+        <div><strong>PIN incorrecto:</strong> Si el sistema dice "PIN incorrecto", verifica que seleccionaste tu nombre y que el PIN tenga exactamente 4 dígitos. Pide al jefe que resetee tu PIN si no lo recuerdas.</div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: DASHBOARD -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <span>2</span>
+        <span>Panel principal</span>
+      </div>
+
+      <p style="margin-bottom: 12px; color: #4a5568;">Al entrar verás el <strong>Dashboard</strong>: un resumen del estado actual del hostal. Desde aquí puedes navegar a todas las secciones usando el menú de arriba.</p>
+
+      <div class="grid2">
+        <div class="card">
+          <h4>📊 Lo que muestra</h4>
+          <ul>
+            <li>Total vendido en tu turno</li>
+            <li>Número de ventas realizadas</li>
+            <li>Estado general del hostal</li>
+            <li>Habitaciones libres y ocupadas</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>🧭 Menú de navegación</h4>
+          <ul>
+            <li>Habitaciones</li>
+            <li>Nueva Venta</li>
+            <li>Historial</li>
+            <li>Cerrar Turno</li>
+            <li>Más opciones (según rol)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: HABITACIONES -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <span>3</span>
+        <span>Habitaciones</span>
+      </div>
+
+      <div class="subseccion">
+        <h3>Estados de habitación</h3>
+        <table>
+          <tr>
+            <th>Estado</th>
+            <th>Significado</th>
+            <th>Qué hacer</th>
+          </tr>
+          <tr>
+            <td>🟢 <strong>Libre</strong></td>
+            <td>Disponible para hospedar</td>
+            <td>Se puede arrendar directamente</td>
+          </tr>
+          <tr>
+            <td>🔴 <strong>Ocupada</strong></td>
+            <td>Hay huéspedes dentro</td>
+            <td>Liberar cuando se vayan</td>
+          </tr>
+          <tr>
+            <td>🟠 <strong>Aseo</strong></td>
+            <td>En limpieza tras checkout</td>
+            <td>Cambiar a Libre cuando esté lista</td>
+          </tr>
+          <tr>
+            <td>🟡 <strong>Mantención</strong></td>
+            <td>En reparación</td>
+            <td>Solo el jefe puede cambiar este estado</td>
+          </tr>
+          <tr>
+            <td>⚫ <strong>Deshabilitada</strong></td>
+            <td>Fuera de servicio</td>
+            <td>Solo el jefe puede habilitarla</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="subseccion">
+        <h3>Cómo registrar entrada de un huésped</h3>
+        <ol class="pasos">
+          <li>Ve a <span class="pantalla">Habitaciones</span> en el menú.</li>
+          <li>Encuentra una habitación con estado <strong>Libre</strong>.</li>
+          <li>Haz clic en ella para ver sus opciones.</li>
+          <li>Selecciona el tipo de estadía (horas o noche) e ingresa las horas si corresponde.</li>
+          <li>Confirma. La habitación cambiará a <strong>Ocupada</strong>.</li>
+        </ol>
+        <div class="alerta alerta-info">
+          <span>💡</span>
+          <div>También puedes registrar la entrada directamente al hacer una venta de habitación en <span class="pantalla">Nueva Venta</span> — el sistema las vincula automáticamente.</div>
+        </div>
+      </div>
+
+      <div class="subseccion">
+        <h3>Cómo liberar una habitación</h3>
+        <ol class="pasos">
+          <li>Ve a <span class="pantalla">Habitaciones</span>.</li>
+          <li>Haz clic en la habitación <strong>Ocupada</strong> que deseas liberar.</li>
+          <li>Selecciona <strong>Liberar habitación</strong>.</li>
+          <li>El sistema te pedirá confirmar. La habitación pasará a estado <strong>Aseo</strong>.</li>
+          <li>Cuando el cuarto esté limpio, cámbialo a <strong>Libre</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="alerta alerta-aviso">
+        <span>⚠️</span>
+        <div><strong>Habitación con tiempo vencido:</strong> Si el ícono de una habitación aparece en rojo con una advertencia, significa que el huésped debería haberse ido pero sigue marcado. Habla con el huésped y libera o extiende su estadía.</div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 4: NUEVA VENTA -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <span>4</span>
+        <span>Registrar una venta</span>
+      </div>
+
+      <div class="subseccion">
+        <h3>Venta de habitación</h3>
+        <ol class="pasos">
+          <li>Ve a <span class="pantalla">Nueva Venta</span>.</li>
+          <li>Selecciona el tipo <strong>Habitación</strong>.</li>
+          <li>Elige la habitación disponible y el tiempo de estadía.</li>
+          <li>El precio se calcula automáticamente.</li>
+          <li>Selecciona el método de pago (efectivo, débito, crédito u otro).</li>
+          <li>Haz clic en <strong>Registrar Venta</strong>.</li>
+          <li>Se imprimirá o mostrará el comprobante. Puedes imprimirlo con el botón correspondiente.</li>
+        </ol>
+      </div>
+
+      <div class="subseccion">
+        <h3>Venta de productos (minimarket)</h3>
+        <ol class="pasos">
+          <li>Ve a <span class="pantalla">Nueva Venta</span>.</li>
+          <li>Selecciona el tipo <strong>Producto</strong>.</li>
+          <li>Busca el producto escribiendo su nombre, o escanea el código de barras.</li>
+          <li>Agrega los productos al carro. Puedes ajustar la cantidad con los botones + y −.</li>
+          <li>Selecciona el método de pago.</li>
+          <li>Haz clic en <strong>Registrar Venta</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="alerta alerta-info">
+        <span>💡</span>
+        <div><strong>Escáner de código de barras:</strong> Si tienes un lector conectado, solo apunta al producto y escanea. El sistema lo agrega automáticamente.</div>
+      </div>
+
+      <div class="subseccion">
+        <h3>Anular una venta</h3>
+        <ol class="pasos">
+          <li>Ve a <span class="pantalla">Historial</span>.</li>
+          <li>Busca la venta que deseas anular.</li>
+          <li>Haz clic en los tres puntos o en el ícono de anular.</li>
+          <li>El sistema pedirá la <strong>clave de jefe</strong> para confirmar. Solo el jefe puede autorizar anulaciones.</li>
+        </ol>
+        <div class="alerta alerta-peligro">
+          <span>🚫</span>
+          <div><strong>Importante:</strong> Al anular una venta se notifica al jefe por correo electrónico automáticamente. No anules ventas sin autorización.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 5: HISTORIAL -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <span>5</span>
+        <span>Historial de ventas</span>
+      </div>
+
+      <p style="margin-bottom: 12px; color: #4a5568;">En <span class="pantalla">Historial</span> puedes revisar todas las ventas registradas, filtrar por fecha, ver el detalle de cada una e imprimir comprobantes.</p>
+
+      <table>
+        <tr>
+          <th>Función</th>
+          <th>Cómo usarla</th>
+        </tr>
+        <tr>
+          <td>Ver ventas del día</td>
+          <td>Por defecto muestra el día actual</td>
+        </tr>
+        <tr>
+          <td>Filtrar por fecha</td>
+          <td>Usa el selector de fecha en la parte superior</td>
+        </tr>
+        <tr>
+          <td>Ver detalle</td>
+          <td>Haz clic en cualquier venta para ver los ítems</td>
+        </tr>
+        <tr>
+          <td>Imprimir comprobante</td>
+          <td>Botón de impresora dentro del detalle</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- SECCIÓN 6: CIERRE DE TURNO -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <span>6</span>
+        <span>Cerrar turno y hacer el arqueo</span>
+      </div>
+
+      <div class="alerta alerta-aviso">
+        <span>⚠️</span>
+        <div><strong>Esto es importante:</strong> Al terminar tu jornada debes cerrar el turno. El sistema te pedirá contar el dinero en caja y compararlo con lo que el sistema calculó.</div>
+      </div>
+
+      <div class="subseccion">
+        <h3>Pasos para cerrar el turno</h3>
+        <ol class="pasos">
+          <li>Ve a <span class="pantalla">Cerrar Turno</span> en el menú.</li>
+          <li>Verás un resumen de tus ventas del turno: total esperado por efectivo, débito, crédito, etc.</li>
+          <li>Cuenta físicamente el dinero en caja.</li>
+          <li>Ingresa el monto real que tienes en cada método de pago.</li>
+          <li>El sistema calculará si hay diferencia (sobrante o faltante).</li>
+          <li>Escribe una observación si hay diferencia.</li>
+          <li>Haz clic en <strong>Cerrar Turno</strong>.</li>
+          <li>Se enviará un resumen al correo del jefe automáticamente.</li>
+        </ol>
+      </div>
+
+      <div class="alerta alerta-peligro">
+        <span>🚫</span>
+        <div><strong>Diferencia mayor a $5.000:</strong> Si el sistema detecta una diferencia importante entre el dinero esperado y el contado, se enviará una alerta automática al jefe. Asegúrate de contar bien antes de cerrar.</div>
+      </div>
+
+      <div class="alerta alerta-exito">
+        <span>✅</span>
+        <div><strong>Después del cierre:</strong> Una vez cerrado el turno, si necesitas seguir trabajando debes volver a iniciar sesión. Se abrirá un nuevo turno automáticamente.</div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 7: PANEL JEFE -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <span>7</span>
+        <span>Panel del jefe</span>
+        <span class="badge">SOLO JEFE</span>
+      </div>
+
+      <p style="margin-bottom: 14px; color: #4a5568;">El jefe tiene acceso a un panel especial en <span class="pantalla">Admin</span> que se actualiza cada 30 segundos automáticamente. Desde ahí puede ver todo lo que pasa en el hostal en tiempo real, aunque esté en casa.</p>
+
+      <div class="grid2">
+        <div class="card">
+          <h4>📡 Información en tiempo real</h4>
+          <ul>
+            <li>Total vendido hoy</li>
+            <li>Ventas de la semana</li>
+            <li>Cajeros trabajando ahora</li>
+            <li>Habitaciones ocupadas con hora de salida</li>
+            <li>Alertas de habitaciones vencidas</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>📧 Funciones de correo</h4>
+          <ul>
+            <li>Botón "Enviar resumen del día" para recibir reporte al instante</li>
+            <li>Resumen automático cada noche a las 23:30</li>
+            <li>Alerta si se anula una venta</li>
+            <li>Alerta si hay diferencia grande en el arqueo</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="subseccion">
+        <h3>Secciones exclusivas del jefe</h3>
+        <table>
+          <tr>
+            <th>Sección</th>
+            <th>Para qué sirve</th>
+          </tr>
+          <tr>
+            <td><span class="pantalla">Admin</span></td>
+            <td>Ver el estado general del hostal en tiempo real</td>
+          </tr>
+          <tr>
+            <td><span class="pantalla">Gestión de Habitaciones</span></td>
+            <td>Agregar, editar o deshabilitar habitaciones</td>
+          </tr>
+          <tr>
+            <td><span class="pantalla">Inventario</span></td>
+            <td>Agregar stock de productos del minimarket</td>
+          </tr>
+          <tr>
+            <td><span class="pantalla">Usuarios</span></td>
+            <td>Crear, editar o desactivar cajeros</td>
+          </tr>
+          <tr>
+            <td><span class="pantalla">DTE</span></td>
+            <td>Gestionar documentos tributarios electrónicos (SII)</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 8: GESTIÓN USUARIOS -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <span>8</span>
+        <span>Gestión de usuarios</span>
+        <span class="badge">SOLO JEFE</span>
+      </div>
+
+      <div class="subseccion">
+        <h3>Crear un nuevo cajero</h3>
+        <ol class="pasos">
+          <li>Ve a <span class="pantalla">Usuarios</span> en el menú.</li>
+          <li>Haz clic en <strong>Nuevo usuario</strong>.</li>
+          <li>Escribe el nombre completo del cajero.</li>
+          <li>Asigna un PIN de 4 a 8 dígitos y confírmalo.</li>
+          <li>Selecciona el rol: <strong>Cajero</strong> o <strong>Jefe</strong>.</li>
+          <li>Haz clic en <strong>Guardar</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="subseccion">
+        <h3>Editar o cambiar PIN</h3>
+        <ol class="pasos">
+          <li>Ve a <span class="pantalla">Usuarios</span>.</li>
+          <li>Haz clic en el ícono de editar junto al usuario.</li>
+          <li>Modifica el nombre o el PIN (si quieres cambiar el PIN, escríbelo y confírmalo).</li>
+          <li>Guarda los cambios.</li>
+        </ol>
+      </div>
+
+      <div class="subseccion">
+        <h3>Desactivar un usuario</h3>
+        <ol class="pasos">
+          <li>Ve a <span class="pantalla">Usuarios</span>.</li>
+          <li>Haz clic en el ícono de desactivar junto al usuario.</li>
+          <li>Confirma la acción. El usuario ya no podrá iniciar sesión.</li>
+        </ol>
+        <div class="alerta alerta-info">
+          <span>💡</span>
+          <div>Los usuarios desactivados no se eliminan — sus ventas e historial quedan registrados. Se pueden reactivar si es necesario.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 9: FAQ -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <span>9</span>
+        <span>Preguntas frecuentes y problemas comunes</span>
+      </div>
+
+      <table>
+        <tr>
+          <th>Problema</th>
+          <th>Solución</th>
+        </tr>
+        <tr>
+          <td><strong>La página no carga o sale error</strong></td>
+          <td>Verifica que el computador del hostal esté encendido y conectado. Espera unos segundos y recarga la página (F5).</td>
+        </tr>
+        <tr>
+          <td><strong>Me pidió iniciar sesión de nuevo sin que yo saliera</strong></td>
+          <td>Otro cajero inició sesión con tu mismo usuario en otro dispositivo. Vuelve a entrar con tu PIN.</td>
+        </tr>
+        <tr>
+          <td><strong>No aparece mi nombre en la lista</strong></td>
+          <td>Pide al jefe que verifique que tu usuario esté activo en el sistema.</td>
+        </tr>
+        <tr>
+          <td><strong>El PIN dice incorrecto pero estoy seguro de que es correcto</strong></td>
+          <td>Puede que el PIN haya sido cambiado. Pide al jefe que lo resetee.</td>
+        </tr>
+        <tr>
+          <td><strong>La habitación quedó en "Ocupada" pero el huésped se fue</strong></td>
+          <td>Ve a Habitaciones, haz clic en esa habitación y selecciona "Liberar". Ponla en Aseo y luego en Libre.</td>
+        </tr>
+        <tr>
+          <td><strong>Registré una venta equivocada</strong></td>
+          <td>Ve al Historial, encuentra la venta y anúlala. Necesitas la clave del jefe para hacerlo.</td>
+        </tr>
+        <tr>
+          <td><strong>El comprobante no se imprime</strong></td>
+          <td>Verifica que la impresora esté encendida y conectada. Haz clic en el botón de imprimir e intenta nuevamente.</td>
+        </tr>
+        <tr>
+          <td><strong>El jefe no recibe los correos</strong></td>
+          <td>Contacta a Sebastián para revisar la configuración del correo del sistema.</td>
+        </tr>
+      </table>
+
+      <div class="alerta alerta-info">
+        <span>📞</span>
+        <div><strong>Soporte técnico:</strong> Para cualquier problema que no puedas resolver, contacta a <strong>Sebastián</strong>, quien administra el sistema.</div>
+      </div>
+    </div>
+
+  </div><!-- /contenido -->
+
+  <!-- PIE -->
+  <div class="pie">
+    Sistema Llavero · Hostal Mi Maravilla · La Serena, Chile · 2026<br>
+    Manual de uso para personal operativo — versión 1.0
+  </div>
+
+</div>
+</body>
+</html>

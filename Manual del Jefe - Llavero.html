@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual del Jefe · Sistema Llavero</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #1a1a2e;
+      background: #f5f5f5;
+    }
+
+    .page {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+    }
+
+    /* ====== PORTADA ====== */
+    .portada {
+      background: linear-gradient(135deg, #0f3460 0%, #16213e 60%, #1a1a2e 100%);
+      color: white;
+      padding: 70px 60px 50px;
+      text-align: center;
+    }
+
+    .portada .icono { font-size: 60px; margin-bottom: 16px; }
+
+    .portada h1 {
+      font-size: 38px;
+      font-weight: 800;
+      color: #c9a96e;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    .portada .subtitulo {
+      font-size: 15px;
+      color: #90cdf4;
+      margin-bottom: 10px;
+    }
+
+    .portada .para {
+      display: inline-block;
+      background: rgba(201,169,110,0.15);
+      border: 1px solid rgba(201,169,110,0.4);
+      color: #c9a96e;
+      padding: 6px 20px;
+      border-radius: 100px;
+      font-size: 13px;
+      margin-bottom: 28px;
+      letter-spacing: 1px;
+    }
+
+    .portada .hostal {
+      font-size: 12px;
+      color: #4a5568;
+      border-top: 1px solid #2d3748;
+      padding-top: 18px;
+    }
+
+    /* ====== INTRO DESTACADA ====== */
+    .intro {
+      background: linear-gradient(135deg, #ebf8ff, #e6fffa);
+      border-left: 5px solid #3182ce;
+      padding: 22px 28px;
+      margin: 0;
+    }
+
+    .intro h2 {
+      font-size: 15px;
+      color: #2b6cb0;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .intro p {
+      color: #2c5282;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    /* ====== CONTENIDO ====== */
+    .contenido { padding: 36px 50px; }
+
+    .seccion { margin-bottom: 38px; page-break-inside: avoid; }
+
+    .seccion-titulo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #0f3460;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .seccion-titulo .num {
+      background: #c9a96e;
+      color: #0f3460;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .subseccion { margin-bottom: 22px; page-break-inside: avoid; }
+
+    .subseccion h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f3460;
+      margin-bottom: 10px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #bee3f8;
+      display: inline-block;
+    }
+
+    p { color: #4a5568; margin-bottom: 10px; }
+
+    /* ====== PASOS ====== */
+    .pasos { list-style: none; counter-reset: paso; }
+
+    .pasos li {
+      counter-increment: paso;
+      display: flex;
+      gap: 12px;
+      margin-bottom: 9px;
+      align-items: flex-start;
+    }
+
+    .pasos li::before {
+      content: counter(paso);
+      min-width: 24px;
+      height: 24px;
+      background: #0f3460;
+      color: #c9a96e;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ====== ALERTAS ====== */
+    .alerta {
+      display: flex;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 12.5px;
+    }
+
+    .alerta-info    { background: #ebf8ff; border-left: 4px solid #3182ce; color: #1a365d; }
+    .alerta-aviso   { background: #fffbeb; border-left: 4px solid #d69e2e; color: #744210; }
+    .alerta-peligro { background: #fff5f5; border-left: 4px solid #e53e3e; color: #742a2a; }
+    .alerta-exito   { background: #f0fff4; border-left: 4px solid #38a169; color: #1c4532; }
+
+    /* ====== TABLA ====== */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 12.5px; }
+    th { background: #0f3460; color: #c9a96e; padding: 8px 12px; text-align: left; font-size: 11px; letter-spacing: 0.5px; }
+    td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    tr:nth-child(even) td { background: #f7fafc; }
+
+    /* ====== CHIP ====== */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      background: #2d3748;
+      color: #c9a96e;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: monospace;
+    }
+
+    /* ====== GRID ====== */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+
+    .card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px;
+      page-break-inside: avoid;
+    }
+
+    .card h4 { font-size: 12px; font-weight: 700; color: #2d3748; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+
+    .card ul { list-style: none; font-size: 12px; }
+    .card ul li { padding: 3px 0; color: #4a5568; display: flex; gap: 6px; }
+    .card ul li::before { content: '→'; color: #c9a96e; flex-shrink: 0; }
+
+    /* ====== MÉTRICA GRANDE ====== */
+    .metrica-box {
+      background: #f7fafc;
+      border: 1px solid #bee3f8;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      page-break-inside: avoid;
+    }
+
+    .metrica-box .valor {
+      font-size: 28px;
+      font-weight: 800;
+      color: #2b6cb0;
+      line-height: 1.2;
+    }
+
+    .metrica-box .etiqueta {
+      font-size: 10px;
+      font-weight: 700;
+      color: #718096;
+      letter-spacing: 1px;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .metrica-box .desc {
+      font-size: 11px;
+      color: #a0aec0;
+      margin-top: 4px;
+    }
+
+    /* ====== ÍNDICE ====== */
+    .indice {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 32px;
+    }
+
+    .indice h2 { font-size: 11px; font-weight: 700; color: #718096; letter-spacing: 1px; margin-bottom: 12px; text-transform: uppercase; }
+
+    .indice ol { list-style: none; counter-reset: idx; }
+    .indice ol li {
+      counter-increment: idx;
+      padding: 4px 0;
+      color: #2d3748;
+      font-size: 13px;
+      display: flex;
+      gap: 10px;
+    }
+    .indice ol li::before { content: counter(idx) '.'; color: #c9a96e; font-weight: 700; min-width: 18px; }
+
+    /* ====== TIMELINE CORREO ====== */
+    .timeline { list-style: none; margin-bottom: 14px; }
+    .timeline li {
+      display: flex;
+      gap: 14px;
+      padding-bottom: 16px;
+      position: relative;
+    }
+    .timeline li:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 32px;
+      width: 2px;
+      height: calc(100% - 16px);
+      background: #bee3f8;
+    }
+    .timeline .hora {
+      min-width: 50px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #2b6cb0;
+      background: #ebf8ff;
+      border: 1px solid #bee3f8;
+      border-radius: 6px;
+      padding: 4px 6px;
+      text-align: center;
+      height: fit-content;
+      flex-shrink: 0;
+    }
+    .timeline .icono {
+      width: 32px;
+      height: 32px;
+      background: #0f3460;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .timeline .texto strong { display: block; font-size: 12.5px; color: #1a1a2e; }
+    .timeline .texto span { font-size: 11.5px; color: #718096; }
+
+    /* ====== PIE ====== */
+    .pie {
+      background: #0f3460;
+      color: #4a5568;
+      text-align: center;
+      padding: 20px;
+      font-size: 11px;
+    }
+
+    @media print {
+      body { background: white; font-size: 12px; }
+      .page { max-width: 100%; }
+      .portada { padding: 50px 40px 40px; }
+      .contenido { padding: 28px 40px; }
+      .seccion { page-break-inside: avoid; margin-bottom: 28px; }
+      .subseccion, .grid2, .grid3, .card { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- PORTADA -->
+  <div class="portada">
+    <div class="icono">👔</div>
+    <h1>LLAVERO</h1>
+    <p class="subtitulo">Sistema de Gestión · Hostal Mi Maravilla</p>
+    <div class="para">Manual del Jefe — Control remoto desde casa</div>
+    <div class="hostal">La Serena, Chile · 2026</div>
+  </div>
+
+  <!-- INTRO -->
+  <div class="intro">
+    <h2>¿Para qué sirve este manual?</h2>
+    <p>
+      Este manual es para <strong>usted como jefe del hostal</strong>. Le explica cómo ver en tiempo real lo que ocurre en el hostal desde su casa, cómo entender los correos que le llegará automáticamente, cómo administrar a su personal y cómo detectar problemas antes de que se agraven. No necesita estar físicamente en el hostal para tener todo bajo control.
+    </p>
+  </div>
+
+  <div class="contenido">
+
+    <!-- ÍNDICE -->
+    <div class="indice">
+      <h2>Contenido</h2>
+      <ol>
+        <li>Cómo acceder al sistema desde su casa</li>
+        <li>El Panel del Jefe — su vista de control</li>
+        <li>Correos automáticos que recibirá</li>
+        <li>Cómo interpretar el cierre de turno</li>
+        <li>Administrar a su personal (usuarios)</li>
+        <li>Gestionar habitaciones</li>
+        <li>Control del inventario (minimarket)</li>
+        <li>Qué hacer ante situaciones problemáticas</li>
+        <li>Resumen rápido — lo más importante</li>
+        <li>Configurar la impresora y el scanner (primera vez)</li>
+      </ol>
+    </div>
+
+    <!-- SECCIÓN 1: ACCESO -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <div class="num">1</div>
+        <span>Cómo acceder al sistema desde su casa</span>
+      </div>
+
+      <div class="subseccion">
+        <h3>Lo que necesita</h3>
+        <div class="grid2">
+          <div class="card">
+            <h4>✅ Usted necesita</h4>
+            <ul>
+              <li>Cualquier celular, tablet o computador</li>
+              <li>Conexión a internet (WiFi o datos)</li>
+              <li>La dirección web del sistema</li>
+              <li>Su nombre de usuario y PIN</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>🏨 El hostal necesita tener</h4>
+            <ul>
+              <li>El computador del hostal encendido</li>
+              <li>El programa "Llavero" funcionando</li>
+              <li>Conexión a internet activa</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="subseccion">
+        <h3>Pasos para entrar</h3>
+        <ol class="pasos">
+          <li>Abra el navegador en su celular o computador (Chrome, Safari o Edge).</li>
+          <li>Escriba la dirección web que le entregó Sebastián en la barra de arriba y presione Enter.</li>
+          <li>Verá la pantalla de inicio. Toque su nombre en la lista.</li>
+          <li>Ingrese su PIN de 4 dígitos.</li>
+          <li>Presione <strong>Ingresar</strong>. Quedará en el Panel Principal.</li>
+        </ol>
+      </div>
+
+      <div class="alerta alerta-info">
+        <span>💡</span>
+        <div><strong>Sesión segura:</strong> Si usted inicia sesión desde el celular mientras ya estaba conectado en otro dispositivo, la sesión anterior se cierra sola. Solo puede haber una sesión activa de su usuario a la vez.</div>
+      </div>
+
+      <div class="alerta alerta-aviso">
+        <span>⚠️</span>
+        <div><strong>Si el sistema no carga:</strong> El computador del hostal puede estar apagado o sin internet. Llame a alguien del hostal para que lo revise. El sistema solo funciona si ese computador está encendido y conectado.</div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: PANEL JEFE -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <div class="num">2</div>
+        <span>El Panel del Jefe — su vista de control</span>
+      </div>
+
+      <p>Después de entrar, vaya al menú y seleccione <span class="chip">Admin</span>. Este es su panel de control. <strong>Se actualiza solo cada 30 segundos</strong> sin que usted haga nada.</p>
+
+      <div class="subseccion">
+        <h3>Los números que verá</h3>
+        <div class="grid2">
+          <div class="metrica-box">
+            <div class="valor">$142.000</div>
+            <div class="etiqueta">Total Hoy</div>
+            <div class="desc">Todo lo vendido en el día actual</div>
+          </div>
+          <div class="metrica-box">
+            <div class="valor">$890.000</div>
+            <div class="etiqueta">Esta Semana</div>
+            <div class="desc">Suma de los últimos 7 días</div>
+          </div>
+        </div>
+
+        <table>
+          <tr>
+            <th>Indicador</th>
+            <th>Qué significa</th>
+            <th>Cuándo preocuparse</th>
+          </tr>
+          <tr>
+            <td><strong>Total Hoy</strong></td>
+            <td>Suma de todas las ventas del día</td>
+            <td>Si es muy bajo para un día normal</td>
+          </tr>
+          <tr>
+            <td><strong>Turnos Activos</strong></td>
+            <td>Cuántos cajeros están trabajando ahora mismo</td>
+            <td>Si es 0 y hay horario de atención</td>
+          </tr>
+          <tr>
+            <td><strong>Habitaciones Ocupadas</strong></td>
+            <td>Lista de habitaciones con huéspedes y su hora de salida</td>
+            <td>Si aparece ⚠️ rojo (tiempo vencido)</td>
+          </tr>
+          <tr>
+            <td><strong>DTE Pendientes</strong></td>
+            <td>Documentos tributarios que aún no se han emitido al SII</td>
+            <td>Si acumula más de 5</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="subseccion">
+        <h3>Alerta de habitación vencida</h3>
+        <p>Si una habitación aparece destacada en <strong style="color:#e53e3e">rojo con ⚠️</strong>, significa que el huésped debía haber salido pero la habitación sigue marcada como ocupada.</p>
+        <div class="alerta alerta-peligro">
+          <span>🚨</span>
+          <div><strong>Qué hacer:</strong> Llame al hostal e indique a su equipo que verifiquen si el huésped está aún en la habitación. Si ya se fue, deben liberar la habitación desde el sistema.</div>
+        </div>
+      </div>
+
+      <div class="subseccion">
+        <h3>Botón "Enviar resumen del día"</h3>
+        <p>En cualquier momento puede presionar este botón y recibirá un correo con el resumen completo del estado actual del hostal. Útil si quiere una foto rápida del día sin esperar al resumen automático de la noche.</p>
+      </div>
+
+      <div class="subseccion">
+        <h3>Estado general de habitaciones</h3>
+        <p>Al bajar en el panel verá un conteo de cuántas habitaciones están en cada estado:</p>
+        <div class="grid3">
+          <div class="card">
+            <h4>🟢 Libres</h4>
+            <ul><li>Disponibles para arrendar</li></ul>
+          </div>
+          <div class="card">
+            <h4>🔴 Ocupadas</h4>
+            <ul><li>Con huéspedes dentro</li></ul>
+          </div>
+          <div class="card">
+            <h4>🟠 En Aseo</h4>
+            <ul><li>Limpiándose tras salida</li></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: CORREOS -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <div class="num">3</div>
+        <span>Correos automáticos que recibirá</span>
+      </div>
+
+      <p>El sistema envía correos a su casilla <strong>hostalmimaravilla@gmail.com</strong> de forma automática. No tiene que hacer nada para recibirlos.</p>
+
+      <div class="subseccion">
+        <h3>¿Cuándo llegan?</h3>
+        <ul class="timeline">
+          <li>
+            <div class="hora">23:30</div>
+            <div class="icono">📊</div>
+            <div class="texto">
+              <strong>Resumen diario automático</strong>
+              <span>Cada noche a las 11:30 PM llega un resumen completo del día: total vendido, habitaciones usadas, turnos cerrados.</span>
+            </div>
+          </li>
+          <li>
+            <div class="hora">Al instante</div>
+            <div class="icono">🚫</div>
+            <div class="texto">
+              <strong>Alerta de venta anulada</strong>
+              <span>Cada vez que un cajero anule una venta, usted recibe un correo inmediatamente con el nombre del cajero, el monto y el detalle.</span>
+            </div>
+          </li>
+          <li>
+            <div class="hora">Al instante</div>
+            <div class="icono">⚠️</div>
+            <div class="texto">
+              <strong>Alerta de diferencia en arqueo</strong>
+              <span>Si al cerrar turno hay una diferencia mayor a $5.000 entre el dinero contado y el esperado, recibe alerta de inmediato.</span>
+            </div>
+          </li>
+          <li>
+            <div class="hora">Manual</div>
+            <div class="icono">📧</div>
+            <div class="texto">
+              <strong>Resumen bajo pedido</strong>
+              <span>Cuando usted presiona "Enviar resumen del día" en el panel, recibe el reporte al instante.</span>
+            </div>
+          </li>
+          <li>
+            <div class="hora">Al cierre</div>
+            <div class="icono">📋</div>
+            <div class="texto">
+              <strong>Arqueo de turno</strong>
+              <span>Cada vez que un cajero cierra su turno, usted recibe el detalle del arqueo con el PDF adjunto.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="subseccion">
+        <h3>Cómo leer el correo de arqueo de turno</h3>
+        <table>
+          <tr>
+            <th>Campo del correo</th>
+            <th>Qué significa</th>
+          </tr>
+          <tr>
+            <td><strong>Cajero</strong></td>
+            <td>Quién cerró el turno</td>
+          </tr>
+          <tr>
+            <td><strong>Total ventas</strong></td>
+            <td>Suma de todas las ventas registradas en ese turno</td>
+          </tr>
+          <tr>
+            <td><strong>Efectivo esperado</strong></td>
+            <td>Cuánto efectivo debería haber según el sistema</td>
+          </tr>
+          <tr>
+            <td><strong>Efectivo contado</strong></td>
+            <td>Lo que el cajero dijo tener en caja</td>
+          </tr>
+          <tr>
+            <td><strong>Diferencia</strong></td>
+            <td>La resta entre ambos. Ideal = $0. Si es negativo, falta dinero. Si es positivo, sobra.</td>
+          </tr>
+          <tr>
+            <td><strong>Observaciones</strong></td>
+            <td>Lo que el cajero escribió para explicar diferencias</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="alerta alerta-aviso">
+        <span>⚠️</span>
+        <div><strong>Diferencia en arqueo:</strong> Una diferencia pequeña (menos de $500) puede ser un error de conteo. Una diferencia grande o recurrente en el mismo cajero merece conversación. El sistema le guarda el registro histórico.</div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 4: CIERRE DE TURNO -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <div class="num">4</div>
+        <span>Cómo interpretar el cierre de turno</span>
+      </div>
+
+      <p>Cada cajero debe cerrar su turno al terminar su jornada. Esto genera el arqueo de caja. Como jefe, usted no cierra turnos ajenos, pero sí los recibe por correo y puede verlos desde el panel.</p>
+
+      <div class="grid2">
+        <div class="card">
+          <h4>✅ Turno cerrado correctamente</h4>
+          <ul>
+            <li>Llega el correo de arqueo</li>
+            <li>Diferencia de $0 o muy baja</li>
+            <li>El cajero aparece "Sin turno" en el panel</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>🚨 Señales de alerta</h4>
+          <ul>
+            <li>Diferencia mayor a $5.000</li>
+            <li>Turno abierto toda la noche sin cerrar</li>
+            <li>Venta anulada sin explicación</li>
+            <li>Diferencias repetidas del mismo cajero</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="alerta alerta-info">
+        <span>💡</span>
+        <div><strong>Turno sin cerrar:</strong> Si un cajero se va y no cerró su turno, en el panel admin verá su nombre en "Turnos activos" con muchas horas. Llámele para que lo cierre, o contáctese con Sebastián para cerrarlo de emergencia.</div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 5: USUARIOS -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <div class="num">5</div>
+        <span>Administrar a su personal (usuarios)</span>
+      </div>
+
+      <p>Vaya al menú y seleccione <span class="chip">Usuarios</span>. Desde aquí usted controla quién puede entrar al sistema.</p>
+
+      <div class="subseccion">
+        <h3>Agregar un cajero nuevo</h3>
+        <ol class="pasos">
+          <li>Haga clic en <strong>Nuevo usuario</strong>.</li>
+          <li>Escriba el nombre completo del cajero.</li>
+          <li>Cree un PIN de 4 a 8 dígitos y escríbalo dos veces para confirmarlo.</li>
+          <li>Seleccione el rol: <strong>Cajero</strong> (lo normal) o <strong>Jefe</strong> (solo para personas de confianza).</li>
+          <li>Guarde. El cajero ya puede iniciar sesión.</li>
+        </ol>
+        <div class="alerta alerta-aviso">
+          <span>⚠️</span>
+          <div>Anote el PIN en un lugar seguro y entrégueselo personalmente al cajero. El sistema no puede mostrar PINes una vez creados.</div>
+        </div>
+      </div>
+
+      <div class="subseccion">
+        <h3>Cambiar el PIN de un cajero</h3>
+        <ol class="pasos">
+          <li>En la lista de usuarios, haga clic en el ícono de editar ✏️ junto al cajero.</li>
+          <li>Ingrese el nuevo PIN y confírmelo.</li>
+          <li>Guarde. El cajero deberá usar el nuevo PIN desde ese momento.</li>
+        </ol>
+      </div>
+
+      <div class="subseccion">
+        <h3>Desactivar un cajero</h3>
+        <p>Si un cajero ya no trabaja con usted, desactívelo para que no pueda entrar al sistema.</p>
+        <ol class="pasos">
+          <li>Haga clic en el ícono de desactivar 🚫 junto al cajero.</li>
+          <li>Confirme la acción.</li>
+          <li>El cajero no podrá entrar más. Sus ventas e historial quedan guardados.</li>
+        </ol>
+        <div class="alerta alerta-info">
+          <span>💡</span>
+          <div>Los cajeros desactivados no se borran. Si alguien vuelve a trabajar con usted, contáctese con Sebastián para reactivarlo.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 6: HABITACIONES -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <div class="num">6</div>
+        <span>Gestionar habitaciones</span>
+      </div>
+
+      <p>Vaya a <span class="chip">Gestión de Habitaciones</span>. Aquí puede crear habitaciones nuevas, cambiar sus precios o deshabilitar una que esté en mantención.</p>
+
+      <div class="subseccion">
+        <h3>Agregar una habitación nueva</h3>
+        <ol class="pasos">
+          <li>Haga clic en <strong>Nueva habitación</strong>.</li>
+          <li>Ingrese el número o nombre de la habitación (ej: "101" o "Suite A").</li>
+          <li>Seleccione el tipo (simple, doble, etc.) y sus características.</li>
+          <li>Ingrese el precio por hora y por noche.</li>
+          <li>Guarde.</li>
+        </ol>
+      </div>
+
+      <div class="subseccion">
+        <h3>Poner una habitación en mantención</h3>
+        <ol class="pasos">
+          <li>Encuentre la habitación en la lista.</li>
+          <li>Haga clic en editar y cambie su estado a <strong>Mantención</strong> o <strong>Deshabilitada</strong>.</li>
+          <li>Los cajeros verán que no está disponible y no podrán arrendarla.</li>
+        </ol>
+      </div>
+
+      <div class="alerta alerta-info">
+        <span>💡</span>
+        <div>Los cajeros también pueden cambiar habitaciones a "Aseo", pero <strong>solo usted</strong> puede marcarlas en Mantención o Deshabilitada.</div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 7: INVENTARIO -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <div class="num">7</div>
+        <span>Control del inventario (minimarket)</span>
+      </div>
+
+      <p>Vaya a <span class="chip">Inventario</span>. Aquí puede agregar productos nuevos, actualizar precios y registrar cuando llega mercadería.</p>
+
+      <div class="subseccion">
+        <h3>Agregar stock cuando llega mercadería</h3>
+        <ol class="pasos">
+          <li>Busque el producto en la lista.</li>
+          <li>Haga clic en <strong>Ingreso de stock</strong>.</li>
+          <li>Escriba la cantidad que llegó.</li>
+          <li>Confirme. El stock se suma automáticamente.</li>
+        </ol>
+      </div>
+
+      <div class="subseccion">
+        <h3>Agregar un producto nuevo</h3>
+        <ol class="pasos">
+          <li>Haga clic en <strong>Nuevo producto</strong>.</li>
+          <li>Escriba el nombre, el precio de venta y el stock inicial.</li>
+          <li>Si tiene un código de barras, ingréselo para que los cajeros puedan escanearlo.</li>
+          <li>Guarde.</li>
+        </ol>
+      </div>
+
+      <div class="alerta alerta-aviso">
+        <span>⚠️</span>
+        <div><strong>Stock bajo:</strong> El sistema no envía alerta automática de stock bajo todavía. Revise el inventario periódicamente o pídale a su equipo que le avise cuando algo esté por agotarse.</div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 8: SITUACIONES PROBLEMÁTICAS -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <div class="num">8</div>
+        <span>Qué hacer ante situaciones problemáticas</span>
+      </div>
+
+      <table>
+        <tr>
+          <th>Situación</th>
+          <th>Qué hacer usted</th>
+        </tr>
+        <tr>
+          <td><strong>Recibí correo de venta anulada</strong></td>
+          <td>Verifique si la anulación tenía sentido. Si no, llame al cajero que la hizo para pedir explicación. El correo indica quién anuló, cuánto y qué se anuló.</td>
+        </tr>
+        <tr>
+          <td><strong>Recibí alerta de diferencia grande en arqueo</strong></td>
+          <td>Revise el correo de arqueo: ¿falta o sobra dinero? Hable con el cajero. Si el faltante es recurrente, evalúe el acceso de esa persona.</td>
+        </tr>
+        <tr>
+          <td><strong>El panel muestra turno abierto de hace muchas horas</strong></td>
+          <td>Llame al hostal para que el cajero cierre su turno. Si es urgente, llame a Sebastián.</td>
+        </tr>
+        <tr>
+          <td><strong>Habitación con ⚠️ tiempo vencido</strong></td>
+          <td>Llame al hostal para que liberen o extiendan la habitación. Si el huésped ya se fue, deben liberarla en el sistema.</td>
+        </tr>
+        <tr>
+          <td><strong>Un cajero no recuerda su PIN</strong></td>
+          <td>Vaya a Usuarios → editar → asígnele un PIN nuevo. Entrégueselo.</td>
+        </tr>
+        <tr>
+          <td><strong>El sistema no carga desde mi casa</strong></td>
+          <td>Verifique que el computador del hostal esté encendido y con internet. Si todo está bien y no carga, llame a Sebastián.</td>
+        </tr>
+        <tr>
+          <td><strong>No me llegan los correos automáticos</strong></td>
+          <td>Revise la carpeta de spam o correo no deseado. Si no está ahí, llame a Sebastián para revisar la configuración.</td>
+        </tr>
+        <tr>
+          <td><strong>Quiero ver las ventas de un día anterior</strong></td>
+          <td>Vaya a <span class="chip">Historial</span> y use el filtro de fecha para ver las ventas del día que quiera.</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- SECCIÓN 9: RESUMEN RÁPIDO -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <div class="num">9</div>
+        <span>Resumen rápido — lo más importante</span>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h4>📱 Su rutina diaria recomendada</h4>
+          <ul>
+            <li>Abra el panel Admin en su celular por la mañana</li>
+            <li>Verifique que haya turnos activos en horario de trabajo</li>
+            <li>Revise las habitaciones ocupadas y sus horas de salida</li>
+            <li>Lea el resumen nocturno que llega a las 23:30</li>
+            <li>Revise el correo de cada arqueo de turno</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>🚨 Señales que requieren acción</h4>
+          <ul>
+            <li>⚠️ Habitación en rojo con tiempo vencido</li>
+            <li>📧 Correo de venta anulada inesperada</li>
+            <li>📧 Correo de diferencia mayor a $5.000</li>
+            <li>Turnos abiertos fuera del horario laboral</li>
+            <li>Panel no actualiza (posible caída del sistema)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="alerta alerta-exito">
+        <span>✅</span>
+        <div><strong>Lo que NO tiene que hacer:</strong> No necesita estar en el hostal para controlar todo. Con el panel y los correos automáticos, tiene visibilidad completa desde cualquier lugar. Solo vaya si hay una situación que realmente lo requiera.</div>
+      </div>
+
+      <div style="margin-top: 20px; padding: 16px; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <p style="font-size: 12px; color: #718096; text-align: center; margin: 0;">
+          <strong style="color: #2d3748;">Contacto de soporte técnico:</strong><br>
+          Sebastián Cruchaga · <strong>scruchagaq@gmail.com</strong><br>
+          Para problemas del sistema que no pueda resolver con este manual.
+        </p>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 10: HARDWARE -->
+    <div class="seccion">
+      <div class="seccion-titulo">
+        <div class="num">10</div>
+        <span>Configurar la impresora y el scanner (primera vez)</span>
+      </div>
+
+      <p>Esta configuración se hace <strong>una sola vez</strong> cuando se instala el sistema. Después de esto, todo funciona automáticamente cada vez que los cajeros usen el programa.</p>
+
+      <!-- SCANNER -->
+      <div class="subseccion">
+        <h3>Pistola lectora de códigos de barra</h3>
+        <div class="alerta alerta-exito">
+          <span>✅</span>
+          <div><strong>No requiere configuración.</strong> Solo conecte la pistola al puerto USB del computador. Windows la reconoce automáticamente como si fuera un teclado. El sistema Llavero ya está preparado para recibirla.</div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <h4>🏪 En modo minimarket</h4>
+            <ul>
+              <li>El cajero apunta la pistola al producto</li>
+              <li>Se escanea el código y el producto se agrega solo al carro</li>
+              <li>No hay que tipear nada</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>🏨 En modo hostal</h4>
+            <ul>
+              <li>Si una habitación tiene código de barras en la puerta, se puede escanear para seleccionarla</li>
+              <li>También funciona para buscar productos adicionales</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- IMPRESORA -->
+      <div class="subseccion">
+        <h3>Impresora térmica 58mm</h3>
+        <p>La impresora imprime los comprobantes de venta y de cierre de turno en papel de rollo angosto (58mm). Necesita dos configuraciones iniciales: una en Windows y otra en el navegador.</p>
+
+        <div class="alerta alerta-aviso">
+          <span>⚠️</span>
+          <div>Esta configuración la debe hacer <strong>Sebastián o alguien con acceso al computador del hostal</strong> la primera vez que se instale la impresora. Después no hay que volver a hacerlo.</div>
+        </div>
+      </div>
+
+      <div class="subseccion">
+        <h3>Paso 1 — Instalar la impresora en Windows</h3>
+        <ol class="pasos">
+          <li>Conecte la impresora al computador con el cable USB y enciéndala.</li>
+          <li>Windows debería instalarla automáticamente en 1-2 minutos. Aparecerá una notificación diciendo "Dispositivo listo".</li>
+          <li>Si no aparece sola, vaya a <strong>Inicio → Configuración → Bluetooth y dispositivos → Impresoras y escáneres → Agregar impresora</strong>.</li>
+          <li>Seleccione la impresora térmica de la lista y haga clic en <strong>Agregar</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="subseccion">
+        <h3>Paso 2 — Configurar el tamaño de papel (58mm)</h3>
+        <ol class="pasos">
+          <li>Vaya a <strong>Inicio → Configuración → Bluetooth y dispositivos → Impresoras y escáneres</strong>.</li>
+          <li>Haga clic en la impresora térmica.</li>
+          <li>Seleccione <strong>Preferencias de impresora</strong>.</li>
+          <li>Busque la opción de tamaño de papel y seleccione <strong>58mm</strong> o <strong>"Roll Paper 58 x 40mm"</strong> (el nombre exacto depende del modelo).</li>
+          <li>Haga clic en <strong>Aplicar</strong> y luego en <strong>Aceptar</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="subseccion">
+        <h3>Paso 3 — Configurar el navegador (Chrome o Edge)</h3>
+        <p>Esta configuración se hace la <strong>primera vez que se imprime</strong> desde el sistema. El navegador la recuerda para siempre.</p>
+        <ol class="pasos">
+          <li>En el sistema Llavero, realice una venta de prueba y haga clic en <strong>"Imprimir 58mm"</strong>.</li>
+          <li>Se abrirá el diálogo de impresión del navegador.</li>
+          <li>En <strong>Destino / Impresora</strong>, seleccione la impresora térmica.</li>
+          <li>Haga clic en <strong>"Más opciones"</strong> o <strong>"Configuración avanzada"</strong>.</li>
+          <li>Configure lo siguiente:
+            <table style="margin-top:8px">
+              <tr><th>Opción</th><th>Valor que debe poner</th></tr>
+              <tr><td>Márgenes</td><td><strong>Ninguno</strong></td></tr>
+              <tr><td>Encabezados y pies de página</td><td><strong>Desactivado</strong></td></tr>
+              <tr><td>Escala</td><td><strong>100%</strong> (sin ajuste automático)</td></tr>
+            </table>
+          </li>
+          <li>Haga clic en <strong>Imprimir</strong>. Debe salir el comprobante en el papel de rollo.</li>
+        </ol>
+        <div class="alerta alerta-exito">
+          <span>✅</span>
+          <div>Desde ese momento Chrome o Edge recuerda esa configuración para esa impresora. Los cajeros solo presionan "Imprimir 58mm" y sale directo, sin tocar nada más.</div>
+        </div>
+      </div>
+
+      <div class="subseccion">
+        <h3>¿Qué hacer si el comprobante sale cortado o con texto muy pequeño?</h3>
+        <table>
+          <tr>
+            <th>Problema</th>
+            <th>Solución</th>
+          </tr>
+          <tr>
+            <td>El texto sale muy pequeño o ilegible</td>
+            <td>En el diálogo de impresión, verifique que la escala sea 100% y que el tamaño de papel sea 58mm en las preferencias de Windows.</td>
+          </tr>
+          <tr>
+            <td>El papel sale en blanco</td>
+            <td>El papel del rollo está al revés. El lado que imprime es el lado liso interior del rollo, no el exterior. Dé vuelta el rollo.</td>
+          </tr>
+          <tr>
+            <td>El texto se corta por los lados</td>
+            <td>Los márgenes no están en "Ninguno". Repita el paso 3 y asegúrese de desactivar los márgenes.</td>
+          </tr>
+          <tr>
+            <td>Imprime en la impresora equivocada</td>
+            <td>En el diálogo de impresión cambie manualmente el destino a la impresora térmica. Si ocurre seguido, establezca la térmica como impresora predeterminada en Windows.</td>
+          </tr>
+          <tr>
+            <td>La impresora no aparece en la lista</td>
+            <td>Verifique que el cable USB esté conectado y la impresora encendida. Reinicie el computador e intente de nuevo.</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="subseccion">
+        <h3>Establecer la impresora térmica como predeterminada (recomendado)</h3>
+        <p>Si en el hostal solo se usa esa impresora, conviene dejarla como predeterminada para que el diálogo de impresión la seleccione sola.</p>
+        <ol class="pasos">
+          <li>Vaya a <strong>Inicio → Configuración → Bluetooth y dispositivos → Impresoras y escáneres</strong>.</li>
+          <li>Haga clic en la impresora térmica.</li>
+          <li>Seleccione <strong>"Establecer como predeterminada"</strong>.</li>
+        </ol>
+      </div>
+
+    </div>
+
+  </div><!-- /contenido -->
+
+  <div class="pie">
+    Sistema Llavero · Hostal Mi Maravilla · La Serena, Chile · 2026<br>
+    Manual exclusivo para el administrador — versión 1.0
+  </div>
+
+</div>
+</body>
+</html>

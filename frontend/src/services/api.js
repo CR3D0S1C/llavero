@@ -18,8 +18,12 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
+      const tenia = !!localStorage.getItem('llavero_sesion')
       localStorage.removeItem('llavero_sesion')
-      window.location.href = '/'
+      if (tenia) {
+        sessionStorage.setItem('llavero_sesion_invalidada', '1')
+      }
+      window.location.href = '/llavero/'
     }
     return Promise.reject(err)
   }
