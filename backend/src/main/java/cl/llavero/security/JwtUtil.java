@@ -24,12 +24,13 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generarToken(String usuarioId, String nombre, String rol, String turnoId) {
+    public String generarToken(String usuarioId, String nombre, String rol, String turnoId, String sessionId) {
         return Jwts.builder()
                 .subject(usuarioId)
                 .claim("nombre", nombre)
                 .claim("rol", rol)
                 .claim("turnoId", turnoId)
+                .claim("sid", sessionId)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())
@@ -63,5 +64,9 @@ public class JwtUtil {
 
     public String getTurnoId(String token) {
         return parsearToken(token).get("turnoId", String.class);
+    }
+
+    public String getSessionId(String token) {
+        return parsearToken(token).get("sid", String.class);
     }
 }

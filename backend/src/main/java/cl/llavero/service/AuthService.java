@@ -49,11 +49,16 @@ public class AuthService {
                     return turnoRepository.save(nuevo);
                 });
 
+        String sessionId = java.util.UUID.randomUUID().toString();
+        usuario.setSessionId(sessionId);
+        usuarioRepository.save(usuario);
+
         String token = jwtUtil.generarToken(
                 usuario.getId().toString(),
                 usuario.getNombre(),
                 usuario.getRol().name(),
-                turno.getId().toString()
+                turno.getId().toString(),
+                sessionId
         );
 
         return new LoginResponse(

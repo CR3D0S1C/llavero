@@ -32,4 +32,7 @@ public class Usuario {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "session_id", length = 36)
+    private String sessionId;
 }

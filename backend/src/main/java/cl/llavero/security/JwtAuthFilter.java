@@ -1,5 +1,6 @@
 package cl.llavero.security;
 
+import cl.llavero.repository.UsuarioRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,14 +13,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final UsuarioRepository usuarioRepository;
 
-    public JwtAuthFilter(JwtUtil jwtUtil) {
+    public JwtAuthFilter(JwtUtil jwtUtil, UsuarioRepository usuarioRepository) {
         this.jwtUtil = jwtUtil;
+        this.usuarioRepository = usuarioRepository;
     }
 
     @Override
@@ -32,15 +36,23 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String token = header.substring(7);
             if (jwtUtil.esValido(token)) {
                 String usuarioId = jwtUtil.getUsuarioId(token);
-                String rol = jwtUtil.getRol(token);
-                String turnoId = jwtUtil.getTurnoId(token);
+                String sessionId = jwtUtil.getSessionId(token);
 
-                var auth = new UsernamePasswordAuthenticationToken(
-                        usuarioId,
-                        turnoId,
-                        List.of(new SimpleGrantedAuthority("ROLE_" + rol.toUpperCase()))
-                );
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                boolean sessionActiva = usuarioRepository
+                        .findById(UUID.fromString(usuarioId))
+                        .map(u -> sessionId != null && sessionId.equals(u.getSessionId()))
+                        .orElse(false);
+
+                if (sessionActiva) {
+                    String rol = jwtUtil.getRol(token);
+                    String turnoId = jwtUtil.getTurnoId(token);
+                    var auth = new UsernamePasswordAuthenticationToken(
+                            usuarioId,
+                            turnoId,
+                            List.of(new SimpleGrantedAuthority("ROLE_" + rol.toUpperCase()))
+                    );
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
             }
         }
 
