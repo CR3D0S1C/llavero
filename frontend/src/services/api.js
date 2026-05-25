@@ -71,6 +71,10 @@ export const marcarDteEmitido = (id) => api.put(`/dte/${id}/emitido`)
 export const marcarDteError = (id, mensaje) => api.put(`/dte/${id}/error`, { mensaje })
 
 // Admin
-export const getMetricas = () => api.get('/admin/metricas')
+export const getMetricas    = () => api.get('/admin/metricas')
+export const getUsuarios    = () => api.get('/admin/usuarios')
+export const crearUsuario   = (data) => api.post('/admin/usuarios', data)
+export const editarUsuario  = (id, data) => api.put(`/admin/usuarios/${id}`, data)
+export const desactivarUsuario = (id) => api.delete(`/admin/usuarios/${id}`)
 
 export default api

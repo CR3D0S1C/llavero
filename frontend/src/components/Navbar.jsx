@@ -20,6 +20,7 @@ const linksAdmin = [
   { to: '/inventario',  label: 'Inventario',              icon: '📥', desc: 'Stock, ingresos y movimientos' },
   { to: '/dte',         label: 'DTEs SII',                icon: '🧾', desc: 'Boletas y facturas pendientes' },
   { to: '/admin',       label: 'Métricas',                icon: '📈', desc: 'Resumen general del negocio' },
+  { to: '/usuarios',   label: 'Usuarios',                icon: '👤', desc: 'Cajeros y administradores' },
 ]
 
 export default function Navbar() {

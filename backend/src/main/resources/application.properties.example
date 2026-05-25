@@ -1,0 +1,42 @@
+# ===== BASE DE DATOS =====
+spring.datasource.url=jdbc:postgresql://localhost:5432/llavero
+spring.datasource.username=postgres
+spring.datasource.password=postgres
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# ===== JPA / HIBERNATE =====
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.format_sql=true
+
+# ===== SERVIDOR =====
+server.port=8080
+
+# ===== JWT =====
+jwt.secret=CAMBIAR_POR_CLAVE_BASE64_DE_AL_MENOS_32_CHARS
+jwt.expiration=86400000
+
+# ===== LLAVERO =====
+llavero.codigo.supervisor=7777
+llavero.clave.anulacion=1271
+llavero.clave.operaciones=1331
+llavero.clave.deshabilitar=1221
+
+# ===== CORS =====
+cors.allowed-origins=http://localhost:3000
+
+# ===== EMAIL SMTP (Gmail) =====
+# Crear contraseña de app en: myaccount.google.com/apppasswords
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=tucorreo@gmail.com
+spring.mail.password=xxxx xxxx xxxx xxxx
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.connectiontimeout=5000
+spring.mail.properties.mail.smtp.timeout=5000
+
+# Destinatario del email de cierre de turno
+llavero.arqueo.email.destino=destino@gmail.com
+llavero.arqueo.email.remitente=Llavero <tucorreo@gmail.com>

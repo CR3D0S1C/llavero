@@ -146,30 +146,35 @@ textarea:focus-visible {
 .thermal .item   { margin-bottom: 4px; }
 .thermal .label-row { color: #000; font-size: 9pt; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
 
-/* Cuando se imprime, ocultar TODO menos el .print-only */
+/* El contenedor de impresión NO se muestra en pantalla */
+.print-only {
+  display: none;
+}
+
+/* Al imprimir: oculta TODO el árbol normal y deja solo el .print-only,
+   que está renderizado como hijo directo de <body> vía React Portal */
 @media print {
   @page {
     size: 58mm auto;
-    margin: 0;
+    margin: 2mm;
   }
   html, body {
     background: #fff !important;
+    color: #000 !important;
     margin: 0 !important;
     padding: 0 !important;
   }
-  body * {
-    visibility: hidden;
-  }
-  .print-only, .print-only * {
-    visibility: visible;
-  }
-  .print-only {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 58mm;
-  }
-  .no-print {
+  /* Oculta cualquier hijo directo de body que NO sea el print-only */
+  body > *:not(.print-only) {
     display: none !important;
+  }
+  /* Y muestra el print-only ocupando todo el ancho */
+  body > .print-only {
+    display: block !important;
+    background: #fff !important;
+    color: #000 !important;
+    width: auto !important;
+    height: auto !important;
+    position: static !important;
   }
 }

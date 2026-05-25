@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useModalClose } from '../hooks/useModalClose'
 
 const fmt = (n) => Number(n || 0).toLocaleString('es-CL')
@@ -16,11 +17,11 @@ const DENOMS = [
 
 export default function ComprobanteCierre({ resumen, arqueo, emailEnviado, onCerrar, onFinalizar }) {
   useModalClose(onCerrar, false) // No cerrar accidentalmente con ESC
-  const imprimir = () => setTimeout(() => window.print(), 80)
+  const imprimir = () => setTimeout(() => window.print(), 100)
 
   return (
     <>
-      <div className="modal-backdrop no-print">
+      <div className="modal-backdrop">
         <div className="modal-panel w-full max-w-md flex flex-col" style={{ maxHeight: '90vh' }}>
           <div className="p-5 border-b border-border">
             <h2 className="text-lg font-bold">✅ Turno cerrado</h2>
@@ -47,10 +48,13 @@ export default function ComprobanteCierre({ resumen, arqueo, emailEnviado, onCer
         </div>
       </div>
 
-      {/* Hermano del modal — no se ve en pantalla pero se imprime */}
-      <div className="print-only" aria-hidden="true">
-        <TicketCierre resumen={resumen} arqueo={arqueo} />
-      </div>
+      {/* Portal: hijo directo de <body> — solo visible al imprimir */}
+      {createPortal(
+        <div className="print-only" aria-hidden="true">
+          <TicketCierre resumen={resumen} arqueo={arqueo} />
+        </div>,
+        document.body
+      )}
     </>
   )
 }
