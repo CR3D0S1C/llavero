@@ -61,7 +61,7 @@ public class PdfService {
 
         return """
             <!DOCTYPE html>
-            <html><head><meta charset='UTF-8'><style>
+            <html><head><meta charset='UTF-8'/><style>
               @page { size: A4; margin: 18mm; }
               body { font-family: 'Helvetica', sans-serif; color: #1a1a1a; font-size: 11pt; line-height: 1.4; }
               h1 { font-size: 22pt; margin: 0 0 4px 0; letter-spacing: -0.5px; }

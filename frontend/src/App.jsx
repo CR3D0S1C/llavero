@@ -19,7 +19,7 @@ export default function App() {
   return (
     <SesionProvider>
       <ToastContainer />
-      <BrowserRouter>
+      <BrowserRouter basename="/llavero">
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

@@ -26,8 +26,9 @@ api.interceptors.response.use(
 )
 
 // Auth
-export const login = (nombre, pin) => api.post('/auth/login', { nombre, pin })
-export const logout = () => api.post('/auth/logout')
+export const login              = (nombre, pin) => api.post('/auth/login', { nombre, pin })
+export const logout             = () => api.post('/auth/logout')
+export const getUsuariosPublicos = () => api.get('/auth/usuarios')
 
 // Habitaciones
 export const getHabitaciones = () => api.get('/habitaciones')
@@ -71,10 +72,12 @@ export const marcarDteEmitido = (id) => api.put(`/dte/${id}/emitido`)
 export const marcarDteError = (id, mensaje) => api.put(`/dte/${id}/error`, { mensaje })
 
 // Admin
-export const getMetricas    = () => api.get('/admin/metricas')
-export const getUsuarios    = () => api.get('/admin/usuarios')
-export const crearUsuario   = (data) => api.post('/admin/usuarios', data)
-export const editarUsuario  = (id, data) => api.put(`/admin/usuarios/${id}`, data)
-export const desactivarUsuario = (id) => api.delete(`/admin/usuarios/${id}`)
+export const getMetricas        = () => api.get('/admin/metricas')
+export const getEstadoActual    = () => api.get('/admin/estado-actual')
+export const enviarResumenDia   = () => api.post('/admin/resumen-dia/enviar')
+export const getUsuarios        = () => api.get('/admin/usuarios')
+export const crearUsuario       = (data) => api.post('/admin/usuarios', data)
+export const editarUsuario      = (id, data) => api.put(`/admin/usuarios/${id}`, data)
+export const desactivarUsuario  = (id) => api.delete(`/admin/usuarios/${id}`)
 
 export default api

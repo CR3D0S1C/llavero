@@ -1,35 +1,17 @@
 package cl.llavero.config;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.resource.PathResourceResolver;
-
-import java.io.IOException;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/**")
-                .addResourceLocations("classpath:/static/")
-                .resourceChain(true)
-                .addResolver(new PathResourceResolver() {
-                    @Override
-                    protected Resource getResource(String resourcePath, Resource location) throws IOException {
-                        Resource resource = location.createRelative(resourcePath);
-                        // Si el archivo existe (JS, CSS, imágenes) lo sirve directamente.
-                        // Si no existe, devuelve index.html para que React Router maneje la ruta.
-                        if (resource.exists() && resource.isReadable()) {
-                            return resource;
-                        }
-                        return new ClassPathResource("/static/index.html");
-                    }
-                });
+        // Solo sirve los archivos físicos (JS, CSS, imágenes)
+        // Las rutas de React Router las maneja LlaveroSpaController
+        registry.addResourceHandler("/llavero/assets/**")
+                .addResourceLocations("classpath:/static/llavero/assets/");
     }
 }

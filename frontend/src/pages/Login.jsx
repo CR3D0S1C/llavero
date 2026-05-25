@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login } from '../services/api'
+import { login, getUsuariosPublicos } from '../services/api'
 import { useSesion } from '../context/SesionContext'
 import { toast } from '../utils/toast'
 
-const USUARIOS = ['Carlos Mendoza', 'Ana Torres', 'Luis Pérez']
-
 export default function Login() {
+  const [usuarios, setUsuarios] = useState([])
   const [nombre, setNombre] = useState('')
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
@@ -17,6 +16,10 @@ export default function Login() {
   useEffect(() => {
     if (sesion) navigate('/dashboard', { replace: true })
   }, [sesion, navigate])
+
+  useEffect(() => {
+    getUsuariosPublicos().then(r => setUsuarios(r.data)).catch(() => {})
+  }, [])
 
   // Soporte de teclado físico (números + backspace + Enter)
   useEffect(() => {
@@ -71,17 +74,17 @@ export default function Login() {
           <div>
             <label className="text-xs text-muted mb-2 block">USUARIO</label>
             <div className="grid grid-cols-1 gap-2">
-              {USUARIOS.map(u => (
+              {usuarios.map(u => (
                 <button
-                  key={u}
-                  onClick={() => { setNombre(u); setError('') }}
+                  key={u.nombre}
+                  onClick={() => { setNombre(u.nombre); setError('') }}
                   className={`py-2.5 px-4 rounded-lg border transition-all text-left text-sm font-medium ${
-                    nombre === u
+                    nombre === u.nombre
                       ? 'border-accent bg-accent/10 text-accent'
                       : 'border-border hover:border-gray-500 text-gray-300'
                   }`}
                 >
-                  {u}
+                  {u.nombre}
                 </button>
               ))}
             </div>

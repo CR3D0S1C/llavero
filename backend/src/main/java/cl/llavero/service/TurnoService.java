@@ -182,8 +182,13 @@ public class TurnoService {
         turno.setFin(LocalDateTime.now());
         turnoRepository.save(turno);
 
-        // Enviar email con PDF adjunto (async, no bloquea si falla)
+        // Email con PDF del arqueo
         emailService.enviarArqueoAsync(arqueo, resumen);
+
+        // Alerta separada si la diferencia supera $5.000
+        if (diferencia.abs().compareTo(java.math.BigDecimal.valueOf(5000)) >= 0) {
+            emailService.alertaDiferenciaArqueo(usuario.getNombre(), diferencia);
+        }
 
         return mapear(turno, true);
     }

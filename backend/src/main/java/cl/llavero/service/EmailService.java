@@ -1,5 +1,6 @@
 package cl.llavero.service;
 
+import cl.llavero.dto.EstadoActualResponse;
 import cl.llavero.dto.ResumenTurnoResponse;
 import cl.llavero.entity.ArqueoTurno;
 import jakarta.mail.internet.MimeMessage;
@@ -12,6 +13,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -123,6 +125,150 @@ public class EmailService {
     private String fmt(BigDecimal n) {
         if (n == null) return "0";
         return String.format("%,d", n.longValue()).replace(',', '.');
+    }
+
+    // ── Resumen diario ──────────────────────────────────────────────────────────
+
+    @Async
+    public void enviarResumenDiarioAsync(EstadoActualResponse estado) {
+        try {
+            enviarResumenDiario(estado);
+        } catch (Exception e) {
+            System.err.println("[EmailService] Error enviando resumen diario: " + e.getMessage());
+        }
+    }
+
+    public void enviarResumenDiario(EstadoActualResponse estado) {
+        if (!emailConfigurado()) return;
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(remitente);
+            helper.setTo(destino);
+            String fecha = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            helper.setSubject("Resumen del día — " + fecha + " · Llavero");
+            helper.setText(construirResumenHtml(estado, fecha), true);
+            mailSender.send(message);
+            System.out.println("[EmailService] Resumen diario enviado.");
+        } catch (Exception e) {
+            throw new RuntimeException("Error enviando resumen diario: " + e.getMessage(), e);
+        }
+    }
+
+    private String construirResumenHtml(EstadoActualResponse e, String fecha) {
+        String turnosHtml = e.getTurnosActivos().isEmpty() ? "<p style='color:#888'>Sin turnos abiertos</p>" :
+            e.getTurnosActivos().stream().map(t ->
+                "<tr><td>" + esc(t.getCajeroNombre()) + "</td>" +
+                "<td style='text-align:right'>" + t.getCantidadVentas() + " ventas</td>" +
+                "<td style='text-align:right;font-weight:bold'>$" + fmt(t.getTotalTurno()) + "</td></tr>"
+            ).collect(java.util.stream.Collectors.joining());
+
+        String habsHtml = e.getHabitacionesOcupadas().isEmpty() ? "<p style='color:#888'>Ninguna</p>" :
+            e.getHabitacionesOcupadas().stream().map(h ->
+                "<li><strong>Hab. " + esc(h.getNumero()) + "</strong> — " + esc(h.getTipo()) +
+                (h.getSalidaEstimada() != null ? " · Sale: " + h.getSalidaEstimada().format(DateTimeFormatter.ofPattern("HH:mm")) : "") +
+                (h.isVencida() ? " <span style='color:#dc2626'>⚠ VENCIDA</span>" : "") + "</li>"
+            ).collect(java.util.stream.Collectors.joining());
+
+        return """
+            <div style='font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:auto;color:#1a1a1a'>
+              <h2 style='margin:0 0 4px 0'>🔑 Resumen del día — Llavero</h2>
+              <p style='color:#666;margin:0 0 20px 0'>%s</p>
+
+              <div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:20px'>
+                <div style='font-size:13pt;color:#888;margin-bottom:4px'>TOTAL DEL DÍA</div>
+                <div style='font-size:26pt;font-weight:bold;color:#059669'>$%s</div>
+                <div style='color:#666;font-size:10pt'>%d ventas realizadas</div>
+              </div>
+
+              <h3 style='margin:0 0 8px 0'>Turnos del día</h3>
+              <table style='width:100%%;border-collapse:collapse;margin-bottom:20px'>
+                <tr style='background:#f5f5f5'><th style='text-align:left;padding:6px'>Cajero</th><th style='padding:6px'>Ventas</th><th style='padding:6px'>Recaudado</th></tr>
+                %s
+              </table>
+
+              <h3 style='margin:0 0 8px 0'>Habitaciones aún ocupadas</h3>
+              <ul style='margin:0 0 20px 0;padding-left:20px'>%s</ul>
+
+              %s
+
+              <p style='color:#888;font-size:11pt;margin-top:20px;border-top:1px solid #eee;padding-top:12px'>
+                Llavero · Sistema de gestión de hospedaje
+              </p>
+            </div>
+            """.formatted(
+                fecha,
+                fmt(e.getTotalDia()), e.getVentasDia(),
+                turnosHtml,
+                habsHtml,
+                e.getDtePendientes() > 0
+                    ? "<div style='background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px;margin-bottom:16px'>" +
+                      "⚠ <strong>" + e.getDtePendientes() + " DTE(s) pendiente(s)</strong> de emitir en SII MiPyme.</div>"
+                    : ""
+            );
+    }
+
+    // ── Alertas ─────────────────────────────────────────────────────────────────
+
+    @Async
+    public void alertaVentaAnulada(String cajeroNombre, BigDecimal monto, String detalle) {
+        if (!emailConfigurado()) return;
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(remitente);
+            helper.setTo(destino);
+            helper.setSubject("⚠ Venta anulada — $" + fmt(monto) + " · Llavero");
+            String html = """
+                <div style='font-family:Helvetica,Arial,sans-serif;max-width:500px;margin:auto'>
+                  <h2 style='color:#dc2626'>⚠ Venta Anulada</h2>
+                  <p><strong>Cajero:</strong> %s</p>
+                  <p><strong>Monto anulado:</strong> <span style='font-size:16pt;font-weight:bold'>$%s</span></p>
+                  <p><strong>Detalle:</strong> %s</p>
+                  <p><strong>Hora:</strong> %s</p>
+                  <p style='color:#888;font-size:11pt;margin-top:20px'>Llavero · Sistema de gestión de hospedaje</p>
+                </div>
+                """.formatted(esc(cajeroNombre), fmt(monto), esc(detalle),
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            helper.setText(html, true);
+            mailSender.send(message);
+        } catch (Exception ex) {
+            System.err.println("[EmailService] Error enviando alerta anulación: " + ex.getMessage());
+        }
+    }
+
+    @Async
+    public void alertaDiferenciaArqueo(String cajeroNombre, BigDecimal diferencia) {
+        if (!emailConfigurado() || diferencia.abs().compareTo(BigDecimal.valueOf(5000)) < 0) return;
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(remitente);
+            helper.setTo(destino);
+            helper.setSubject("⚠ Diferencia de caja — " + cajeroNombre + " · Llavero");
+            String signo = diferencia.signum() > 0 ? "Sobraron" : "Faltaron";
+            String html = """
+                <div style='font-family:Helvetica,Arial,sans-serif;max-width:500px;margin:auto'>
+                  <h2 style='color:#d97706'>⚠ Diferencia en Arqueo de Caja</h2>
+                  <p><strong>Cajero:</strong> %s</p>
+                  <p><strong>Diferencia:</strong> <span style='font-size:16pt;font-weight:bold;color:#dc2626'>%s $%s</span></p>
+                  <p><strong>Hora del cierre:</strong> %s</p>
+                  <p style='color:#888;font-size:11pt;margin-top:20px'>Revisa el arqueo completo en el PDF adjunto al email de cierre.</p>
+                </div>
+                """.formatted(esc(cajeroNombre), signo, fmt(diferencia.abs()),
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            helper.setText(html, true);
+            mailSender.send(message);
+        } catch (Exception ex) {
+            System.err.println("[EmailService] Error enviando alerta diferencia: " + ex.getMessage());
+        }
+    }
+
+    private boolean emailConfigurado() {
+        return mailSender != null
+                && mailHost != null && !mailHost.isBlank()
+                && mailUsername != null && !mailUsername.isBlank()
+                && destino != null && !destino.isBlank();
     }
 
     private String esc(String s) {

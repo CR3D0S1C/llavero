@@ -35,6 +35,7 @@ public class VentaService {
     private final DteQueueRepository dteQueueRepository;
     private final ProductoRepository productoRepository;
     private final ProductoService productoService;
+    private final EmailService emailService;
 
     public VentaService(VentaRepository ventaRepository,
                         VentaItemRepository itemRepository,
@@ -43,7 +44,8 @@ public class VentaService {
                         UsuarioRepository usuarioRepository,
                         DteQueueRepository dteQueueRepository,
                         ProductoRepository productoRepository,
-                        ProductoService productoService) {
+                        ProductoService productoService,
+                        EmailService emailService) {
         this.ventaRepository = ventaRepository;
         this.itemRepository = itemRepository;
         this.habitacionRepository = habitacionRepository;
@@ -52,6 +54,7 @@ public class VentaService {
         this.dteQueueRepository = dteQueueRepository;
         this.productoRepository = productoRepository;
         this.productoService = productoService;
+        this.emailService = emailService;
     }
 
     private LocalDateTime calcularSalida(String duracion, String earlyCheckin) {
@@ -222,7 +225,15 @@ public class VentaService {
         if (!claveAnulacion.equals(clave)) {
             throw new RuntimeException("Clave de anulación incorrecta");
         }
+        Venta venta = ventaRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
+        String cajero = venta.getUsuario() != null ? venta.getUsuario().getNombre() : "Desconocido";
+        BigDecimal monto = venta.getTotal();
+        String detalle = venta.getItems().stream()
+                .map(i -> i.getDescripcion())
+                .collect(Collectors.joining(", "));
         eliminar(id);
+        emailService.alertaVentaAnulada(cajero, monto, detalle);
     }
 
     @Transactional

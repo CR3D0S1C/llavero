@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hostal Mi Maravilla</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: #0a0a0a;
+      color: #fff;
+      font-family: 'Georgia', serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 52px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: normal;
+      letter-spacing: 2px;
+      color: #f5e6c8;
+      margin-bottom: 8px;
+    }
+
+    .tagline {
+      font-size: clamp(13px, 2vw, 16px);
+      color: #888;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 48px;
+    }
+
+    .divider {
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, #c9a96e, transparent);
+      margin: 0 auto 48px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(201, 169, 110, 0.1);
+      border: 1px solid rgba(201, 169, 110, 0.3);
+      border-radius: 100px;
+      padding: 12px 24px;
+      font-size: 14px;
+      color: #c9a96e;
+      letter-spacing: 1px;
+      margin-bottom: 48px;
+    }
+
+    .badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #c9a96e;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .desc {
+      max-width: 440px;
+      font-size: 15px;
+      line-height: 1.8;
+      color: #666;
+      margin-bottom: 48px;
+    }
+
+    .contact {
+      font-size: 13px;
+      color: #555;
+      letter-spacing: 1px;
+    }
+
+    .contact a {
+      color: #c9a96e;
+      text-decoration: none;
+    }
+
+    .contact a:hover {
+      text-decoration: underline;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 20px;
+      font-size: 11px;
+      color: #333;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">🏨</div>
+  <h1>Hostal Mi Maravilla</h1>
+  <p class="tagline">La Serena · Chile</p>
+
+  <div class="divider"></div>
+
+  <div class="badge">
+    <span class="dot"></span>
+    Sitio web en construcción
+  </div>
+
+  <p class="desc">
+    Estamos trabajando para ofrecerte una experiencia en línea tan acogedora
+    como nuestra hospitalidad. Muy pronto podrás conocernos, ver nuestras
+    habitaciones y hacer tu reserva aquí.
+  </p>
+
+  <p class="contact">
+    Consultas y reservas:
+    <a href="mailto:hostalmimaravilla@gmail.com">hostalmimaravilla@gmail.com</a>
+  </p>
+
+  <p class="footer">© 2026 Hostal Mi Maravilla · Todos los derechos reservados</p>
+
+</body>
+</html>
