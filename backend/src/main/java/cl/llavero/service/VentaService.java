@@ -153,7 +153,8 @@ public class VentaService {
         for (VentaItem item : items) {
             item.setVenta(venta);
         }
-        itemRepository.saveAll(items);
+        items = itemRepository.saveAll(items);
+        venta.setItems(new ArrayList<>(items));
 
         // Descontar stock de productos trackeados
         for (VentaItemRequest ir : request.getItems()) {
