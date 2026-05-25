@@ -35,5 +35,11 @@ public class VentaResponse {
     private String receptorCiudad;
     private String receptorEmail;
 
+    // Método de pago
+    private String metodoPago;
+    private BigDecimal montoPagado;
+    private BigDecimal vuelto;
+    private String codigoTransaccion;
+
     private List<VentaItemResponse> items;
 }

@@ -2,6 +2,7 @@ package cl.llavero.dto;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -22,4 +23,9 @@ public class VentaRequest {
     private String receptorComuna;
     private String receptorCiudad;
     private String receptorEmail;
+
+    // Método de pago
+    private String metodoPago;          // "efectivo" | "transferencia" | "debito" | "credito" | "otro"
+    private BigDecimal montoPagado;     // solo para efectivo (puede ser >= total para calcular vuelto)
+    private String codigoTransaccion;   // para transferencia / débito / crédito / otro
 }

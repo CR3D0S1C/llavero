@@ -84,6 +84,19 @@ public class Venta {
     @Column(name = "receptor_email", length = 150)
     private String receptorEmail;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "metodo_pago", columnDefinition = "varchar(20)")
+    private MetodoPago metodoPago;
+
+    @Column(name = "monto_pagado", precision = 12, scale = 2)
+    private BigDecimal montoPagado;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal vuelto;
+
+    @Column(name = "codigo_transaccion", length = 100)
+    private String codigoTransaccion;
+
     @OneToMany(mappedBy = "venta", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<VentaItem> items = new ArrayList<>();
 }

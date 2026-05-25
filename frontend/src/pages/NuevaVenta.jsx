@@ -190,7 +190,7 @@ export default function NuevaVenta() {
     ? (habitacionSel ? !!tarifaSel : items.length > 0)
     : items.length > 0
 
-  const confirmarVenta = async (tipoDte, receptor) => {
+  const confirmarVenta = async (tipoDte, receptor, pago) => {
     if (!puedeConfirmar) return
     setLoading(true)
     try {
@@ -211,6 +211,11 @@ export default function NuevaVenta() {
           receptorComuna: receptor.comuna,
           receptorCiudad: receptor.ciudad,
           receptorEmail: receptor.email,
+        } : {}),
+        ...(pago ? {
+          metodoPago: pago.metodoPago,
+          montoPagado: pago.montoPagado,
+          codigoTransaccion: pago.codigoTransaccion,
         } : {})
       }
       const res = await crearVenta(payload)
@@ -465,7 +470,7 @@ export default function NuevaVenta() {
       {showModal && (
         <ModalDTE
           total={total}
-          onConfirmar={(tipo, receptor) => { setShowModal(false); confirmarVenta(tipo, receptor) }}
+          onConfirmar={(tipo, receptor, pago) => { setShowModal(false); confirmarVenta(tipo, receptor, pago) }}
           onCancelar={() => setShowModal(false)}
         />
       )}

@@ -8,6 +8,14 @@ const TIPO_DTE_LABEL = {
   factura: 'Factura SII',
 }
 
+const METODO_LABEL = {
+  efectivo:      'Efectivo',
+  transferencia: 'Transferencia',
+  debito:        'Tarjeta Débito',
+  credito:       'Tarjeta Crédito',
+  otro:          'Otro',
+}
+
 export default function ComprobanteVenta({ venta, onCerrar, onContinuar }) {
   useModalClose(onCerrar)
   const imprimir = () => setTimeout(() => window.print(), 100)
@@ -116,6 +124,30 @@ function Ticket({ venta, fecha, hora }) {
         <span>TOTAL</span>
         <span>${fmt(venta.total)}</span>
       </div>
+
+      {venta.metodoPago && (
+        <>
+          <div className="sep" />
+          <div className="row sm">
+            <span>Forma de pago:</span>
+            <span className="bold">{METODO_LABEL[venta.metodoPago] || venta.metodoPago}</span>
+          </div>
+          {venta.metodoPago === 'efectivo' && venta.montoPagado != null && (
+            <>
+              <div className="row sm"><span>Recibido:</span><span>${fmt(venta.montoPagado)}</span></div>
+              {venta.vuelto != null && Number(venta.vuelto) > 0 && (
+                <div className="row sm bold"><span>Vuelto:</span><span>${fmt(venta.vuelto)}</span></div>
+              )}
+            </>
+          )}
+          {venta.metodoPago !== 'efectivo' && venta.codigoTransaccion && (
+            <div className="row sm">
+              <span>Cód. transacción:</span>
+              <span style={{ fontSize: '8pt' }}>{venta.codigoTransaccion}</span>
+            </div>
+          )}
+        </>
+      )}
 
       <div className="sep" />
       <div className="sm center">

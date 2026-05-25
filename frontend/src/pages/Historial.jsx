@@ -12,6 +12,14 @@ const FILTROS = [
   { label: 'Todo', value: 'todo' },
 ]
 
+const METODO_BADGE = {
+  efectivo:      { label: 'Efectivo',      icono: '💵', clase: 'bg-green-900/40 text-green-300' },
+  transferencia: { label: 'Transferencia', icono: '🏦', clase: 'bg-blue-900/40 text-blue-300' },
+  debito:        { label: 'Débito',        icono: '💳', clase: 'bg-cyan-900/40 text-cyan-300' },
+  credito:       { label: 'Crédito',       icono: '💳', clase: 'bg-purple-900/40 text-purple-300' },
+  otro:          { label: 'Otro',          icono: '📋', clase: 'bg-gray-700/40 text-gray-300' },
+}
+
 export default function Historial() {
   const [ventas, setVentas] = useState([])
   const [filtro, setFiltro] = useState('turno')
@@ -109,6 +117,22 @@ export default function Historial() {
                     {v.tipoDte === 'factura' && v.receptorRut && (
                       <div className="text-xs text-purple-400 mt-2">
                         📄 {v.receptorRazon} · {v.receptorRut}
+                      </div>
+                    )}
+                    {v.metodoPago && (
+                      <div className="flex items-center gap-2 mt-2 text-xs flex-wrap">
+                        <span className={`px-2 py-0.5 rounded-full font-semibold ${METODO_BADGE[v.metodoPago]?.clase || 'bg-gray-700/40 text-gray-300'}`}>
+                          {METODO_BADGE[v.metodoPago]?.icono} {METODO_BADGE[v.metodoPago]?.label || v.metodoPago}
+                        </span>
+                        {v.metodoPago === 'efectivo' && v.montoPagado != null && (
+                          <span className="text-muted">
+                            Recibió ${Number(v.montoPagado).toLocaleString('es-CL')}
+                            {Number(v.vuelto) > 0 && <> · Vuelto ${Number(v.vuelto).toLocaleString('es-CL')}</>}
+                          </span>
+                        )}
+                        {v.metodoPago !== 'efectivo' && v.codigoTransaccion && (
+                          <span className="text-muted font-mono">Ref: {v.codigoTransaccion}</span>
+                        )}
                       </div>
                     )}
                   </div>

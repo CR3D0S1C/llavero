@@ -118,6 +118,17 @@ public class VentaService {
             venta.setReceptorEmail(request.getReceptorEmail());
         }
 
+        // Método de pago
+        if (request.getMetodoPago() != null && !request.getMetodoPago().isBlank()) {
+            MetodoPago mp = MetodoPago.valueOf(request.getMetodoPago());
+            venta.setMetodoPago(mp);
+            if (mp == MetodoPago.efectivo && request.getMontoPagado() != null) {
+                venta.setMontoPagado(request.getMontoPagado());
+            } else if (request.getCodigoTransaccion() != null && !request.getCodigoTransaccion().isBlank()) {
+                venta.setCodigoTransaccion(request.getCodigoTransaccion().trim());
+            }
+        }
+
         BigDecimal total = BigDecimal.ZERO;
         List<VentaItem> items = new ArrayList<>();
 
@@ -148,6 +159,13 @@ public class VentaService {
         }
 
         venta.setTotal(total);
+
+        // Calcular vuelto si se pagó en efectivo
+        if (venta.getMetodoPago() == MetodoPago.efectivo && venta.getMontoPagado() != null) {
+            BigDecimal vuelto = venta.getMontoPagado().subtract(total);
+            venta.setVuelto(vuelto.signum() > 0 ? vuelto : BigDecimal.ZERO);
+        }
+
         venta = ventaRepository.save(venta);
 
         for (VentaItem item : items) {
@@ -308,6 +326,11 @@ public class VentaService {
 
         r.setDuracion(v.getDuracion());
         r.setSalidaEstimada(v.getSalidaEstimada());
+
+        if (v.getMetodoPago() != null) r.setMetodoPago(v.getMetodoPago().name());
+        r.setMontoPagado(v.getMontoPagado());
+        r.setVuelto(v.getVuelto());
+        r.setCodigoTransaccion(v.getCodigoTransaccion());
 
         dteQueueRepository.findByVentaId(v.getId())
                 .ifPresent(dte -> r.setDteEstado(dte.getEstado().name()));
