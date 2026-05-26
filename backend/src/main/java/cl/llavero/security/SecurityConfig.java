@@ -34,8 +34,11 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/booking/**").hasRole("HUESPED")
                         .requestMatchers("/api/**").authenticated()
-                        .anyRequest().permitAll()  // Archivos estáticos y rutas React Router
+                        .anyRequest().permitAll()
                 )
                 .exceptionHandling(ex -> ex
                         // No autenticado / sesión inválida → 401 (no 403, así el frontend redirige al login)

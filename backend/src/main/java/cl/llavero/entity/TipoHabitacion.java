@@ -21,4 +21,7 @@ public class TipoHabitacion {
 
     @Column(length = 10)
     private String color;
+
+    @Column(length = 500)
+    private String amenidades;
 }

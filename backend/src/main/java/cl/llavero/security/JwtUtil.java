@@ -31,10 +31,31 @@ public class JwtUtil {
                 .claim("rol", rol)
                 .claim("turnoId", turnoId)
                 .claim("sid", sessionId)
+                .claim("tipo", "staff")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())
                 .compact();
+    }
+
+    public String generarTokenHuesped(String huespedId, String nombre, String email) {
+        return Jwts.builder()
+                .subject(huespedId)
+                .claim("nombre", nombre)
+                .claim("email", email)
+                .claim("tipo", "huesped")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    public String getTipo(String token) {
+        return parsearToken(token).get("tipo", String.class);
+    }
+
+    public String getEmail(String token) {
+        return parsearToken(token).get("email", String.class);
     }
 
     public Claims parsearToken(String token) {

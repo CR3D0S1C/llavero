@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+
+
 @Entity
 @Table(name = "habitaciones")
 @Getter @Setter @NoArgsConstructor
@@ -41,6 +43,16 @@ public class Habitacion {
     @Column(nullable = false)
     private Boolean activa = true;
 
+    @Column(columnDefinition = "TEXT")
+    private String descripcionWeb;
+
+    @Column
+    private Integer capacidadMax;
+
     @OneToMany(mappedBy = "habitacion", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<HabitacionPrecio> precios = new ArrayList<>();
+
+    @OneToMany(mappedBy = "habitacion", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orden ASC")
+    private List<HabitacionFoto> fotos = new ArrayList<>();
 }

@@ -4,23 +4,29 @@ import cl.llavero.dto.HabitacionCreateRequest;
 import cl.llavero.dto.HabitacionLogResponse;
 import cl.llavero.dto.HabitacionResponse;
 import cl.llavero.dto.HabitacionUpdateRequest;
+import cl.llavero.entity.HabitacionFoto;
 import cl.llavero.entity.TipoHabitacion;
+import cl.llavero.service.FotoService;
 import cl.llavero.service.HabitacionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/habitaciones")
 public class HabitacionController {
 
     private final HabitacionService habitacionService;
+    private final FotoService fotoService;
 
-    public HabitacionController(HabitacionService habitacionService) {
+    public HabitacionController(HabitacionService habitacionService, FotoService fotoService) {
         this.habitacionService = habitacionService;
+        this.fotoService = fotoService;
     }
 
     @GetMapping
@@ -113,5 +119,34 @@ public class HabitacionController {
     @PreAuthorize("hasRole('JEFE')")
     public ResponseEntity<List<HabitacionLogResponse>> log() {
         return ResponseEntity.ok(habitacionService.getLogs());
+    }
+
+    @PostMapping("/{id}/fotos")
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<?> subirFoto(@PathVariable UUID id,
+                                       @RequestParam("file") MultipartFile file,
+                                       @RequestParam(defaultValue = "false") boolean esPortada) {
+        try {
+            HabitacionFoto foto = fotoService.guardar(id, file, esPortada);
+            return ResponseEntity.ok(Map.of(
+                "id", foto.getId(),
+                "url", foto.getUrl(),
+                "esPortada", foto.getEsPortada(),
+                "orden", foto.getOrden()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}/fotos/{fotoId}")
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<?> eliminarFoto(@PathVariable UUID id, @PathVariable UUID fotoId) {
+        try {
+            fotoService.eliminar(fotoId);
+            return ResponseEntity.ok(Map.of("mensaje", "Foto eliminada"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

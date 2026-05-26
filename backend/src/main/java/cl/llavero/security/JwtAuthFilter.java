@@ -35,23 +35,35 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
             if (jwtUtil.esValido(token)) {
-                String usuarioId = jwtUtil.getUsuarioId(token);
-                String sessionId = jwtUtil.getSessionId(token);
+                String tipo = jwtUtil.getTipo(token);
 
-                boolean sessionActiva = usuarioRepository
-                        .findById(UUID.fromString(usuarioId))
-                        .map(u -> sessionId != null && sessionId.equals(u.getSessionId()))
-                        .orElse(false);
-
-                if (sessionActiva) {
-                    String rol = jwtUtil.getRol(token);
-                    String turnoId = jwtUtil.getTurnoId(token);
+                if ("huesped".equals(tipo)) {
+                    String huespedId = jwtUtil.getUsuarioId(token);
                     var auth = new UsernamePasswordAuthenticationToken(
-                            usuarioId,
-                            turnoId,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + rol.toUpperCase()))
+                            huespedId,
+                            null,
+                            List.of(new SimpleGrantedAuthority("ROLE_HUESPED"))
                     );
                     SecurityContextHolder.getContext().setAuthentication(auth);
+                } else {
+                    String usuarioId = jwtUtil.getUsuarioId(token);
+                    String sessionId = jwtUtil.getSessionId(token);
+
+                    boolean sessionActiva = usuarioRepository
+                            .findById(UUID.fromString(usuarioId))
+                            .map(u -> sessionId != null && sessionId.equals(u.getSessionId()))
+                            .orElse(false);
+
+                    if (sessionActiva) {
+                        String rol = jwtUtil.getRol(token);
+                        String turnoId = jwtUtil.getTurnoId(token);
+                        var auth = new UsernamePasswordAuthenticationToken(
+                                usuarioId,
+                                turnoId,
+                                List.of(new SimpleGrantedAuthority("ROLE_" + rol.toUpperCase()))
+                        );
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                    }
                 }
             }
         }

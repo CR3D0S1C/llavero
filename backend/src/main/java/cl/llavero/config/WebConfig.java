@@ -9,9 +9,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Solo sirve los archivos físicos (JS, CSS, imágenes)
-        // Las rutas de React Router las maneja LlaveroSpaController
         registry.addResourceHandler("/llavero/assets/**")
                 .addResourceLocations("classpath:/static/llavero/assets/");
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:uploads/");
     }
 }
