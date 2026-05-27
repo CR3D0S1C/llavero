@@ -1,7 +1,10 @@
+# Copia este archivo como application.properties y completa los valores reales.
+# NUNCA subas application.properties a git.
+
 # ===== BASE DE DATOS =====
-spring.datasource.url=jdbc:postgresql://localhost:5432/llavero
-spring.datasource.username=postgres
-spring.datasource.password=postgres
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/llavero}
+spring.datasource.username=${DB_USERNAME:postgres}
+spring.datasource.password=${DB_PASSWORD:postgres}
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 # ===== JPA / HIBERNATE =====
@@ -14,29 +17,33 @@ spring.jpa.properties.hibernate.format_sql=true
 server.port=8080
 
 # ===== JWT =====
-jwt.secret=CAMBIAR_POR_CLAVE_BASE64_DE_AL_MENOS_32_CHARS
+# Generar con: openssl rand -base64 32
+jwt.secret=${JWT_SECRET:cambiar-en-produccion-clave-minimo-32-chars-000000}
 jwt.expiration=86400000
 
 # ===== LLAVERO =====
-llavero.codigo.supervisor=7777
-llavero.clave.anulacion=1271
-llavero.clave.operaciones=1331
-llavero.clave.deshabilitar=1221
+llavero.codigo.supervisor=${LLAVERO_COD_SUPERVISOR:7777}
+llavero.clave.anulacion=${LLAVERO_CLAVE_ANULACION:1271}
+llavero.clave.operaciones=${LLAVERO_CLAVE_OPERACIONES:1331}
+llavero.clave.deshabilitar=${LLAVERO_CLAVE_DESHABILITAR:1221}
 
 # ===== CORS =====
-cors.allowed-origins=http://localhost:3000
+cors.allowed-origins=${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
 
-# ===== EMAIL SMTP (Gmail) =====
-# Crear contraseña de app en: myaccount.google.com/apppasswords
+# ===== SEGURIDAD APP =====
+app.registro.habilitado=${APP_REGISTRO_HABILITADO:false}
+
+# ===== EMAIL (SMTP) =====
+# Crear clave de app en: myaccount.google.com/apppasswords
 spring.mail.host=smtp.gmail.com
 spring.mail.port=587
-spring.mail.username=tucorreo@gmail.com
-spring.mail.password=xxxx xxxx xxxx xxxx
+spring.mail.username=${MAIL_USERNAME:tucorreo@gmail.com}
+spring.mail.password=${MAIL_PASSWORD:xxxx xxxx xxxx xxxx}
 spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 spring.mail.properties.mail.smtp.connectiontimeout=5000
 spring.mail.properties.mail.smtp.timeout=5000
 
 # Destinatario del email de cierre de turno
-llavero.arqueo.email.destino=destino@gmail.com
-llavero.arqueo.email.remitente=Llavero <tucorreo@gmail.com>
+llavero.arqueo.email.destino=${ARQUEO_EMAIL_DESTINO:destino@gmail.com}
+llavero.arqueo.email.remitente=${ARQUEO_EMAIL_REMITENTE:Llavero <tucorreo@gmail.com>}
