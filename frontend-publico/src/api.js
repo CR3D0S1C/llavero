@@ -17,6 +17,7 @@ export const publicApi = {
     api.get('/public/estacionamiento', { params: { fechaEntrada, fechaSalida } }),
   register: (data) => api.post('/public/register', data),
   login: (data) => api.post('/public/login', data),
+  crearReservaInvitado: (data) => api.post('/public/reservas', data),
 }
 
 export const bookingApi = {

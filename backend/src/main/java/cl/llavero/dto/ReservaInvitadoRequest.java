@@ -1,14 +1,18 @@
 package cl.llavero.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-public record ReservaRequest(
+public record ReservaInvitadoRequest(
+    String nombre,
+    String email,
+    String telefono,
     UUID habitacionId,
     LocalDate fechaEntrada,
     LocalDate fechaSalida,
     String notas,
     Integer personas,
     Boolean conEstacionamiento,
-    java.math.BigDecimal montoEstimado
+    BigDecimal montoEstimado
 ) {}

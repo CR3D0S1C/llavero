@@ -4,6 +4,8 @@ import cl.llavero.dto.HabitacionPublicaResponse;
 import cl.llavero.dto.HuespedLoginRequest;
 import cl.llavero.dto.HuespedLoginResponse;
 import cl.llavero.dto.HuespedRegisterRequest;
+import cl.llavero.dto.ReservaInvitadoRequest;
+import cl.llavero.dto.ReservaResponse;
 import cl.llavero.entity.Habitacion;
 import cl.llavero.entity.EstadoHabitacion;
 import cl.llavero.repository.HabitacionRepository;
@@ -121,6 +123,16 @@ public class PublicController {
             return ResponseEntity.ok(resp);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/reservas")
+    public ResponseEntity<?> crearReservaInvitado(@RequestBody ReservaInvitadoRequest req) {
+        try {
+            ReservaResponse resp = reservaService.crearComoInvitado(req);
+            return ResponseEntity.ok(resp);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

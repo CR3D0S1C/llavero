@@ -46,6 +46,11 @@ export default function HabitacionDetallePage() {
   const [reservando, setReservando] = useState(false)
   const [error, setError] = useState('')
   const [exito, setExito] = useState(false)
+  const [exitoEmail, setExitoEmail] = useState('')
+
+  const [guestNombre, setGuestNombre] = useState('')
+  const [guestEmail, setGuestEmail] = useState('')
+  const [guestTelefono, setGuestTelefono] = useState('')
 
   useEffect(() => {
     publicApi.getHabitacion(id)
@@ -87,7 +92,6 @@ export default function HabitacionDetallePage() {
   }, [hab, tarifaSeleccionada, noches])
 
   const handleReservar = async () => {
-    if (!huesped) { navigate('/login'); return }
     setReservando(true)
     setError('')
     try {
@@ -97,14 +101,32 @@ export default function HabitacionDetallePage() {
         notas,
       ].filter(Boolean).join(' — ')
 
-      await bookingApi.crearReserva({
-        habitacionId: id,
-        fechaEntrada,
-        fechaSalida,
-        notas: notaFinal || null,
-        personas: paramPersonas ? parseInt(paramPersonas) : null,
-        conEstacionamiento,
-      })
+      if (huesped) {
+        await bookingApi.crearReserva({
+          habitacionId: id,
+          fechaEntrada,
+          fechaSalida,
+          notas: notaFinal || null,
+          personas: paramPersonas ? parseInt(paramPersonas) : null,
+          conEstacionamiento,
+          montoEstimado: precioTotal ?? null,
+        })
+        setExitoEmail(huesped.email)
+      } else {
+        await publicApi.crearReservaInvitado({
+          nombre: guestNombre.trim(),
+          email: guestEmail.trim(),
+          telefono: guestTelefono.trim() || null,
+          habitacionId: id,
+          fechaEntrada,
+          fechaSalida,
+          notas: notaFinal || null,
+          personas: paramPersonas ? parseInt(paramPersonas) : null,
+          conEstacionamiento,
+          montoEstimado: precioTotal ?? null,
+        })
+        setExitoEmail(guestEmail.trim())
+      }
       setExito(true)
     } catch (e) {
       setError(e.response?.data?.error || 'Error al crear la reserva')
@@ -114,7 +136,8 @@ export default function HabitacionDetallePage() {
   }
 
   const hoy = new Date().toISOString().split('T')[0]
-  const canBook = fechaEntrada && fechaSalida && disponible === true && !reservando
+  const guestValido = !huesped ? (guestNombre.trim().length > 0 && guestEmail.includes('@')) : true
+  const canBook = fechaEntrada && fechaSalida && disponible === true && !reservando && guestValido
 
   if (loading) return (
     <div style={{ maxWidth: '1152px', margin: '0 auto', padding: '4rem 1.5rem' }}>
@@ -393,28 +416,54 @@ export default function HabitacionDetallePage() {
                   </p>
                 </div>
               ) : exito ? (
-                <div style={{ padding: '2.5rem 1.5rem', textAlign: 'center' }}>
-                  <div style={{
-                    width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    margin: '0 auto 1rem',
-                    background: C.teal, color: '#fff', fontSize: '1.25rem',
-                  }}>✓</div>
-                  <h3 className="font-heading" style={{ fontSize: '1.5rem', fontWeight: 400, color: C.teal, marginBottom: '0.75rem' }}>
-                    ¡Reserva enviada!
-                  </h3>
-                  <p style={{ color: C.warm, fontWeight: 300, fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-                    Recibirás confirmación por email una vez que el hostal la apruebe.
-                  </p>
-                  <button
-                    onClick={() => navigate('/mis-reservas')}
-                    style={{
-                      fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase',
-                      color: C.teal, background: 'none', border: 'none', cursor: 'pointer',
-                      borderBottom: `1px solid ${C.teal}`, paddingBottom: '2px',
-                    }}
-                  >
-                    Ver mis reservas →
-                  </button>
+                <div style={{ padding: '2rem 1.5rem' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                    <div style={{
+                      width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      margin: '0 auto 1rem',
+                      background: C.teal, color: '#fff', fontSize: '1.25rem',
+                    }}>✓</div>
+                    <h3 className="font-heading" style={{ fontSize: '1.5rem', fontWeight: 400, color: C.teal, marginBottom: '0.5rem' }}>
+                      ¡Reserva enviada!
+                    </h3>
+                    <p style={{ color: C.warm, fontWeight: 300, fontSize: '0.875rem', lineHeight: 1.6 }}>
+                      Enviamos los detalles a <strong>{exitoEmail}</strong>
+                    </p>
+                  </div>
+
+                  {/* Datos de transferencia */}
+                  <div style={{ background: '#fffbeb', border: `1px solid ${C.sand}`, borderLeft: `3px solid ${C.gold}`, padding: '1rem', marginBottom: '1rem' }}>
+                    <p style={{ fontSize: '12px', fontWeight: 600, color: C.charcoal, marginBottom: '0.5rem', letterSpacing: '0.04em' }}>
+                      Depósito para confirmar tu reserva
+                    </p>
+                    <p style={{ fontSize: '12px', color: C.warm, lineHeight: 1.55, marginBottom: '0.75rem' }}>
+                      Te contactaremos para coordinar el monto. Si prefieres hacerlo ahora:
+                    </p>
+                    <div style={{ fontSize: '12px', lineHeight: 2, color: C.charcoal }}>
+                      <div><span style={{ color: C.warm }}>Banco:</span> <strong>Banco Santander</strong></div>
+                      <div><span style={{ color: C.warm }}>Tipo:</span> <strong>Cuenta Corriente</strong></div>
+                      <div><span style={{ color: C.warm }}>N° cuenta:</span> <strong>66959287</strong></div>
+                      <div><span style={{ color: C.warm }}>RUT:</span> <strong>10.813.858-0</strong></div>
+                      <div><span style={{ color: C.warm }}>Titular:</span> <strong>Abelardo Pedro Cruchaga Quinteros</strong></div>
+                    </div>
+                    <p style={{ fontSize: '11px', color: C.warm, marginTop: '0.5rem' }}>
+                      Envía el comprobante a{' '}
+                      <span style={{ color: C.teal, fontWeight: 500 }}>hostalmimaravilla@gmail.com</span>
+                    </p>
+                  </div>
+
+                  {huesped && (
+                    <button
+                      onClick={() => navigate('/mis-reservas')}
+                      style={{
+                        fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase',
+                        color: C.teal, background: 'none', border: 'none', cursor: 'pointer',
+                        borderBottom: `1px solid ${C.teal}`, paddingBottom: '2px', display: 'block', margin: '0 auto',
+                      }}
+                    >
+                      Ver mis reservas →
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div style={{ padding: '1.5rem' }}>
@@ -538,6 +587,58 @@ export default function HabitacionDetallePage() {
                     />
                   </div>
 
+                  {/* Formulario de datos para reserva sin registro */}
+                  {!huesped && disponible === true && (
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: '1.25rem', marginBottom: '1rem' }}>
+                        <p style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: C.teal, marginBottom: '0.75rem' }}>
+                          Tus datos de contacto
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                          <div>
+                            <label style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: C.warm, display: 'block', marginBottom: '6px' }}>
+                              Nombre completo *
+                            </label>
+                            <input
+                              type="text"
+                              value={guestNombre}
+                              onChange={e => setGuestNombre(e.target.value)}
+                              placeholder="Juan Pérez"
+                              className="input-line"
+                              style={{ fontSize: '0.875rem' }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: C.warm, display: 'block', marginBottom: '6px' }}>
+                              Email *
+                            </label>
+                            <input
+                              type="email"
+                              value={guestEmail}
+                              onChange={e => setGuestEmail(e.target.value)}
+                              placeholder="correo@ejemplo.com"
+                              className="input-line"
+                              style={{ fontSize: '0.875rem' }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: C.warm, display: 'block', marginBottom: '6px' }}>
+                              Teléfono <span style={{ color: C.line, textTransform: 'none', letterSpacing: 0 }}>(opcional)</span>
+                            </label>
+                            <input
+                              type="tel"
+                              value={guestTelefono}
+                              onChange={e => setGuestTelefono(e.target.value)}
+                              placeholder="+56 9 1234 5678"
+                              className="input-line"
+                              style={{ fontSize: '0.875rem' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {error && (
                     <p style={{ fontSize: '13px', color: C.terracotta, marginBottom: '1rem', lineHeight: 1.4 }}>{error}</p>
                   )}
@@ -559,17 +660,17 @@ export default function HabitacionDetallePage() {
                     onMouseEnter={e => { if (canBook) e.currentTarget.style.background = C.charcoal }}
                     onMouseLeave={e => { if (canBook) e.currentTarget.style.background = C.teal }}
                   >
-                    {reservando ? 'Enviando reserva...' : huesped ? 'Solicitar reserva' : 'Inicia sesión para reservar'}
+                    {reservando ? 'Enviando reserva...' : 'Solicitar reserva'}
                   </button>
 
                   {!huesped && (
                     <p style={{ fontSize: '12px', textAlign: 'center', color: C.warm, marginTop: '1rem' }}>
-                      ¿No tienes cuenta?{' '}
+                      ¿Ya tienes cuenta?{' '}
                       <button
-                        onClick={() => navigate('/registro')}
+                        onClick={() => navigate('/login')}
                         style={{ color: C.teal, background: 'none', border: 'none', cursor: 'pointer', borderBottom: `1px solid ${C.teal}`, paddingBottom: '1px', fontSize: '12px' }}
                       >
-                        Regístrate gratis
+                        Inicia sesión
                       </button>
                     </p>
                   )}

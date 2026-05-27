@@ -1,5 +1,6 @@
 package cl.llavero.service;
 
+import cl.llavero.dto.ReservaInvitadoRequest;
 import cl.llavero.dto.ReservaRequest;
 import cl.llavero.dto.ReservaResponse;
 import cl.llavero.dto.ReservaStaffRequest;
@@ -22,13 +23,16 @@ public class ReservaService {
     private final ReservaRepository reservaRepository;
     private final HabitacionRepository habitacionRepository;
     private final HuespedRepository huespedRepository;
+    private final EmailService emailService;
 
     public ReservaService(ReservaRepository reservaRepository,
                           HabitacionRepository habitacionRepository,
-                          HuespedRepository huespedRepository) {
+                          HuespedRepository huespedRepository,
+                          EmailService emailService) {
         this.reservaRepository = reservaRepository;
         this.habitacionRepository = habitacionRepository;
         this.huespedRepository = huespedRepository;
+        this.emailService = emailService;
     }
 
     public ReservaResponse crear(ReservaRequest req, UUID huespedId) {
@@ -66,8 +70,63 @@ public class ReservaService {
         r.setNotas(req.notas());
         r.setPersonas(req.personas());
         r.setConEstacionamiento(Boolean.TRUE.equals(req.conEstacionamiento()));
+        r.setMontoEstimado(req.montoEstimado());
 
         reservaRepository.save(r);
+        emailService.enviarConfirmacionReservaAsync(r);
+        return ReservaResponse.from(r);
+    }
+
+    public ReservaResponse crearComoInvitado(ReservaInvitadoRequest req) {
+        if (req.nombre() == null || req.nombre().isBlank())
+            throw new IllegalArgumentException("El nombre es requerido");
+        if (req.email() == null || req.email().isBlank())
+            throw new IllegalArgumentException("El email es requerido");
+        if (req.fechaEntrada() == null || req.fechaSalida() == null)
+            throw new IllegalArgumentException("Las fechas son requeridas");
+        if (!req.fechaEntrada().isBefore(req.fechaSalida()))
+            throw new IllegalArgumentException("La fecha de salida debe ser posterior a la de entrada");
+        if (req.fechaEntrada().isBefore(LocalDate.now()))
+            throw new IllegalArgumentException("La fecha de entrada no puede ser en el pasado");
+
+        var habitacion = habitacionRepository.findById(req.habitacionId())
+            .orElseThrow(() -> new IllegalArgumentException("Habitación no encontrada"));
+
+        if (!habitacion.getActiva())
+            throw new IllegalArgumentException("Habitación no disponible");
+
+        var solapadas = reservaRepository.findSolapadas(req.habitacionId(), req.fechaEntrada(), req.fechaSalida());
+        if (!solapadas.isEmpty())
+            throw new IllegalArgumentException("La habitación ya tiene una reserva en esas fechas");
+
+        if (Boolean.TRUE.equals(req.conEstacionamiento())) {
+            long estacionamientosUsados = reservaRepository.countEstacionamientoSolapadas(req.fechaEntrada(), req.fechaSalida());
+            if (estacionamientosUsados >= 4)
+                throw new IllegalArgumentException("No hay estacionamientos disponibles para esas fechas");
+        }
+
+        String emailLower = req.email().toLowerCase().trim();
+        Huesped huesped = huespedRepository.findByEmailIgnoreCase(emailLower).orElseGet(() -> {
+            Huesped h = new Huesped();
+            h.setNombre(req.nombre().trim());
+            h.setEmail(emailLower);
+            h.setPasswordHash(null);
+            h.setTelefono(req.telefono());
+            return huespedRepository.save(h);
+        });
+
+        Reserva r = new Reserva();
+        r.setHuesped(huesped);
+        r.setHabitacion(habitacion);
+        r.setFechaEntrada(req.fechaEntrada());
+        r.setFechaSalida(req.fechaSalida());
+        r.setNotas(req.notas());
+        r.setPersonas(req.personas());
+        r.setConEstacionamiento(Boolean.TRUE.equals(req.conEstacionamiento()));
+        r.setMontoEstimado(req.montoEstimado());
+
+        reservaRepository.save(r);
+        emailService.enviarConfirmacionReservaAsync(r);
         return ReservaResponse.from(r);
     }
 
