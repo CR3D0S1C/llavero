@@ -150,6 +150,12 @@ public class HabitacionService {
         if (request.getDescripcion() != null) {
             habitacion.setDescripcion(request.getDescripcion());
         }
+        if (request.getDescripcionWeb() != null) {
+            habitacion.setDescripcionWeb(request.getDescripcionWeb());
+        }
+        if (request.getCapacidadMax() != null) {
+            habitacion.setCapacidadMax(request.getCapacidadMax());
+        }
         if (request.getCodigoBarras() != null) {
             String cb = request.getCodigoBarras().trim();
             habitacion.setCodigoBarras(cb.isEmpty() ? null : cb);
@@ -291,7 +297,18 @@ public class HabitacionService {
             r.setTipoLabel(h.getTipo().getLabel());
             r.setBano(h.getTipo().getBano());
             r.setColor(h.getTipo().getColor());
+            r.setAmenidades(h.getTipo().getAmenidades());
         }
+        r.setDescripcionWeb(h.getDescripcionWeb());
+        r.setCapacidadMax(h.getCapacidadMax());
+        r.setFotos(h.getFotos().stream().map(f -> {
+            HabitacionResponse.FotoDto dto = new HabitacionResponse.FotoDto();
+            dto.setId(f.getId());
+            dto.setUrl(f.getUrl());
+            dto.setEsPortada(f.getEsPortada());
+            dto.setOrden(f.getOrden());
+            return dto;
+        }).collect(Collectors.toList()));
         r.setPrecios(h.getPrecios().stream().map(p -> {
             HabitacionPrecioDto dto = new HabitacionPrecioDto();
             dto.setPersonas(p.getPersonas());

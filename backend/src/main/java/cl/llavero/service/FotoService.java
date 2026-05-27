@@ -55,6 +55,16 @@ public class FotoService {
         return fotoRepository.save(foto);
     }
 
+    public HabitacionFoto setPortada(UUID fotoId) {
+        HabitacionFoto foto = fotoRepository.findById(fotoId)
+            .orElseThrow(() -> new IllegalArgumentException("Foto no encontrada"));
+        Habitacion habitacion = foto.getHabitacion();
+        habitacion.getFotos().forEach(f -> f.setEsPortada(false));
+        fotoRepository.saveAll(habitacion.getFotos());
+        foto.setEsPortada(true);
+        return fotoRepository.save(foto);
+    }
+
     public void eliminar(UUID fotoId) throws IOException {
         HabitacionFoto foto = fotoRepository.findById(fotoId)
             .orElseThrow(() -> new IllegalArgumentException("Foto no encontrada"));

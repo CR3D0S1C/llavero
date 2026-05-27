@@ -15,7 +15,7 @@ const FALLBACK_IMGS = [
   'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=80',
 ]
 
-function HabitacionCard({ hab, index }) {
+function HabitacionCard({ hab, index, extraStyle }) {
   const portada = hab.fotos?.find(f => f.esPortada) || hab.fotos?.[0]
   const imgSrc = portada?.url || FALLBACK_IMGS[index % FALLBACK_IMGS.length]
   const estado = ESTADO_CONFIG[hab.estadoPublico] || ESTADO_CONFIG.no_disponible
@@ -25,7 +25,7 @@ function HabitacionCard({ hab, index }) {
   const disponible = hab.estadoPublico !== 'no_disponible'
 
   return (
-    <div className="group flex flex-col" style={{ background: '#fff' }}>
+    <div className="group flex flex-col" style={{ background: '#fff', ...extraStyle }}>
       {/* Imagen */}
       <div className="relative overflow-hidden" style={{ aspectRatio: '4/3' }}>
         <img
@@ -167,7 +167,7 @@ export default function HabitacionesPage() {
       </div>
 
       {/* Grid */}
-      <div className="max-w-6xl mx-auto px-6 py-16">
+      <div className="max-w-6xl mx-auto px-6 pt-16 pb-32">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
@@ -183,9 +183,17 @@ export default function HabitacionesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {habitaciones.map((hab, i) => (
-              <HabitacionCard key={hab.id} hab={hab} index={i} />
-            ))}
+            {habitaciones.map((hab, i) => {
+              const solaEnFila = habitaciones.length % 3 === 1 && i === habitaciones.length - 1
+              return (
+                <HabitacionCard
+                  key={hab.id}
+                  hab={hab}
+                  index={i}
+                  extraStyle={solaEnFila ? { gridColumnStart: 2 } : undefined}
+                />
+              )
+            })}
           </div>
         )}
       </div>

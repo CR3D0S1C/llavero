@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Navbar from '../components/Navbar'
 import RoomCard from '../components/RoomCard'
 import ModalLiberar from '../components/ModalLiberar'
 import {
   getHabitaciones, getTiposHabitacion, updateHabitacion,
-  crearHabitacion, eliminarHabitacion
+  crearHabitacion, eliminarHabitacion,
+  subirFotoHabitacion, setPortadaFoto, eliminarFotoHabitacion
 } from '../services/api'
 import { useSesion } from '../context/SesionContext'
 import { toast } from '../utils/toast'
@@ -20,6 +21,8 @@ export default function Habitaciones() {
   const [saving, setSaving] = useState(false)
   const [habitacionALiberar, setHabitacionALiberar] = useState(null)
   const [showNueva, setShowNueva] = useState(false)
+  const [subiendoFoto, setSubiendoFoto] = useState(false)
+  const fileInputRef = useRef(null)
   const { sesion } = useSesion()
   const esJefe = sesion?.rol === 'jefe'
 
@@ -51,16 +54,70 @@ export default function Habitaciones() {
       estado: h.estado,
       nota: h.nota || '',
       descripcion: h.descripcion || '',
+      descripcionWeb: h.descripcionWeb || '',
+      capacidadMax: h.capacidadMax || '',
       codigoBarras: h.codigoBarras || '',
       precios: h.precios?.map(p => ({ ...p })) || []
     })
+  }
+
+  const subirFoto = async (e) => {
+    const file = e.target.files[0]
+    if (!file || !seleccionada) return
+    setSubiendoFoto(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('esPortada', seleccionada.fotos?.length === 0 ? 'true' : 'false')
+      await subirFotoHabitacion(seleccionada.id, fd)
+      toast.success('Foto subida')
+      const res = await getHabitaciones()
+      setHabitaciones(res.data)
+      const actualizada = res.data.find(h => h.id === seleccionada.id)
+      if (actualizada) setSeleccionada(actualizada)
+    } catch (e) {
+      toast.error('Error al subir foto')
+    } finally {
+      setSubiendoFoto(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const marcarPortada = async (fotoId) => {
+    try {
+      await setPortadaFoto(seleccionada.id, fotoId)
+      toast.success('Portada actualizada')
+      const res = await getHabitaciones()
+      setHabitaciones(res.data)
+      const actualizada = res.data.find(h => h.id === seleccionada.id)
+      if (actualizada) setSeleccionada(actualizada)
+    } catch {
+      toast.error('Error al cambiar portada')
+    }
+  }
+
+  const borrarFoto = async (fotoId) => {
+    if (!confirm('¿Eliminar esta foto?')) return
+    try {
+      await eliminarFotoHabitacion(seleccionada.id, fotoId)
+      toast.success('Foto eliminada')
+      const res = await getHabitaciones()
+      setHabitaciones(res.data)
+      const actualizada = res.data.find(h => h.id === seleccionada.id)
+      if (actualizada) setSeleccionada(actualizada)
+    } catch {
+      toast.error('Error al eliminar foto')
+    }
   }
 
   const guardar = async () => {
     if (!seleccionada) return
     setSaving(true)
     try {
-      await updateHabitacion(seleccionada.id, editForm)
+      await updateHabitacion(seleccionada.id, {
+        ...editForm,
+        capacidadMax: editForm.capacidadMax !== '' ? Number(editForm.capacidadMax) : null,
+      })
       toast.success(`${seleccionada.numero} actualizada`)
       await cargar()
       setSeleccionada(null)
@@ -110,56 +167,157 @@ export default function Habitaciones() {
           {/* Panel edición */}
           <div className="lg:col-span-1">
             {seleccionada && esJefe ? (
-              <div className="card sticky top-20">
+              <div className="card sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-semibold">Editar — {seleccionada.numero}</h2>
+                  <h2 className="font-semibold">Hab. {seleccionada.numero}</h2>
                   <button onClick={() => setSeleccionada(null)} className="text-muted hover:text-white text-sm">✕</button>
                 </div>
 
                 <div className="space-y-4">
+
+                  {/* ── Fotos ── */}
                   <div>
-                    <label className="text-xs text-muted mb-1 block">Estado</label>
-                    <select
-                      className="input"
-                      value={editForm.estado}
-                      onChange={e => setEditForm(p => ({ ...p, estado: e.target.value }))}
-                    >
-                      {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
-                    </select>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs text-muted uppercase tracking-wide">Fotos del sitio web</label>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={subiendoFoto}
+                        className="text-xs text-accent hover:underline disabled:opacity-50"
+                      >
+                        {subiendoFoto ? 'Subiendo...' : '+ Subir foto'}
+                      </button>
+                      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={subirFoto} />
+                    </div>
+
+                    {seleccionada.fotos?.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {seleccionada.fotos.map(f => (
+                          <div key={f.id} className="relative group aspect-square">
+                            <img
+                              src={f.url}
+                              alt=""
+                              className={`w-full h-full object-cover rounded ${f.esPortada ? 'ring-2 ring-accent' : ''}`}
+                            />
+                            {f.esPortada && (
+                              <span className="absolute top-1 left-1 text-[9px] bg-accent text-black font-bold px-1 rounded leading-tight">
+                                PORTADA
+                              </span>
+                            )}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded flex flex-col items-center justify-center gap-1">
+                              {!f.esPortada && (
+                                <button
+                                  onClick={() => marcarPortada(f.id)}
+                                  className="text-[10px] bg-accent text-black font-bold px-2 py-0.5 rounded hover:bg-yellow-400"
+                                >
+                                  Portada
+                                </button>
+                              )}
+                              <button
+                                onClick={() => borrarFoto(f.id)}
+                                className="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded hover:bg-red-500"
+                              >
+                                Borrar
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="border-2 border-dashed border-border rounded-lg p-4 text-center text-muted text-xs cursor-pointer hover:border-accent/50 transition-colors"
+                      >
+                        Sin fotos — haz clic para subir
+                      </div>
+                    )}
                   </div>
 
-                  <div>
-                    <label className="text-xs text-muted mb-1 block">Código barras</label>
-                    <input className="input font-mono" placeholder="Opcional, para pistola"
-                      value={editForm.codigoBarras}
-                      onChange={e => setEditForm(p => ({ ...p, codigoBarras: e.target.value }))} />
-                  </div>
+                  <div className="border-t border-border/50 pt-4">
+                    <p className="text-xs text-muted uppercase tracking-wide mb-3">Datos del sitio web</p>
 
-                  <div>
-                    <label className="text-xs text-muted mb-1 block">Nota interna</label>
-                    <input className="input" placeholder="Opcional..." value={editForm.nota}
-                      onChange={e => setEditForm(p => ({ ...p, nota: e.target.value }))} />
-                  </div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs text-muted mb-1 block">Descripción pública</label>
+                        <textarea
+                          className="input resize-none text-sm"
+                          rows={3}
+                          placeholder="Descripción que verán los huéspedes al reservar..."
+                          value={editForm.descripcionWeb}
+                          onChange={e => setEditForm(p => ({ ...p, descripcionWeb: e.target.value }))}
+                        />
+                      </div>
 
-                  <div>
-                    <label className="text-xs text-muted mb-2 block">Tarifas</label>
-                    <div className="space-y-2">
-                      {editForm.precios?.map((p, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm">
-                          <span className="text-muted w-16 shrink-0">{p.duracion} / {p.personas}p</span>
-                          <input
-                            className="input py-1"
-                            type="number"
-                            value={p.precio}
-                            onChange={e => actualizarPrecio(i, 'precio', e.target.value)}
-                          />
+                      <div>
+                        <label className="text-xs text-muted mb-1 block">Capacidad máx. (personas)</label>
+                        <input
+                          className="input"
+                          type="number"
+                          min="1"
+                          max="20"
+                          placeholder="Ej: 2"
+                          value={editForm.capacidadMax}
+                          onChange={e => setEditForm(p => ({ ...p, capacidadMax: e.target.value }))}
+                        />
+                      </div>
+
+                      {seleccionada.amenidades && (
+                        <div>
+                          <label className="text-xs text-muted mb-1 block">Amenidades (del tipo de habitación)</label>
+                          <p className="text-xs text-gray-400 bg-surface rounded px-2 py-1.5">{seleccionada.amenidades}</p>
                         </div>
-                      ))}
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border/50 pt-4">
+                    <p className="text-xs text-muted uppercase tracking-wide mb-3">Datos internos (POS)</p>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs text-muted mb-1 block">Estado</label>
+                        <select
+                          className="input"
+                          value={editForm.estado}
+                          onChange={e => setEditForm(p => ({ ...p, estado: e.target.value }))}
+                        >
+                          {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-xs text-muted mb-1 block">Nota interna</label>
+                        <input className="input" placeholder="Opcional..." value={editForm.nota}
+                          onChange={e => setEditForm(p => ({ ...p, nota: e.target.value }))} />
+                      </div>
+
+                      <div>
+                        <label className="text-xs text-muted mb-1 block">Código barras</label>
+                        <input className="input font-mono" placeholder="Para pistola de código"
+                          value={editForm.codigoBarras}
+                          onChange={e => setEditForm(p => ({ ...p, codigoBarras: e.target.value }))} />
+                      </div>
+
+                      <div>
+                        <label className="text-xs text-muted mb-2 block">Tarifas</label>
+                        <div className="space-y-2">
+                          {editForm.precios?.map((p, i) => (
+                            <div key={i} className="flex items-center gap-2 text-sm">
+                              <span className="text-muted w-16 shrink-0 text-xs">{p.duracion} / {p.personas}p</span>
+                              <input
+                                className="input py-1"
+                                type="number"
+                                value={p.precio}
+                                onChange={e => actualizarPrecio(i, 'precio', e.target.value)}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   <button onClick={guardar} disabled={saving} className="btn-primary w-full">
-                    {saving ? 'Guardando...' : 'Guardar Cambios'}
+                    {saving ? 'Guardando...' : 'Guardar cambios'}
                   </button>
 
                   <button

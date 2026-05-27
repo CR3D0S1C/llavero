@@ -139,6 +139,17 @@ public class HabitacionController {
         }
     }
 
+    @PutMapping("/{id}/fotos/{fotoId}/portada")
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<?> setPortada(@PathVariable UUID id, @PathVariable UUID fotoId) {
+        try {
+            var foto = fotoService.setPortada(fotoId);
+            return ResponseEntity.ok(Map.of("id", foto.getId(), "esPortada", foto.getEsPortada()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/{id}/fotos/{fotoId}")
     @PreAuthorize("hasRole('JEFE')")
     public ResponseEntity<?> eliminarFoto(@PathVariable UUID id, @PathVariable UUID fotoId) {

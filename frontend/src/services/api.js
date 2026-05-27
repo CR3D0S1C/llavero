@@ -45,6 +45,9 @@ export const liberarHabitacion = (id) => api.put(`/habitaciones/${id}/liberar`)
 export const operarHabitacion = (id, estado, clave) => api.put(`/habitaciones/${id}/operar`, { estado, clave })
 export const cambiarEstadoJefe = (id, estado) => api.put(`/habitaciones/${id}/estado`, { estado })
 export const getHabitacionLog = () => api.get('/habitaciones/log')
+export const subirFotoHabitacion = (id, formData) => api.post(`/habitaciones/${id}/fotos`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const setPortadaFoto = (habId, fotoId) => api.put(`/habitaciones/${habId}/fotos/${fotoId}/portada`)
+export const eliminarFotoHabitacion = (habId, fotoId) => api.delete(`/habitaciones/${habId}/fotos/${fotoId}`)
 
 // Ventas
 export const getVentas = (params) => api.get('/ventas', { params })
