@@ -11,25 +11,27 @@
   --color-line: #DDD0C0;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
-html {
-  scroll-behavior: smooth;
-}
+  html {
+    scroll-behavior: smooth;
+  }
 
-body {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  background-color: #F5EFE6;
-  color: #1E1E1E;
-}
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background-color: #F5EFE6;
+    color: #1E1E1E;
+  }
 
-.font-heading {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  .font-heading {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
 }
 
 /* Inputs estilo línea inferior elegante */

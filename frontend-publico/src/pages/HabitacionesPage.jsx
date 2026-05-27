@@ -154,12 +154,12 @@ export default function HabitacionesPage() {
   return (
     <div>
       {/* Header */}
-      <div className="bg-teal py-16 px-6">
-        <div className="max-w-6xl mx-auto">
+      <div style={{ background: '#1C4A5A', padding: '4rem 1.5rem' }}>
+        <div style={{ maxWidth: '1152px', margin: '0 auto' }}>
           <p style={{ fontSize: '11px', letterSpacing: '0.3em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
             Hostal Mi Maravilla
           </p>
-          <h1 className="font-heading text-white" style={{ fontSize: 'clamp(2.5rem,5vw,4rem)', fontWeight: 300, lineHeight: 1.1 }}>
+          <h1 className="font-heading" style={{ fontSize: 'clamp(2.5rem,5vw,4rem)', fontWeight: 300, lineHeight: 1.1, color: '#fff' }}>
             Nuestras habitaciones
           </h1>
           <div style={{ width: '40px', height: '1px', background: '#C9943A', marginTop: '1.5rem' }} />
@@ -167,14 +167,14 @@ export default function HabitacionesPage() {
       </div>
 
       {/* Grid */}
-      <div className="max-w-6xl mx-auto px-6 pt-16 pb-32">
+      <div style={{ maxWidth: '1152px', margin: '0 auto', padding: '4rem 1.5rem 8rem' }}>
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.5rem' }}>
             {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
           </div>
         ) : habitaciones.length === 0 ? (
-          <div className="text-center py-24">
-            <p className="font-heading text-teal mb-4" style={{ fontSize: '2rem', fontWeight: 300 }}>
+          <div style={{ textAlign: 'center', padding: '6rem 0' }}>
+            <p className="font-heading" style={{ fontSize: '2rem', fontWeight: 300, color: '#1C4A5A', marginBottom: '1rem' }}>
               Sin habitaciones disponibles
             </p>
             <p style={{ color: '#6B6057', fontWeight: 300 }}>
@@ -182,18 +182,14 @@ export default function HabitacionesPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {habitaciones.map((hab, i) => {
-              const solaEnFila = habitaciones.length % 3 === 1 && i === habitaciones.length - 1
-              return (
-                <HabitacionCard
-                  key={hab.id}
-                  hab={hab}
-                  index={i}
-                  extraStyle={solaEnFila ? { gridColumnStart: 2 } : undefined}
-                />
-              )
-            })}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.5rem' }}>
+            {habitaciones.map((hab, i) => (
+              <HabitacionCard
+                key={hab.id}
+                hab={hab}
+                index={i}
+              />
+            ))}
           </div>
         )}
       </div>
