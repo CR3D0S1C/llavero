@@ -21,6 +21,8 @@ public record ReservaResponse(
     EstadoReserva estado,
     BigDecimal montoEstimado,
     String notas,
+    Integer personas,
+    Boolean conEstacionamiento,
     LocalDateTime createdAt
 ) {
     public static ReservaResponse from(Reserva r) {
@@ -37,6 +39,8 @@ public record ReservaResponse(
             r.getEstado(),
             r.getMontoEstimado(),
             r.getNotas(),
+            r.getPersonas(),
+            r.getConEstacionamiento(),
             r.getCreatedAt()
         );
     }

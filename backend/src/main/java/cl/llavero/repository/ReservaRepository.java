@@ -42,4 +42,27 @@ public interface ReservaRepository extends JpaRepository<Reserva, UUID> {
         @Param("desde") LocalDate desde,
         @Param("hasta") LocalDate hasta
     );
+
+    @Query("""
+        SELECT DISTINCT r.habitacion.id FROM Reserva r
+        WHERE r.estado IN ('pendiente', 'confirmada')
+          AND r.fechaEntrada < :fechaSalida
+          AND r.fechaSalida > :fechaEntrada
+    """)
+    List<UUID> findHabitacionIdsOcupadas(
+        @Param("fechaEntrada") LocalDate fechaEntrada,
+        @Param("fechaSalida") LocalDate fechaSalida
+    );
+
+    @Query("""
+        SELECT COUNT(r) FROM Reserva r
+        WHERE r.conEstacionamiento = true
+          AND r.estado IN ('pendiente', 'confirmada')
+          AND r.fechaEntrada < :fechaSalida
+          AND r.fechaSalida > :fechaEntrada
+    """)
+    long countEstacionamientoSolapadas(
+        @Param("fechaEntrada") LocalDate fechaEntrada,
+        @Param("fechaSalida") LocalDate fechaSalida
+    );
 }

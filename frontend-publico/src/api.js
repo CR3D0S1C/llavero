@@ -9,10 +9,12 @@ api.interceptors.request.use(cfg => {
 })
 
 export const publicApi = {
-  getHabitaciones: () => api.get('/public/habitaciones'),
+  getHabitaciones: (params) => api.get('/public/habitaciones', { params }),
   getHabitacion: (id) => api.get(`/public/habitaciones/${id}`),
   verificarDisponibilidad: (habitacionId, fechaEntrada, fechaSalida) =>
     api.get('/public/disponibilidad', { params: { habitacionId, fechaEntrada, fechaSalida } }),
+  getEstacionamiento: (fechaEntrada, fechaSalida) =>
+    api.get('/public/estacionamiento', { params: { fechaEntrada, fechaSalida } }),
   register: (data) => api.post('/public/register', data),
   login: (data) => api.post('/public/login', data),
 }

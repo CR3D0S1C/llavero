@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { publicApi, bookingApi } from '../api'
 import { useAuth } from '../context/AuthContext'
 
@@ -25,15 +25,22 @@ export default function HabitacionDetallePage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { huesped } = useAuth()
+  const [searchParams] = useSearchParams()
+
+  const paramFechaEntrada = searchParams.get('fechaEntrada') || ''
+  const paramFechaSalida  = searchParams.get('fechaSalida')  || ''
+  const paramPersonas     = searchParams.get('personas')     || ''
 
   const [hab, setHab] = useState(null)
   const [fotoActual, setFotoActual] = useState(0)
   const [loading, setLoading] = useState(true)
   const [tarifaSeleccionada, setTarifaSeleccionada] = useState(null)
 
-  const [fechaEntrada, setFechaEntrada] = useState('')
-  const [fechaSalida, setFechaSalida] = useState('')
+  const [fechaEntrada, setFechaEntrada] = useState(paramFechaEntrada)
+  const [fechaSalida, setFechaSalida] = useState(paramFechaSalida)
   const [notas, setNotas] = useState('')
+  const [conEstacionamiento, setConEstacionamiento] = useState(false)
+  const [estacionamiento, setEstacionamiento] = useState(null)
   const [disponible, setDisponible] = useState(null)
   const [verificando, setVerificando] = useState(false)
   const [reservando, setReservando] = useState(false)
@@ -56,11 +63,18 @@ export default function HabitacionDetallePage() {
     if (fechaEntrada && fechaSalida && fechaEntrada < fechaSalida) {
       setVerificando(true)
       setDisponible(null)
-      publicApi.verificarDisponibilidad(id, fechaEntrada, fechaSalida)
-        .then(r => setDisponible(r.data.disponible))
-        .finally(() => setVerificando(false))
+      setEstacionamiento(null)
+      Promise.all([
+        publicApi.verificarDisponibilidad(id, fechaEntrada, fechaSalida),
+        publicApi.getEstacionamiento(fechaEntrada, fechaSalida),
+      ]).then(([dispRes, estacRes]) => {
+        setDisponible(dispRes.data.disponible)
+        setEstacionamiento(estacRes.data)
+      }).finally(() => setVerificando(false))
     } else {
       setDisponible(null)
+      setEstacionamiento(null)
+      setConEstacionamiento(false)
     }
   }, [fechaEntrada, fechaSalida])
 
@@ -88,6 +102,8 @@ export default function HabitacionDetallePage() {
         fechaEntrada,
         fechaSalida,
         notas: notaFinal || null,
+        personas: paramPersonas ? parseInt(paramPersonas) : null,
+        conEstacionamiento,
       })
       setExito(true)
     } catch (e) {
@@ -371,6 +387,46 @@ export default function HabitacionDetallePage() {
                       <p style={{ fontSize: '12px', color: C.terracotta, fontWeight: 500 }}>✗ No disponible para esas fechas</p>
                     )}
                   </div>
+
+                  {/* Estacionamiento */}
+                  {estacionamiento && disponible === true && (
+                    <div style={{ marginBottom: '1rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => estacionamiento.disponibles > 0 && setConEstacionamiento(v => !v)}
+                        style={{
+                          width: '100%', display: 'flex', alignItems: 'center', gap: '0.875rem',
+                          padding: '0.875rem 1rem',
+                          border: conEstacionamiento ? `2px solid ${C.teal}` : `1px solid ${C.line}`,
+                          background: conEstacionamiento ? 'rgba(28,74,90,0.05)' : '#fff',
+                          cursor: estacionamiento.disponibles > 0 ? 'pointer' : 'not-allowed',
+                          textAlign: 'left', transition: 'all 0.15s',
+                          opacity: estacionamiento.disponibles === 0 ? 0.55 : 1,
+                        }}
+                      >
+                        <div style={{
+                          width: '18px', height: '18px', flexShrink: 0,
+                          border: conEstacionamiento ? `5px solid ${C.teal}` : `2px solid ${C.line}`,
+                          borderRadius: '3px', transition: 'all 0.15s',
+                          background: conEstacionamiento ? C.teal : '#fff',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          {conEstacionamiento && <span style={{ color: '#fff', fontSize: '11px', fontWeight: 700, lineHeight: 1 }}>✓</span>}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: '0.875rem', fontWeight: conEstacionamiento ? 500 : 400, color: C.charcoal }}>
+                            🅿️ Agregar estacionamiento
+                          </p>
+                          <p style={{ fontSize: '11px', color: estacionamiento.disponibles === 0 ? '#B5533E' : C.warm, marginTop: '2px' }}>
+                            {estacionamiento.disponibles === 0
+                              ? 'Sin disponibilidad para esas fechas'
+                              : `${estacionamiento.disponibles} de ${estacionamiento.total} disponibles · sin costo adicional`
+                            }
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+                  )}
 
                   {/* Resumen precio */}
                   {noches > 0 && tarifaSeleccionada !== null && hab.precios?.[tarifaSeleccionada] && (

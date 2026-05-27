@@ -49,6 +49,12 @@ public class ReservaService {
         if (!solapadas.isEmpty())
             throw new IllegalArgumentException("La habitación ya tiene una reserva en esas fechas");
 
+        if (Boolean.TRUE.equals(req.conEstacionamiento())) {
+            long estacionamientosUsados = reservaRepository.countEstacionamientoSolapadas(req.fechaEntrada(), req.fechaSalida());
+            if (estacionamientosUsados >= 4)
+                throw new IllegalArgumentException("No hay estacionamientos disponibles para esas fechas");
+        }
+
         Huesped huesped = huespedRepository.findById(huespedId)
             .orElseThrow(() -> new IllegalArgumentException("Huésped no encontrado"));
 
@@ -58,6 +64,8 @@ public class ReservaService {
         r.setFechaEntrada(req.fechaEntrada());
         r.setFechaSalida(req.fechaSalida());
         r.setNotas(req.notas());
+        r.setPersonas(req.personas());
+        r.setConEstacionamiento(Boolean.TRUE.equals(req.conEstacionamiento()));
 
         reservaRepository.save(r);
         return ReservaResponse.from(r);

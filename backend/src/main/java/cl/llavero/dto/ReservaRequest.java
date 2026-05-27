@@ -7,5 +7,7 @@ public record ReservaRequest(
     UUID habitacionId,
     LocalDate fechaEntrada,
     LocalDate fechaSalida,
-    String notas
+    String notas,
+    Integer personas,
+    Boolean conEstacionamiento
 ) {}

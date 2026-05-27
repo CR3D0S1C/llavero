@@ -44,6 +44,12 @@ public class Reserva {
     @Column(length = 500)
     private String notas;
 
+    @Column
+    private Integer personas;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean conEstacionamiento = false;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }
