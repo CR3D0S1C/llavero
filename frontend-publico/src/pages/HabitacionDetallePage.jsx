@@ -136,31 +136,107 @@ export default function HabitacionDetallePage() {
   return (
     <div style={{ backgroundColor: C.cream, width: '100%' }}>
 
-      {/* ── Imagen hero superior ── */}
+      {/* ── Carrusel hero ── */}
       <div style={{ width: '100%', aspectRatio: '21/9', maxHeight: '520px', overflow: 'hidden', position: 'relative', minHeight: '260px' }}>
-        <img
-          src={portadaSrc}
-          alt={hab.tipoLabel}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.3s' }}
-          key={fotoActual}
-        />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.55) 100%)' }} />
+        {/* Imagen con fade */}
+        <div key={fotoActual} style={{ width: '100%', height: '100%', animation: 'fadeIn 0.4s ease both' }}>
+          <img
+            src={hab.fotos?.[fotoActual]?.url || FALLBACK_IMG}
+            alt={hab.tipoLabel}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        </div>
 
-        {/* Info sobre la imagen */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.65) 100%)' }} />
+
+        {/* Flecha izquierda */}
+        {hab.fotos?.length > 1 && (
+          <button
+            onClick={() => setFotoActual(i => (i - 1 + hab.fotos.length) % hab.fotos.length)}
+            style={{
+              position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)',
+              width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)',
+              border: '1px solid rgba(255,255,255,0.2)', color: '#fff',
+              fontSize: '1.5rem', cursor: 'pointer', transition: 'background 0.2s',
+              lineHeight: 1,
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.7)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.4)'}
+          >
+            ‹
+          </button>
+        )}
+
+        {/* Flecha derecha */}
+        {hab.fotos?.length > 1 && (
+          <button
+            onClick={() => setFotoActual(i => (i + 1) % hab.fotos.length)}
+            style={{
+              position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)',
+              width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)',
+              border: '1px solid rgba(255,255,255,0.2)', color: '#fff',
+              fontSize: '1.5rem', cursor: 'pointer', transition: 'background 0.2s',
+              lineHeight: 1,
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.7)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.4)'}
+          >
+            ›
+          </button>
+        )}
+
+        {/* Info + contador */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem 2.5rem' }}>
-          <div style={{ maxWidth: '1152px', margin: '0 auto' }}>
-            <p style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: C.gold, marginBottom: '0.5rem' }}>
-              Hab. {hab.numero} · Baño {hab.bano}
-            </p>
-            <h1 className="font-heading" style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 300, color: '#fff', lineHeight: 1.1 }}>
-              {hab.tipoLabel}
-            </h1>
+          <div style={{ maxWidth: '1152px', margin: '0 auto', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+            <div>
+              <p style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: C.gold, marginBottom: '0.5rem' }}>
+                Hab. {hab.numero} · Baño {hab.bano}
+              </p>
+              <h1 className="font-heading" style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 300, color: '#fff', lineHeight: 1.1 }}>
+                {hab.tipoLabel}
+              </h1>
+            </div>
+            {/* Contador de fotos */}
+            {hab.fotos?.length > 1 && (
+              <span style={{
+                fontSize: '12px', color: 'rgba(255,255,255,0.7)',
+                background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)',
+                padding: '4px 10px', letterSpacing: '0.06em',
+              }}>
+                {fotoActual + 1} / {hab.fotos.length}
+              </span>
+            )}
           </div>
         </div>
 
+        {/* Puntos indicadores */}
+        {hab.fotos?.length > 1 && (
+          <div style={{
+            position: 'absolute', bottom: '1.25rem', left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', gap: '6px', alignItems: 'center',
+          }}>
+            {hab.fotos.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setFotoActual(i)}
+                style={{
+                  width: i === fotoActual ? '22px' : '8px',
+                  height: '8px',
+                  borderRadius: '4px',
+                  background: i === fotoActual ? '#fff' : 'rgba(255,255,255,0.45)',
+                  border: 'none', padding: 0, cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                }}
+              />
+            ))}
+          </div>
+        )}
+
         {/* Botón volver */}
         <button
-          onClick={() => navigate('/habitaciones')}
+          onClick={() => navigate(-1)}
           style={{
             position: 'absolute', top: '1.5rem', left: '1.5rem',
             fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase',
@@ -183,12 +259,10 @@ export default function HabitacionDetallePage() {
                 key={f.id}
                 onClick={() => setFotoActual(i)}
                 style={{
-                  flexShrink: 0, width: '80px', height: '56px',
-                  overflow: 'hidden',
+                  flexShrink: 0, width: '80px', height: '56px', overflow: 'hidden',
                   border: i === fotoActual ? `2px solid ${C.gold}` : '2px solid transparent',
                   opacity: i === fotoActual ? 1 : 0.5,
-                  transition: 'all 0.2s',
-                  cursor: 'pointer', padding: 0,
+                  transition: 'all 0.2s', cursor: 'pointer', padding: 0,
                 }}
               >
                 <img src={f.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
