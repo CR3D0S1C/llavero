@@ -14,6 +14,7 @@ import DtePendientes from './pages/DtePendientes'
 import GestionHabitaciones from './pages/GestionHabitaciones'
 import Inventario from './pages/Inventario'
 import GestionUsuarios from './pages/GestionUsuarios'
+import Reservas from './pages/Reservas'
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/gestion" element={<ProtectedRoute soloJefe><GestionHabitaciones /></ProtectedRoute>} />
           <Route path="/inventario" element={<ProtectedRoute soloJefe><Inventario /></ProtectedRoute>} />
           <Route path="/usuarios" element={<ProtectedRoute soloJefe><GestionUsuarios /></ProtectedRoute>} />
+          <Route path="/reservas" element={<ProtectedRoute soloJefe><Reservas /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </BrowserRouter>

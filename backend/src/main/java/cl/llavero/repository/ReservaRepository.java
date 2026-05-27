@@ -30,4 +30,16 @@ public interface ReservaRepository extends JpaRepository<Reserva, UUID> {
         @Param("fechaEntrada") LocalDate fechaEntrada,
         @Param("fechaSalida") LocalDate fechaSalida
     );
+
+    @Query("""
+        SELECT r FROM Reserva r
+        WHERE r.estado IN ('pendiente', 'confirmada')
+          AND (r.fechaEntrada BETWEEN :desde AND :hasta
+               OR r.fechaSalida = :desde)
+        ORDER BY r.fechaEntrada ASC, r.createdAt ASC
+    """)
+    List<Reserva> findProximas(
+        @Param("desde") LocalDate desde,
+        @Param("hasta") LocalDate hasta
+    );
 }

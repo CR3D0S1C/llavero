@@ -3,6 +3,7 @@ package cl.llavero.controller;
 import cl.llavero.dto.EstadoActualResponse;
 import cl.llavero.dto.MetricasResponse;
 import cl.llavero.dto.ReservaResponse;
+import cl.llavero.dto.ReservaStaffRequest;
 import cl.llavero.dto.UsuarioRequest;
 import cl.llavero.dto.UsuarioResponse;
 import cl.llavero.entity.EstadoReserva;
@@ -72,6 +73,15 @@ public class AdminController {
     @GetMapping("/reservas")
     public ResponseEntity<List<ReservaResponse>> listarReservas() {
         return ResponseEntity.ok(reservaService.listarTodas());
+    }
+
+    @PostMapping("/reservas")
+    public ResponseEntity<?> crearReserva(@RequestBody ReservaStaffRequest req) {
+        try {
+            return ResponseEntity.ok(reservaService.crearComoStaff(req));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PutMapping("/reservas/{id}/confirmar")

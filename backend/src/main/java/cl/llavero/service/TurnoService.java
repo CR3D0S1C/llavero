@@ -66,6 +66,22 @@ public class TurnoService {
         int boletas  = (int) ventas.stream().filter(v -> v.getTipoDte() == TipoDte.boleta).count();
         int facturas = (int) ventas.stream().filter(v -> v.getTipoDte() == TipoDte.factura).count();
 
+        // Totales por método de pago
+        BigDecimal totEfectivo = BigDecimal.ZERO, totTransferencia = BigDecimal.ZERO,
+                   totDebito = BigDecimal.ZERO,   totCredito = BigDecimal.ZERO,
+                   totOtro = BigDecimal.ZERO;
+        for (Venta v : ventas) {
+            BigDecimal monto = v.getTotal() != null ? v.getTotal() : BigDecimal.ZERO;
+            if (v.getMetodoPago() == null) { totOtro = totOtro.add(monto); continue; }
+            switch (v.getMetodoPago()) {
+                case efectivo      -> totEfectivo      = totEfectivo.add(monto);
+                case transferencia -> totTransferencia = totTransferencia.add(monto);
+                case debito        -> totDebito        = totDebito.add(monto);
+                case credito       -> totCredito       = totCredito.add(monto);
+                case otro          -> totOtro          = totOtro.add(monto);
+            }
+        }
+
         // Top productos vendidos
         Map<String, ResumenTurnoResponse.ProductoVendidoDto> prods = new LinkedHashMap<>();
         Map<String, ResumenTurnoResponse.HabitacionVendidaDto> habs = new LinkedHashMap<>();
@@ -109,6 +125,11 @@ public class TurnoService {
                 .sorted((a, b) -> b.getCantidad().compareTo(a.getCantidad()))
                 .limit(10).collect(Collectors.toList()));
         r.setHabitacionesTop(new ArrayList<>(habs.values()));
+        r.setTotalEfectivo(totEfectivo);
+        r.setTotalTransferencia(totTransferencia);
+        r.setTotalDebito(totDebito);
+        r.setTotalCredito(totCredito);
+        r.setTotalOtro(totOtro);
         return r;
     }
 

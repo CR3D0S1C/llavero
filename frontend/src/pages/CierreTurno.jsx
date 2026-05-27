@@ -50,7 +50,16 @@ export default function CierreTurno() {
   const cargar = async () => {
     try {
       const res = await getResumenTurno()
-      setResumen(res.data)
+      const r = res.data
+      setResumen(r)
+      // Pre-llenar desde ventas registradas — cajero solo valida
+      setPagos({
+        efectivo:      r.totalEfectivo      > 0 ? String(Math.round(r.totalEfectivo))      : '',
+        transferencia: r.totalTransferencia > 0 ? String(Math.round(r.totalTransferencia)) : '',
+        tarjetaDebito: r.totalDebito        > 0 ? String(Math.round(r.totalDebito))        : '',
+        tarjetaCredito:r.totalCredito       > 0 ? String(Math.round(r.totalCredito))       : '',
+        otro:          r.totalOtro          > 0 ? String(Math.round(r.totalOtro))          : '',
+      })
     } catch (e) {
       toast.error(e.response?.data?.error || 'No hay turno activo')
       setResumen(null)
@@ -203,7 +212,7 @@ export default function CierreTurno() {
         {paso === 2 && (
           <section className="space-y-4 animate-fade-in">
             {/* Desglose por método de pago */}
-            <DocCard title="Desglose por método de pago" subtitle="Declara cuánto recibiste en cada uno">
+            <DocCard title="Desglose por método de pago" subtitle="Pre-cargado desde las ventas del turno · ajusta si hay diferencia">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
                 {PAGOS_CFG.map(p => (
                   <PaymentInput key={p.key} cfg={p}

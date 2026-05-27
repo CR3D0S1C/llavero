@@ -75,6 +75,14 @@ export const getDteTodos = () => api.get('/dte/todos')
 export const marcarDteEmitido = (id) => api.put(`/dte/${id}/emitido`)
 export const marcarDteError = (id, mensaje) => api.put(`/dte/${id}/error`, { mensaje })
 
+// Reservas (admin/staff)
+export const getReservas           = () => api.get('/admin/reservas')
+export const crearReservaAdmin     = (data) => api.post('/admin/reservas', data)
+export const confirmarReserva      = (id) => api.put(`/admin/reservas/${id}/confirmar`)
+export const completarReserva      = (id) => api.put(`/admin/reservas/${id}/completar`)
+export const cancelarReservaAdmin  = (id) => api.put(`/admin/reservas/${id}/cancelar`)
+export const getReservasProximas   = () => api.get('/staff/reservas/proximas')
+
 // Admin
 export const getMetricas        = () => api.get('/admin/metricas')
 export const getEstadoActual    = () => api.get('/admin/estado-actual')

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AuthService {
@@ -20,6 +21,11 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final TurnoRepository turnoRepository;
     private final JwtUtil jwtUtil;
+
+    // Brute-force protection: username → [conteo_fallos, timestamp_primer_fallo]
+    private final ConcurrentHashMap<String, long[]> intentosFallidos = new ConcurrentHashMap<>();
+    private static final int MAX_INTENTOS = 5;
+    private static final long BLOQUEO_MS = 30 * 60 * 1000L; // 30 minutos
 
     public AuthService(UsuarioRepository usuarioRepository,
                        TurnoRepository turnoRepository,
@@ -29,16 +35,40 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
+    private void verificarBloqueo(String nombre) {
+        long[] data = intentosFallidos.get(nombre.toLowerCase());
+        if (data == null) return;
+        if (data[0] >= MAX_INTENTOS) {
+            long restante = (data[1] + BLOQUEO_MS) - System.currentTimeMillis();
+            if (restante > 0) {
+                long min = (restante / 60000) + 1;
+                throw new RuntimeException("Cuenta bloqueada por demasiados intentos. Intenta en " + min + " min.");
+            }
+            intentosFallidos.remove(nombre.toLowerCase());
+        }
+    }
+
+    private void registrarFallo(String nombre) {
+        intentosFallidos.compute(nombre.toLowerCase(), (k, data) -> {
+            if (data == null) return new long[]{1, System.currentTimeMillis()};
+            return new long[]{data[0] + 1, data[1]};
+        });
+    }
+
     @Transactional
     public LoginResponse login(LoginRequest request) {
+        verificarBloqueo(request.getNombre());
+
         Usuario usuario = usuarioRepository
                 .findByNombreIgnoreCaseAndActivoTrue(request.getNombre())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RuntimeException("Usuario o PIN incorrecto"));
 
         String pinHash = sha256(request.getPin());
         if (!pinHash.equals(usuario.getPinHash())) {
-            throw new RuntimeException("PIN incorrecto");
+            registrarFallo(request.getNombre());
+            throw new RuntimeException("Usuario o PIN incorrecto");
         }
+        intentosFallidos.remove(request.getNombre().toLowerCase());
 
         // Buscar turno activo o crear uno nuevo
         Turno turno = turnoRepository

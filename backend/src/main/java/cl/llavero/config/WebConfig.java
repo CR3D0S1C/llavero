@@ -11,6 +11,8 @@ public class WebConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/llavero/assets/**")
                 .addResourceLocations("classpath:/static/llavero/assets/");
+        registry.addResourceHandler("/assets/**")
+                .addResourceLocations("classpath:/static/reservas/assets/");
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:uploads/");
     }

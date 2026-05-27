@@ -14,6 +14,7 @@ const linksComunes = [
 
 // Agrupado bajo el dropdown "Administración" (solo jefe)
 const linksAdmin = [
+  { to: '/reservas',    label: 'Reservas Online',         icon: '📅', desc: 'Confirmar y gestionar reservas' },
   { to: '/gestion',     label: 'Gestión de habitaciones', icon: '🏨', desc: 'Estados y log de cambios' },
   { to: '/habitaciones',label: 'Configurar habitaciones', icon: '🛏️', desc: 'Agregar, eliminar, editar precios' },
   { to: '/productos',   label: 'Productos',               icon: '📦', desc: 'Catálogo, precios e iconos' },

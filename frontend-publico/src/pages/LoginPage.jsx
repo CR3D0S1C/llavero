@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { publicApi } from '../api'
 import { useAuth } from '../context/AuthContext'
 
+const SIDE_IMG = 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=900&q=80'
+
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -18,57 +20,122 @@ export default function LoginPage() {
       const r = await publicApi.login(form)
       login(r.data)
       navigate('/')
-    } catch (e) {
-      setError(e.response?.data?.error || 'Credenciales incorrectas')
+    } catch {
+      setError('Credenciales incorrectas. Verifica tu email y contraseña.')
     } finally {
       setLoading(false)
     }
   }
 
+  const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
+
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Iniciar sesión</h1>
-        <p className="text-sm text-gray-400 mb-8">Accede para ver y gestionar tus reservas</p>
+    <div className="min-h-screen flex" style={{ background: '#F5EFE6' }}>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-sm text-gray-600 block mb-1">Email</label>
-            <input
-              type="email"
-              required
-              value={form.email}
-              onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-gray-400"
-              placeholder="tu@email.com"
-            />
-          </div>
-          <div>
-            <label className="text-sm text-gray-600 block mb-1">Contraseña</label>
-            <input
-              type="password"
-              required
-              value={form.password}
-              onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-gray-400"
-            />
-          </div>
+      {/* ── Lado imagen ── */}
+      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
+        <img src={SIDE_IMG} alt="" className="w-full h-full object-cover" />
+        <div className="absolute inset-0" style={{ background: 'rgba(28,74,90,0.65)' }} />
+        <div className="absolute inset-0 flex flex-col justify-end p-16">
+          <p className="font-heading text-white mb-4" style={{ fontSize: '2.5rem', fontWeight: 300, lineHeight: 1.15 }}>
+            "Cada estadía es<br /><em>un recuerdo que dura"</em>
+          </p>
+          <div style={{ width: '40px', height: '1px', background: '#C9943A', marginBottom: '1.25rem' }} />
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 300, fontSize: '0.875rem' }}>
+            Hostal Mi Maravilla · La Serena, Chile
+          </p>
+        </div>
+      </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+      {/* ── Formulario ── */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-8 py-16">
+        <div style={{ width: '100%', maxWidth: '380px' }}>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gray-900 text-white py-2.5 rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:opacity-50"
+          <Link
+            to="/"
+            className="font-heading text-teal block mb-12"
+            style={{ fontSize: '1.25rem', fontWeight: 400, letterSpacing: '0.04em' }}
           >
-            {loading ? 'Entrando...' : 'Iniciar sesión'}
-          </button>
-        </form>
+            Hostal Mi Maravilla
+          </Link>
 
-        <p className="text-sm text-center text-gray-400 mt-6">
-          ¿No tienes cuenta?{' '}
-          <Link to="/registro" className="text-gray-700 underline">Regístrate</Link>
-        </p>
+          <p style={{ fontSize: '11px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#C9943A', marginBottom: '1rem' }}>
+            Bienvenido de vuelta
+          </p>
+          <h1 className="font-heading text-teal mb-2" style={{ fontSize: '2.75rem', fontWeight: 300, lineHeight: 1.05 }}>
+            Iniciar sesión
+          </h1>
+          <p style={{ color: '#6B6057', fontWeight: 300, fontSize: '0.875rem', marginBottom: '2.5rem' }}>
+            Accede para ver y gestionar tus reservas
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#6B6057', display: 'block', marginBottom: '8px' }}>
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={form.email}
+                onChange={set('email')}
+                placeholder="tu@email.com"
+                className="input-line"
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#6B6057', display: 'block', marginBottom: '8px' }}>
+                Contraseña
+              </label>
+              <input
+                type="password"
+                required
+                value={form.password}
+                onChange={set('password')}
+                placeholder="••••••••"
+                className="input-line"
+              />
+            </div>
+
+            {error && (
+              <p style={{ fontSize: '13px', color: '#B5533E', lineHeight: 1.5 }}>{error}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full transition-all"
+              style={{
+                fontSize: '11px',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                padding: '16px',
+                marginTop: '0.5rem',
+                background: loading ? '#DDD0C0' : '#1C4A5A',
+                color: '#fff',
+                border: 'none',
+                cursor: loading ? 'not-allowed' : 'pointer',
+              }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#1E1E1E' }}
+              onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#1C4A5A' }}
+            >
+              {loading ? 'Ingresando...' : 'Iniciar sesión'}
+            </button>
+          </form>
+
+          <p style={{ fontSize: '13px', color: '#6B6057', marginTop: '2rem', fontWeight: 300 }}>
+            ¿No tienes cuenta?{' '}
+            <Link
+              to="/registro"
+              style={{ color: '#1C4A5A', borderBottom: '1px solid #1C4A5A', paddingBottom: '1px' }}
+              onMouseEnter={e => { e.target.style.color = '#C9943A'; e.target.style.borderBottomColor = '#C9943A' }}
+              onMouseLeave={e => { e.target.style.color = '#1C4A5A'; e.target.style.borderBottomColor = '#1C4A5A' }}
+            >
+              Regístrate gratis
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

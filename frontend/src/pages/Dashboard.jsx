@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import RoomCard from '../components/RoomCard'
 import ModalLiberar from '../components/ModalLiberar'
-import { getHabitaciones, getMetricas } from '../services/api'
+import { getHabitaciones, getMetricas, getReservasProximas } from '../services/api'
 import { useSesion } from '../context/SesionContext'
 
 export default function Dashboard() {
@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [habitacionALiberar, setHabitacionALiberar] = useState(null)
   const [ahora, setAhora] = useState(new Date())
+  const [proximas, setProximas] = useState([])
   const { sesion } = useSesion()
   const navigate = useNavigate()
 
@@ -27,8 +28,12 @@ export default function Dashboard() {
 
   const cargar = async () => {
     try {
-      const hRes = await getHabitaciones()
-      setHabitaciones(hRes.data)
+      const [hRes, pRes] = await Promise.allSettled([
+        getHabitaciones(),
+        getReservasProximas(),
+      ])
+      if (hRes.status === 'fulfilled') setHabitaciones(hRes.value.data)
+      if (pRes.status === 'fulfilled') setProximas(pRes.value.data)
       if (sesion?.rol === 'jefe') {
         const mRes = await getMetricas()
         setMetricas(mRes.data)
@@ -100,6 +105,63 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {/* Widget reservas próximas */}
+        {proximas.length > 0 && (
+          <div className="card mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold flex items-center gap-2">
+                📅 Reservas próximas
+                <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full">
+                  {proximas.length}
+                </span>
+              </h2>
+              {sesion?.rol === 'jefe' && (
+                <button
+                  onClick={() => navigate('/reservas')}
+                  className="text-xs text-accent hover:underline"
+                >
+                  Ver todas →
+                </button>
+              )}
+            </div>
+            <div className="space-y-2">
+              {proximas.map(r => {
+                const hoy = new Date().toISOString().slice(0, 10)
+                const esHoy = r.fechaEntrada === hoy
+                const esSalida = r.fechaSalida === hoy
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-white/5 border border-border/50"
+                  >
+                    <span className="text-lg shrink-0">
+                      {esSalida ? '🚪' : '🛎️'}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{r.huespedNombre}</p>
+                      <p className="text-xs text-muted truncate">
+                        Hab. {r.habitacionNumero} · {r.habitacionTipo}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className={`text-xs font-medium ${esSalida ? 'text-red-400' : esHoy ? 'text-green-400' : 'text-blue-400'}`}>
+                        {esSalida ? 'Sale hoy' : esHoy ? 'Llega hoy' : 'Mañana'}
+                      </p>
+                      <p className={`text-xs px-2 py-0.5 rounded-full border mt-0.5 inline-block ${
+                        r.estado === 'pendiente'
+                          ? 'text-yellow-400 border-yellow-600/30 bg-yellow-500/10'
+                          : 'text-blue-400 border-blue-600/30 bg-blue-500/10'
+                      }`}>
+                        {r.estado}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Grid habitaciones */}
         <div className="card">

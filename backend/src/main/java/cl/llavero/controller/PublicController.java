@@ -9,6 +9,7 @@ import cl.llavero.entity.EstadoHabitacion;
 import cl.llavero.repository.HabitacionRepository;
 import cl.llavero.service.HuespedService;
 import cl.llavero.service.ReservaService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +26,9 @@ public class PublicController {
     private final HabitacionRepository habitacionRepository;
     private final HuespedService huespedService;
     private final ReservaService reservaService;
+
+    @Value("${app.registro.habilitado:true}")
+    private boolean registroHabilitado;
 
     public PublicController(HabitacionRepository habitacionRepository,
                             HuespedService huespedService,
@@ -65,6 +69,8 @@ public class PublicController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registrar(@RequestBody HuespedRegisterRequest req) {
+        if (!registroHabilitado)
+            return ResponseEntity.status(503).body(Map.of("error", "El registro está temporalmente deshabilitado. Contáctanos directamente."));
         try {
             HuespedLoginResponse resp = huespedService.registrar(req);
             return ResponseEntity.ok(resp);

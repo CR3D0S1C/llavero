@@ -4,6 +4,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/llavero/',
+  build: {
+    outDir: '../backend/src/main/resources/static/llavero',
+    emptyOutDir: true,
+  },
   server: {
     port: 3000,
     proxy: {

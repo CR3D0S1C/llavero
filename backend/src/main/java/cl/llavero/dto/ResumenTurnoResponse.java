@@ -25,6 +25,13 @@ public class ResumenTurnoResponse {
     private List<ProductoVendidoDto> productosTop;
     private List<HabitacionVendidaDto> habitacionesTop;
 
+    // Totales por método de pago (para pre-llenar el arqueo)
+    private BigDecimal totalEfectivo      = BigDecimal.ZERO;
+    private BigDecimal totalTransferencia = BigDecimal.ZERO;
+    private BigDecimal totalDebito        = BigDecimal.ZERO;
+    private BigDecimal totalCredito       = BigDecimal.ZERO;
+    private BigDecimal totalOtro          = BigDecimal.ZERO;
+
     @Getter @Setter
     public static class ProductoVendidoDto {
         private String nombre;
