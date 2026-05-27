@@ -62,11 +62,13 @@ Hay dos SPAs independientes servidas por el mismo backend. La SPA pública usa u
 - Página "Mis Reservas" donde el huésped ve el historial y estado de sus reservas.
 
 ### Sitio público de reservas
-- **Página de habitaciones**: grilla con fotos, estado en tiempo real (disponible / ocupado / reservado), precio desde y amenidades.
-- **Detalle de habitación**: galería de fotos, descripción completa, capacidad, precios por tipo de tarifa, formulario de reserva con selector de fechas.
+- **Barra de búsqueda** en `/habitaciones`: check-in, check-out y número de personas. Filtra habitaciones disponibles en tiempo real.
+- **Disponibilidad de estacionamiento**: 4 plazas disponibles. El buscador muestra cuántas quedan para las fechas elegidas (indicador verde/amarillo/rojo).
+- **Página de habitaciones**: grilla con foto portada, estado (disponible / ocupado / reservado), precio desde, capacidad y amenidades.
+- **Detalle de habitación**: carrusel de fotos, descripción, precios por tarifa, opción de agregar estacionamiento, formulario de reserva.
+- Las fechas buscadas se pasan automáticamente al formulario de reserva del detalle.
 - La disponibilidad se calcula en el backend — una habitación físicamente ocupada hoy sigue aceptando reservas para fechas futuras.
-- Reservas confirmadas quedan en estado `pendiente` hasta que el staff las aprueba.
-- Huéspedes sin cuenta pueden reservar como invitado (se les crea cuenta interna con email generado).
+- Reservas quedan en estado `pendiente` hasta que el staff las aprueba (o se crean directamente como `confirmada` desde Llavero).
 
 ### Gestión de habitaciones (staff)
 - Vista tipo dashboard con tarjetas por habitación.
@@ -131,8 +133,16 @@ Todos los envíos son asíncronos (`@Async`).
 ### Fotos de habitaciones
 - Subida de fotos desde el panel de Llavero (JEFE).
 - Las fotos se guardan en `uploads/habitaciones/` en el servidor y se sirven como archivos estáticos.
-- Una foto por habitación se marca como portada y aparece primero en el sitio público.
-- El sitio público muestra las fotos reales; si no hay fotos cargadas, muestra imágenes de Unsplash como fallback.
+- Una foto se marca como **portada** y aparece en las tarjetas de la página de habitaciones.
+- Las demás fotos forman el **carrusel** de la página de detalle.
+- Si no hay fotos cargadas, las tarjetas muestran imágenes de Unsplash como fallback.
+
+### Carrusel de fotos (página de detalle)
+- Imagen hero a pantalla completa con flechas de navegación ‹ › superpuestas.
+- Navegación circular: desde la última foto vuelve a la primera.
+- Puntos indicadores en la parte inferior con animación de ancho.
+- Contador de fotos "N / Total" en la esquina inferior derecha.
+- Thumbnails en barra oscura para saltar directamente a cualquier foto.
 
 ### Documentos Tributarios (DTE)
 Sin integración API. Flujo manual:
