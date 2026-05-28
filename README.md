@@ -144,6 +144,18 @@ Todos los envíos son asíncronos (`@Async`).
 - Contador de fotos "N / Total" en la esquina inferior derecha.
 - Thumbnails en barra oscura para saltar directamente a cualquier foto.
 
+### Estadías activas (ciclo completo de hospedaje)
+
+Cierra el ciclo entre reserva web y cobro. El flujo completo es:
+
+1. **Reserva web** — huésped reserva desde `mimaravillahostal.com`, queda en estado `pendiente`.
+2. **Confirmación** — jefe confirma desde Llavero → estado `confirmada`.
+3. **Check-in** — jefe hace click en "🛎️ Check-in" el día de llegada → se crea una **estadía activa** con los cargos iniciales (N noches × precio estimado). La habitación pasa a `ocupado`.
+4. **Cargos durante la estadía** — desde `/llavero/estadias` el staff agrega cargos extras (desayuno, minibar, lavandería) que se acumulan en el total.
+5. **Check-out** — staff abre la estadía, revisa todos los cargos, selecciona método de pago y confirma el cobro. La habitación pasa a `aseo` y se genera el DTE pendiente.
+
+El dashboard muestra un widget verde con las estadías activas en tiempo real.
+
 ### Documentos Tributarios (DTE)
 Sin integración API. Flujo manual:
 1. Cada venta genera un registro `pendiente` en `dte_queue`.
