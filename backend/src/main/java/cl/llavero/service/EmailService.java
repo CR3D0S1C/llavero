@@ -4,6 +4,7 @@ import cl.llavero.dto.EstadoActualResponse;
 import cl.llavero.dto.ResumenTurnoResponse;
 import cl.llavero.entity.ArqueoTurno;
 import cl.llavero.entity.Reserva;
+import cl.llavero.entity.Venta;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -464,6 +465,119 @@ public class EmailService {
                 r.getNotas() != null && !r.getNotas().isBlank()
                     ? "<div style='padding:10px 12px;background:#f5f5f5;border-left:3px solid #ddd;margin-bottom:14px'><strong>Notas:</strong><br/>" + esc(r.getNotas()) + "</div>"
                     : ""
+            );
+    }
+
+    // ── Comprobante de check-out ────────────────────────────────────────────────
+
+    @Async
+    public void enviarComprobanteCheckoutAsync(Venta venta) {
+        try {
+            String emailDestino = resolverEmailHuesped(venta);
+            if (emailDestino == null || emailDestino.isBlank() || emailDestino.endsWith("@llavero.internal")) return;
+            if (mailSender == null || mailUsername == null || mailUsername.isBlank()) return;
+
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper h = new MimeMessageHelper(msg, false, "UTF-8");
+            h.setFrom(remitente);
+            h.setTo(emailDestino);
+            h.setSubject("Comprobante de estadía · Hostal Mi Maravilla");
+            h.setText(construirComprobanteHtml(venta), true);
+            mailSender.send(msg);
+            System.out.println("[EmailService] Comprobante de checkout enviado a " + emailDestino);
+        } catch (Exception e) {
+            System.err.println("[EmailService] Error enviando comprobante checkout: " + e.getMessage());
+        }
+    }
+
+    private String resolverEmailHuesped(Venta v) {
+        if (v.getReceptorEmail() != null && !v.getReceptorEmail().isBlank()) return v.getReceptorEmail();
+        if (v.getReserva() != null) return v.getReserva().getHuesped().getEmail();
+        return null;
+    }
+
+    private String construirComprobanteHtml(Venta v) {
+        java.time.format.DateTimeFormatter fmtFecha =
+            java.time.format.DateTimeFormatter.ofPattern("dd 'de' MMMM 'de' yyyy", new java.util.Locale("es", "CL"));
+
+        String nombreHuesped = v.getReserva() != null
+            ? v.getReserva().getHuesped().getNombre()
+            : (v.getReceptorRazon() != null ? v.getReceptorRazon() : "Estimado huésped");
+
+        String habInfo = v.getHabitacion() != null
+            ? "Hab. " + esc(v.getHabitacion().getNumero())
+              + (v.getHabitacion().getTipo() != null ? " · " + esc(v.getHabitacion().getTipo().getLabel()) : "")
+            : "—";
+
+        String itemsHtml = v.getItems().stream().map(i ->
+            "<tr>" +
+            "<td style='padding:9px 14px;font-size:13px;border-bottom:1px solid #EEE8E0'>" + esc(i.getDescripcion()) + "</td>" +
+            "<td style='padding:9px 14px;font-size:13px;text-align:center;border-bottom:1px solid #EEE8E0;color:#666'>" + i.getCantidad() + "</td>" +
+            "<td style='padding:9px 14px;font-size:13px;text-align:right;border-bottom:1px solid #EEE8E0;font-weight:500'>$" + fmt(i.getSubtotal()) + "</td>" +
+            "</tr>"
+        ).collect(java.util.stream.Collectors.joining());
+
+        String pagoStr = v.getMetodoPago() != null ? switch (v.getMetodoPago().name()) {
+            case "efectivo" -> "Efectivo";
+            case "debito" -> "Débito";
+            case "credito" -> "Crédito";
+            case "transferencia" -> "Transferencia";
+            default -> v.getMetodoPago().name();
+        } : "—";
+
+        String fechaCheckout = LocalDateTime.now().format(fmtFecha);
+
+        return """
+            <div style='font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:auto;color:#1a1a1a'>
+              <div style='background:#1C4A5A;padding:28px 24px;text-align:center'>
+                <p style='color:#C9943A;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin:0 0 6px'>Hostal Mi Maravilla</p>
+                <h1 style='color:#fff;font-weight:300;font-size:22px;margin:0 0 4px'>¡Gracias por tu visita!</h1>
+                <p style='color:rgba(255,255,255,0.6);font-size:13px;margin:0'>Esperamos verte pronto</p>
+              </div>
+
+              <div style='padding:20px 24px;background:#F5EFE6;border-bottom:3px solid #C9943A'>
+                <p style='font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#6B6057;margin:0 0 4px'>Comprobante de estadía</p>
+                <p style='font-size:18px;font-weight:500;color:#1C4A5A;margin:0'>%s</p>
+                <p style='font-size:13px;color:#6B6057;margin:4px 0 0'>%s · Check-out %s</p>
+              </div>
+
+              <div style='padding:16px 24px 0;background:#fff'>
+                <table style='width:100%%;border-collapse:collapse'>
+                  <thead>
+                    <tr style='background:#F5EFE6'>
+                      <th style='padding:9px 14px;text-align:left;font-size:12px;color:#6B6057;font-weight:600'>Descripción</th>
+                      <th style='padding:9px 14px;text-align:center;font-size:12px;color:#6B6057;font-weight:600'>Cant.</th>
+                      <th style='padding:9px 14px;text-align:right;font-size:12px;color:#6B6057;font-weight:600'>Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>%s</tbody>
+                </table>
+              </div>
+
+              <div style='padding:16px 24px;background:#fff;border-top:2px solid #1C4A5A'>
+                <table style='width:100%%;border-collapse:collapse'>
+                  <tr>
+                    <td style='padding:6px 0;color:#6B6057;font-size:13px'>Método de pago</td>
+                    <td style='padding:6px 0;text-align:right;font-size:13px'>%s</td>
+                  </tr>
+                  <tr>
+                    <td style='padding:6px 0;font-weight:700;font-size:15px'>TOTAL</td>
+                    <td style='padding:6px 0;text-align:right;font-weight:700;font-size:18px;color:#1C4A5A'>$%s</td>
+                  </tr>
+                </table>
+              </div>
+
+              <p style='font-size:11px;color:#aaa;text-align:center;padding:16px;margin:0'>
+                Hostal Mi Maravilla · Este correo fue generado automáticamente.
+              </p>
+            </div>
+            """.formatted(
+                esc(nombreHuesped),
+                habInfo,
+                fechaCheckout,
+                itemsHtml,
+                pagoStr,
+                fmt(v.getTotal())
             );
     }
 

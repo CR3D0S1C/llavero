@@ -28,4 +28,7 @@ public class VentaRequest {
     private String metodoPago;          // "efectivo" | "transferencia" | "debito" | "credito" | "otro"
     private BigDecimal montoPagado;     // solo para efectivo (puede ser >= total para calcular vuelto)
     private String codigoTransaccion;   // para transferencia / débito / crédito / otro
+
+    // Estadía activa (walk-in pago al salir)
+    private Boolean pagoAlSalir;        // true = crea venta activa sin cobrar, pago en checkout
 }

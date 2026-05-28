@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import RoomCard from '../components/RoomCard'
@@ -190,13 +190,13 @@ export default function NuevaVenta() {
     ? (habitacionSel ? !!tarifaSel : items.length > 0)
     : items.length > 0
 
-  const confirmarVenta = async (tipoDte, receptor, pago) => {
+  const confirmarVenta = async (tipoDte, receptor, pago, pagoAlSalir = false) => {
     if (!puedeConfirmar) return
     setLoading(true)
     try {
       const payload = {
         tipoVenta: modo,
-        tipoDte,
+        tipoDte: pagoAlSalir ? 'boleta' : tipoDte,
         items: items.map(i => ({ ...i })),
         ...(modo === 'hostal' && habitacionSel ? {
           habitacionId: habitacionSel.id,
@@ -216,13 +216,18 @@ export default function NuevaVenta() {
           metodoPago: pago.metodoPago,
           montoPagado: pago.montoPagado,
           codigoTransaccion: pago.codigoTransaccion,
-        } : {})
+        } : {}),
+        ...(pagoAlSalir ? { pagoAlSalir: true } : {})
       }
       const res = await crearVenta(payload)
+      if (pagoAlSalir) {
+        toast.success(`Estadía activa creada — Hab. ${habitacionSel.numero}`)
+        navigate('/estadias')
+        return
+      }
       toast.success(modo === 'hostal' && habitacionSel
         ? `Venta registrada — Hab. ${habitacionSel.numero}`
         : `Venta registrada — $${total.toLocaleString('es-CL')}`)
-      // Mostrar comprobante para imprimir en lugar de navegar directo
       setVentaConfirmada(res.data)
     } catch (e) {
       toast.error(e.response?.data?.error || 'Error al crear venta')
@@ -230,6 +235,14 @@ export default function NuevaVenta() {
       setLoading(false)
     }
   }
+
+  const tarifaVigenteHoy = useMemo(() => {
+    if (!habitacionSel?.tarifasTemporada?.length) return null
+    const hoy = new Date().toISOString().split('T')[0]
+    return habitacionSel.tarifasTemporada
+      .filter(t => t.fechaDesde <= hoy && t.fechaHasta >= hoy)
+      .sort((a, b) => Number(b.precio) - Number(a.precio))[0] || null
+  }, [habitacionSel])
 
   const categorias = [...new Set(productos.map(p => p.categoria))]
 
@@ -322,6 +335,17 @@ export default function NuevaVenta() {
                         </button>
                       ))}
                     </div>
+                    {tarifaVigenteHoy && (
+                      <div className="mt-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                        <p className="text-sm font-semibold text-yellow-400">
+                          ★ Temporada activa: {tarifaVigenteHoy.label}
+                        </p>
+                        <p className="text-xs text-muted mt-0.5">
+                          Precio temporada: <span className="font-bold text-yellow-300">${Number(tarifaVigenteHoy.precio).toLocaleString('es-CL')}/noche</span>
+                          {' — '}verificar con administración antes de confirmar
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -448,6 +472,16 @@ export default function NuevaVenta() {
               >
                 {loading ? 'Procesando...' : 'Confirmar Venta'}
               </button>
+
+              {modo === 'hostal' && habitacionSel && tarifaSel && (
+                <button
+                  onClick={() => confirmarVenta(null, null, null, true)}
+                  disabled={loading}
+                  className="w-full mt-2 py-2.5 text-sm rounded-lg font-medium border border-dashed border-green-700/60 text-green-400 hover:bg-green-950/30 transition-colors disabled:opacity-50"
+                >
+                  🏠 Estadía activa — pago al salir
+                </button>
+              )}
 
               {modo === 'hostal' && tarifaSel?.duracion === 'noche' && new Date().getHours() < 12 && (
                 <p className="text-xs text-yellow-500/70 mt-2 text-center">

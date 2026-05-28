@@ -38,6 +38,7 @@ public class VentaService {
     private final ProductoRepository productoRepository;
     private final ProductoService productoService;
     private final EmailService emailService;
+    private final ReservaRepository reservaRepository;
 
     public VentaService(VentaRepository ventaRepository,
                         VentaItemRepository itemRepository,
@@ -47,7 +48,8 @@ public class VentaService {
                         DteQueueRepository dteQueueRepository,
                         ProductoRepository productoRepository,
                         ProductoService productoService,
-                        EmailService emailService) {
+                        EmailService emailService,
+                        ReservaRepository reservaRepository) {
         this.ventaRepository = ventaRepository;
         this.itemRepository = itemRepository;
         this.habitacionRepository = habitacionRepository;
@@ -57,6 +59,7 @@ public class VentaService {
         this.productoRepository = productoRepository;
         this.productoService = productoService;
         this.emailService = emailService;
+        this.reservaRepository = reservaRepository;
     }
 
     private LocalDateTime calcularSalida(String duracion, String earlyCheckin) {
@@ -73,6 +76,8 @@ public class VentaService {
 
     @Transactional
     public VentaResponse crear(VentaRequest request, String usuarioId) {
+        boolean pagoAlSalir = Boolean.TRUE.equals(request.getPagoAlSalir());
+
         Usuario usuario = usuarioRepository.findById(UUID.fromString(usuarioId))
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -96,8 +101,9 @@ public class VentaService {
         boolean conHabitacion = habitacion != null;
 
         Venta venta = new Venta();
-        venta.setTurno(turno);
+        venta.setTurno(pagoAlSalir ? null : turno);
         venta.setUsuario(usuario);
+        if (pagoAlSalir) venta.setEstado(EstadoVenta.activa);
         venta.setHabitacion(habitacion);
         venta.setTipoVenta(tipoVenta);
         venta.setFecha(LocalDate.now());
@@ -187,6 +193,11 @@ public class VentaService {
         if (conHabitacion) {
             habitacion.setEstado(EstadoHabitacion.ocupado);
             habitacionRepository.save(habitacion);
+        }
+
+        if (pagoAlSalir) {
+            // Estadía activa walk-in: no suma al turno ni crea DTE — se hace en checkout
+            return mapear(ventaRepository.findById(venta.getId()).orElseThrow());
         }
 
         turno.setTotalTurno(turno.getTotalTurno().add(total));
@@ -391,7 +402,9 @@ public class VentaService {
         dte.setEstado(EstadoDte.pendiente);
         dteQueueRepository.save(dte);
 
-        return mapear(ventaRepository.findById(venta.getId()).orElseThrow());
+        Venta ventaFinal2 = ventaRepository.findById(venta.getId()).orElseThrow();
+        emailService.enviarComprobanteCheckoutAsync(ventaFinal2);
+        return mapear(ventaFinal2);
     }
 
     public VentaResponse mapear(Venta v) {
