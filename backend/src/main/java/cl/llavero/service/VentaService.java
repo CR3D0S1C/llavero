@@ -1,5 +1,7 @@
 package cl.llavero.service;
 
+import cl.llavero.dto.AgregarCargoRequest;
+import cl.llavero.dto.CheckoutRequest;
 import cl.llavero.dto.VentaItemRequest;
 import cl.llavero.dto.VentaItemResponse;
 import cl.llavero.dto.VentaRequest;
@@ -298,6 +300,100 @@ public class VentaService {
         ventaRepository.delete(venta);
     }
 
+    public List<VentaResponse> getEstadiasActivas() {
+        return ventaRepository.findByEstado(EstadoVenta.activa)
+            .stream().map(this::mapear).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public VentaResponse agregarCargo(UUID ventaId, AgregarCargoRequest req) {
+        Venta venta = ventaRepository.findById(ventaId)
+            .orElseThrow(() -> new RuntimeException("Estadía no encontrada"));
+        if (venta.getEstado() != EstadoVenta.activa)
+            throw new RuntimeException("Solo se pueden agregar cargos a estadías activas");
+
+        VentaItem item = new VentaItem();
+        item.setVenta(venta);
+        item.setTipo(TipoItem.valueOf(req.tipo() != null ? req.tipo() : "libre"));
+        item.setDescripcion(req.descripcion());
+        item.setCantidad(req.cantidad() != null ? req.cantidad() : 1);
+        item.setPrecioUnitario(req.precioUnitario());
+        BigDecimal subtotal = req.precioUnitario().multiply(BigDecimal.valueOf(item.getCantidad()));
+        item.setSubtotal(subtotal);
+        item.setEsLibre(false);
+        itemRepository.save(item);
+
+        venta.setTotal(venta.getTotal().add(subtotal));
+        venta = ventaRepository.save(venta);
+        return mapear(ventaRepository.findById(venta.getId()).orElseThrow());
+    }
+
+    @Transactional
+    public VentaResponse checkout(UUID ventaId, CheckoutRequest req, String usuarioId) {
+        Venta venta = ventaRepository.findById(ventaId)
+            .orElseThrow(() -> new RuntimeException("Estadía no encontrada"));
+        if (venta.getEstado() != EstadoVenta.activa)
+            throw new RuntimeException("La estadía ya fue cerrada");
+
+        // Asignar turno activo del usuario que hace el checkout
+        try {
+            Usuario usuario = usuarioRepository.findById(UUID.fromString(usuarioId))
+                .orElse(null);
+            if (usuario != null) {
+                venta.setUsuario(usuario);
+                final Venta ventaFinal = venta;
+                turnoRepository.findByUsuarioIdAndCerradoFalse(usuario.getId()).ifPresent(turno -> {
+                    ventaFinal.setTurno(turno);
+                    turno.setTotalTurno(turno.getTotalTurno().add(ventaFinal.getTotal()));
+                    turnoRepository.save(turno);
+                });
+            }
+        } catch (Exception ignored) {}
+
+        if (req.metodoPago() != null && !req.metodoPago().isBlank()) {
+            MetodoPago mp = MetodoPago.valueOf(req.metodoPago());
+            venta.setMetodoPago(mp);
+            if (mp == MetodoPago.efectivo && req.montoPagado() != null) {
+                venta.setMontoPagado(req.montoPagado());
+                BigDecimal vuelto = req.montoPagado().subtract(venta.getTotal());
+                venta.setVuelto(vuelto.signum() > 0 ? vuelto : BigDecimal.ZERO);
+            } else if (req.codigoTransaccion() != null && !req.codigoTransaccion().isBlank()) {
+                venta.setCodigoTransaccion(req.codigoTransaccion().trim());
+            }
+        }
+
+        if (req.observacion() != null) venta.setObservacion(req.observacion());
+
+        String tipoDteStr = req.tipoDte() != null ? req.tipoDte() : "boleta";
+        venta.setTipoDte(TipoDte.valueOf(tipoDteStr));
+        if (TipoDte.factura.name().equals(tipoDteStr)) {
+            venta.setReceptorRut(req.receptorRut());
+            venta.setReceptorRazon(req.receptorRazon());
+            venta.setReceptorGiro(req.receptorGiro());
+            venta.setReceptorDireccion(req.receptorDireccion());
+            venta.setReceptorComuna(req.receptorComuna());
+            venta.setReceptorCiudad(req.receptorCiudad());
+            venta.setReceptorEmail(req.receptorEmail());
+        }
+
+        venta.setEstado(EstadoVenta.cerrada);
+
+        if (venta.getHabitacion() != null) {
+            venta.getHabitacion().setEstado(EstadoHabitacion.aseo);
+            habitacionRepository.save(venta.getHabitacion());
+        }
+
+        venta = ventaRepository.save(venta);
+
+        DteQueue dte = new DteQueue();
+        dte.setVenta(venta);
+        dte.setTipoDte(tipoDteStr);
+        dte.setEstado(EstadoDte.pendiente);
+        dteQueueRepository.save(dte);
+
+        return mapear(ventaRepository.findById(venta.getId()).orElseThrow());
+    }
+
     public VentaResponse mapear(Venta v) {
         VentaResponse r = new VentaResponse();
         r.setId(v.getId().toString());
@@ -331,6 +427,15 @@ public class VentaService {
         r.setMontoPagado(v.getMontoPagado());
         r.setVuelto(v.getVuelto());
         r.setCodigoTransaccion(v.getCodigoTransaccion());
+
+        r.setEstado(v.getEstado() != null ? v.getEstado().name() : "cerrada");
+        if (v.getReserva() != null) {
+            r.setReservaId(v.getReserva().getId().toString());
+            r.setHuespedNombre(v.getReserva().getHuesped().getNombre());
+            r.setHuespedEmail(v.getReserva().getHuesped().getEmail());
+            r.setFechaEntrada(v.getReserva().getFechaEntrada());
+            r.setFechaSalida(v.getReserva().getFechaSalida());
+        }
 
         dteQueueRepository.findByVentaId(v.getId())
                 .ifPresent(dte -> r.setDteEstado(dte.getEstado().name()));

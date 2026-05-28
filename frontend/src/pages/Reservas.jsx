@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
-import { getReservas, crearReservaAdmin, confirmarReserva, completarReserva, cancelarReservaAdmin, getHabitaciones } from '../services/api'
+import { getReservas, crearReservaAdmin, confirmarReserva, completarReserva, cancelarReservaAdmin, checkinReserva, getHabitaciones } from '../services/api'
 import { toast } from '../utils/toast'
 
 const TABS = [
@@ -30,6 +31,7 @@ const FORM_INIT = {
 }
 
 export default function Reservas() {
+  const navigate = useNavigate()
   const [reservas, setReservas] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('pendiente')
@@ -40,6 +42,9 @@ export default function Reservas() {
   const [form, setForm] = useState(FORM_INIT)
   const [guardando, setGuardando] = useState(false)
   const [formError, setFormError] = useState('')
+
+  const [checkinReservaData, setCheckinReservaData] = useState(null)
+  const [checkinando, setCheckinando] = useState(false)
 
   useEffect(() => { cargar() }, [])
 
@@ -103,6 +108,22 @@ export default function Reservas() {
       toast.error(e.response?.data?.error || 'Error al procesar')
     } finally {
       setAccionando(null)
+    }
+  }
+
+  const handleCheckin = async () => {
+    if (!checkinReservaData) return
+    setCheckinando(true)
+    try {
+      await checkinReserva(checkinReservaData.id)
+      toast.success(`Check-in realizado — Hab. ${checkinReservaData.habitacionNumero} ocupada`)
+      setCheckinReservaData(null)
+      await cargar()
+      navigate('/estadias')
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Error al realizar check-in')
+    } finally {
+      setCheckinando(false)
     }
   }
 
@@ -193,6 +214,7 @@ export default function Reservas() {
                 accionando={accionando}
                 onConfirmar={() => accion(confirmarReserva, r.id, 'Reserva confirmada')}
                 onCompletar={() => accion(completarReserva, r.id, 'Reserva marcada como completada')}
+                onCheckin={() => setCheckinReservaData(r)}
                 onCancelar={() => {
                   if (window.confirm(`¿Cancelar la reserva de ${r.huespedNombre}?`))
                     accion(cancelarReservaAdmin, r.id, 'Reserva cancelada')
@@ -202,6 +224,63 @@ export default function Reservas() {
           </div>
         )}
       </div>
+
+      {/* Modal Check-in */}
+      {checkinReservaData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="card w-full max-w-md">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold flex items-center gap-2">🛎️ Confirmar Check-in</h2>
+              <button onClick={() => setCheckinReservaData(null)} className="text-muted hover:text-white text-xl leading-none">×</button>
+            </div>
+
+            <div className="space-y-3 mb-5">
+              <div className="bg-green-950/30 border border-green-700/40 rounded-lg p-4 space-y-2">
+                <p className="text-base font-semibold">{checkinReservaData.huespedNombre}</p>
+                <p className="text-sm text-muted">{checkinReservaData.huespedEmail}</p>
+                <div className="grid grid-cols-3 gap-3 mt-3 text-sm">
+                  <div>
+                    <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Habitación</p>
+                    <p className="font-medium">N° {checkinReservaData.habitacionNumero}</p>
+                    <p className="text-xs text-muted">{checkinReservaData.habitacionTipo}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Noches</p>
+                    <p className="font-medium">{noches(checkinReservaData.fechaEntrada, checkinReservaData.fechaSalida)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Total est.</p>
+                    <p className="font-medium text-accent">
+                      {checkinReservaData.montoEstimado
+                        ? `$${Number(checkinReservaData.montoEstimado).toLocaleString('es-CL')}`
+                        : '—'}
+                    </p>
+                  </div>
+                </div>
+                {checkinReservaData.notas && (
+                  <p className="text-xs text-muted italic border-l-2 border-border pl-2 mt-2">{checkinReservaData.notas}</p>
+                )}
+              </div>
+              <p className="text-sm text-muted">
+                Se creará una estadía activa. El cobro se registra al hacer check-out.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleCheckin}
+                disabled={checkinando}
+                className="flex-1 py-2.5 rounded-lg font-medium bg-green-600 hover:bg-green-500 text-white transition-colors disabled:opacity-50"
+              >
+                {checkinando ? 'Procesando...' : '🛎️ Iniciar estadía'}
+              </button>
+              <button onClick={() => setCheckinReservaData(null)} className="btn-ghost px-4">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal nueva reserva */}
       {showModal && (
@@ -320,13 +399,21 @@ export default function Reservas() {
   )
 }
 
-function ReservaCard({ reserva: r, accionando, onConfirmar, onCompletar, onCancelar }) {
+function ReservaCard({ reserva: r, accionando, onConfirmar, onCompletar, onCheckin, onCancelar }) {
   const cfg = ESTADO_LABEL[r.estado] || ESTADO_LABEL.cancelada
   const n = noches(r.fechaEntrada, r.fechaSalida)
   const busy = accionando === r.id
+  const hoy = new Date().toISOString().slice(0, 10)
+  const llegaHoy = r.estado === 'confirmada' && r.fechaEntrada === hoy
 
   return (
-    <div className="card hover:border-border/80 transition-colors">
+    <div className={`card hover:border-border/80 transition-colors ${llegaHoy ? 'border-green-600/50 bg-green-950/20' : ''}`}>
+      {llegaHoy && (
+        <div className="flex items-center gap-2 mb-3 px-3 py-1.5 bg-green-900/30 rounded-lg border border-green-700/40 -mx-1">
+          <span className="text-green-400 text-sm">🛎️</span>
+          <span className="text-green-400 text-xs font-semibold uppercase tracking-wide">Llega hoy — Check-in pendiente</span>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-start gap-4">
 
         {/* Info principal */}
@@ -387,7 +474,16 @@ function ReservaCard({ reserva: r, accionando, onConfirmar, onCompletar, onCance
                 {busy ? '...' : '✓ Confirmar'}
               </button>
             )}
-            {r.estado === 'confirmada' && (
+            {r.estado === 'confirmada' && llegaHoy && (
+              <button
+                onClick={onCheckin}
+                disabled={busy}
+                className="text-sm py-1.5 px-4 rounded-lg font-medium disabled:opacity-50 bg-green-600 hover:bg-green-500 text-white transition-colors"
+              >
+                {busy ? '...' : '🛎️ Check-in'}
+              </button>
+            )}
+            {r.estado === 'confirmada' && !llegaHoy && (
               <button
                 onClick={onCompletar}
                 disabled={busy}

@@ -97,6 +97,14 @@ public class Venta {
     @Column(name = "codigo_transaccion", length = 100)
     private String codigoTransaccion;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_venta", nullable = false, columnDefinition = "varchar(10) default 'cerrada'")
+    private EstadoVenta estado = EstadoVenta.cerrada;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reserva_id")
+    private Reserva reserva;
+
     @OneToMany(mappedBy = "venta", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<VentaItem> items = new ArrayList<>();
 }

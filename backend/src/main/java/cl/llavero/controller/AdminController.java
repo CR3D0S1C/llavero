@@ -1,17 +1,14 @@
 package cl.llavero.controller;
 
-import cl.llavero.dto.EstadoActualResponse;
-import cl.llavero.dto.MetricasResponse;
-import cl.llavero.dto.ReservaResponse;
-import cl.llavero.dto.ReservaStaffRequest;
-import cl.llavero.dto.UsuarioRequest;
-import cl.llavero.dto.UsuarioResponse;
+import cl.llavero.dto.*;
 import cl.llavero.entity.EstadoReserva;
 import cl.llavero.service.AdminService;
 import cl.llavero.service.EmailService;
 import cl.llavero.service.ReservaService;
+import cl.llavero.service.VentaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,16 +23,24 @@ public class AdminController {
     private final AdminService adminService;
     private final EmailService emailService;
     private final ReservaService reservaService;
+    private final VentaService ventaService;
 
-    public AdminController(AdminService adminService, EmailService emailService, ReservaService reservaService) {
+    public AdminController(AdminService adminService, EmailService emailService,
+                           ReservaService reservaService, VentaService ventaService) {
         this.adminService = adminService;
         this.emailService = emailService;
         this.reservaService = reservaService;
+        this.ventaService = ventaService;
     }
 
     @GetMapping("/metricas")
     public ResponseEntity<MetricasResponse> getMetricas() {
         return ResponseEntity.ok(adminService.getMetricas());
+    }
+
+    @GetMapping("/estadisticas")
+    public ResponseEntity<OcupacionResponse> getEstadisticas() {
+        return ResponseEntity.ok(adminService.getOcupacion());
     }
 
     @GetMapping("/estado-actual")
@@ -55,13 +60,21 @@ public class AdminController {
     }
 
     @PostMapping("/usuarios")
-    public ResponseEntity<UsuarioResponse> crearUsuario(@RequestBody UsuarioRequest req) {
-        return ResponseEntity.ok(adminService.crearUsuario(req));
+    public ResponseEntity<?> crearUsuario(@RequestBody UsuarioRequest req) {
+        try {
+            return ResponseEntity.ok(adminService.crearUsuario(req));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     @PutMapping("/usuarios/{id}")
-    public ResponseEntity<UsuarioResponse> editarUsuario(@PathVariable UUID id, @RequestBody UsuarioRequest req) {
-        return ResponseEntity.ok(adminService.editarUsuario(id, req));
+    public ResponseEntity<?> editarUsuario(@PathVariable UUID id, @RequestBody UsuarioRequest req) {
+        try {
+            return ResponseEntity.ok(adminService.editarUsuario(id, req));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     @DeleteMapping("/usuarios/{id}")
@@ -107,6 +120,43 @@ public class AdminController {
         try {
             return ResponseEntity.ok(reservaService.cambiarEstado(id, EstadoReserva.cancelada));
         } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/reservas/{id}/checkin")
+    public ResponseEntity<?> checkinReserva(@PathVariable UUID id) {
+        try {
+            return ResponseEntity.ok(reservaService.checkin(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ── Estadías activas ──────────────────────────────────────────────
+
+    @GetMapping("/estadias")
+    public ResponseEntity<List<VentaResponse>> getEstadiasActivas() {
+        return ResponseEntity.ok(ventaService.getEstadiasActivas());
+    }
+
+    @PostMapping("/estadias/{ventaId}/cargo")
+    public ResponseEntity<?> agregarCargo(@PathVariable UUID ventaId,
+                                          @RequestBody AgregarCargoRequest req) {
+        try {
+            return ResponseEntity.ok(ventaService.agregarCargo(ventaId, req));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/estadias/{ventaId}/checkout")
+    public ResponseEntity<?> checkout(@PathVariable UUID ventaId,
+                                      @RequestBody CheckoutRequest req,
+                                      Authentication auth) {
+        try {
+            return ResponseEntity.ok(ventaService.checkout(ventaId, req, auth.getName()));
+        } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }

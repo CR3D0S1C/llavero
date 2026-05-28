@@ -15,13 +15,17 @@ const linksComunes = [
 // Agrupado bajo el dropdown "Administración" (solo jefe)
 const linksAdmin = [
   { to: '/reservas',    label: 'Reservas Online',         icon: '📅', desc: 'Confirmar y gestionar reservas' },
+  { to: '/estadias',    label: 'Estadías Activas',        icon: '🏠', desc: 'Huéspedes en curso, cargos y check-out' },
   { to: '/gestion',     label: 'Gestión de habitaciones', icon: '🏨', desc: 'Estados y log de cambios' },
+  { to: '/tipos',       label: 'Tipos de habitación',     icon: '🏷️', desc: 'Categorías, amenidades y colores' },
   { to: '/habitaciones',label: 'Configurar habitaciones', icon: '🛏️', desc: 'Agregar, eliminar, editar precios' },
   { to: '/productos',   label: 'Productos',               icon: '📦', desc: 'Catálogo, precios e iconos' },
   { to: '/inventario',  label: 'Inventario',              icon: '📥', desc: 'Stock, ingresos y movimientos' },
   { to: '/dte',         label: 'DTEs SII',                icon: '🧾', desc: 'Boletas y facturas pendientes' },
   { to: '/admin',       label: 'Métricas',                icon: '📈', desc: 'Resumen general del negocio' },
-  { to: '/usuarios',   label: 'Usuarios',                icon: '👤', desc: 'Cajeros y administradores' },
+  { to: '/estadisticas',label: 'Estadísticas',            icon: '📊', desc: 'Ocupación, ingresos por tipo y temporada' },
+  { to: '/panel-aseo', label: 'Panel de Aseo',            icon: '🧹', desc: 'Asignación de habitaciones al personal' },
+  { to: '/usuarios',   label: 'Usuarios',                icon: '👤', desc: 'Cajeros, mucamas y administradores' },
 ]
 
 export default function Navbar() {

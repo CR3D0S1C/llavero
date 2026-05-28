@@ -15,6 +15,11 @@ import GestionHabitaciones from './pages/GestionHabitaciones'
 import Inventario from './pages/Inventario'
 import GestionUsuarios from './pages/GestionUsuarios'
 import Reservas from './pages/Reservas'
+import Estadias from './pages/Estadias'
+import GestionTipos from './pages/GestionTipos'
+import Estadisticas from './pages/Estadisticas'
+import Aseo from './pages/Aseo'
+import PanelAseo from './pages/PanelAseo'
 
 export default function App() {
   return (
@@ -35,6 +40,11 @@ export default function App() {
           <Route path="/inventario" element={<ProtectedRoute soloJefe><Inventario /></ProtectedRoute>} />
           <Route path="/usuarios" element={<ProtectedRoute soloJefe><GestionUsuarios /></ProtectedRoute>} />
           <Route path="/reservas" element={<ProtectedRoute soloJefe><Reservas /></ProtectedRoute>} />
+          <Route path="/estadias" element={<ProtectedRoute soloJefe><Estadias /></ProtectedRoute>} />
+          <Route path="/tipos" element={<ProtectedRoute soloJefe><GestionTipos /></ProtectedRoute>} />
+          <Route path="/estadisticas" element={<ProtectedRoute soloJefe><Estadisticas /></ProtectedRoute>} />
+          <Route path="/aseo" element={<Aseo />} />
+          <Route path="/panel-aseo" element={<ProtectedRoute soloJefe><PanelAseo /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </BrowserRouter>

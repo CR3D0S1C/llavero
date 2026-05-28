@@ -4,16 +4,15 @@ import cl.llavero.dto.ReservaInvitadoRequest;
 import cl.llavero.dto.ReservaRequest;
 import cl.llavero.dto.ReservaResponse;
 import cl.llavero.dto.ReservaStaffRequest;
-import cl.llavero.entity.EstadoReserva;
-import cl.llavero.entity.Huesped;
-import cl.llavero.entity.Reserva;
-import cl.llavero.repository.HabitacionRepository;
-import cl.llavero.repository.HuespedRepository;
-import cl.llavero.repository.ReservaRepository;
+import cl.llavero.entity.*;
+import cl.llavero.repository.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,15 +23,21 @@ public class ReservaService {
     private final HabitacionRepository habitacionRepository;
     private final HuespedRepository huespedRepository;
     private final EmailService emailService;
+    private final VentaRepository ventaRepository;
+    private final VentaItemRepository itemRepository;
 
     public ReservaService(ReservaRepository reservaRepository,
                           HabitacionRepository habitacionRepository,
                           HuespedRepository huespedRepository,
-                          EmailService emailService) {
+                          EmailService emailService,
+                          VentaRepository ventaRepository,
+                          VentaItemRepository itemRepository) {
         this.reservaRepository = reservaRepository;
         this.habitacionRepository = habitacionRepository;
         this.huespedRepository = huespedRepository;
         this.emailService = emailService;
+        this.ventaRepository = ventaRepository;
+        this.itemRepository = itemRepository;
     }
 
     public ReservaResponse crear(ReservaRequest req, UUID huespedId) {
@@ -203,6 +208,60 @@ public class ReservaService {
         r.setEstado(EstadoReserva.confirmada);
         reservaRepository.save(r);
         return ReservaResponse.from(r);
+    }
+
+    public ReservaResponse checkin(UUID reservaId) {
+        Reserva r = reservaRepository.findById(reservaId)
+            .orElseThrow(() -> new IllegalArgumentException("Reserva no encontrada"));
+        if (r.getEstado() != EstadoReserva.confirmada)
+            throw new IllegalArgumentException("Solo se puede hacer check-in de reservas confirmadas");
+
+        r.getHabitacion().setEstado(EstadoHabitacion.ocupado);
+        habitacionRepository.save(r.getHabitacion());
+        r.setEstado(EstadoReserva.completada);
+        reservaRepository.save(r);
+
+        crearVentaActiva(r);
+
+        return ReservaResponse.from(r);
+    }
+
+    private void crearVentaActiva(Reserva r) {
+        long noches = r.getFechaEntrada().until(r.getFechaSalida()).getDays();
+        if (noches <= 0) noches = 1;
+
+        Venta venta = new Venta();
+        venta.setHabitacion(r.getHabitacion());
+        venta.setReserva(r);
+        venta.setFecha(LocalDate.now());
+        venta.setHora(LocalTime.now());
+        venta.setCreatedAt(LocalDateTime.now());
+        venta.setTipoDte(TipoDte.boleta);
+        venta.setTipoVenta(TipoVenta.hostal);
+        venta.setDuracion("noche");
+        venta.setSalidaEstimada(r.getFechaSalida().atTime(12, 0));
+        venta.setEstado(EstadoVenta.activa);
+        venta.setReceptorEmail(r.getHuesped().getEmail());
+
+        BigDecimal precioTotal = r.getMontoEstimado() != null ? r.getMontoEstimado() : BigDecimal.ZERO;
+        BigDecimal precioPorNoche = noches > 0
+            ? precioTotal.divide(BigDecimal.valueOf(noches), 2, java.math.RoundingMode.HALF_UP)
+            : BigDecimal.ZERO;
+
+        venta.setTotal(precioTotal);
+        venta = ventaRepository.save(venta);
+
+        String hab = r.getHabitacion().getNumero();
+        String tipo = r.getHabitacion().getTipo() != null ? r.getHabitacion().getTipo().getLabel() : "";
+        VentaItem item = new VentaItem();
+        item.setVenta(venta);
+        item.setTipo(TipoItem.habitacion);
+        item.setDescripcion(String.format("Estadía %d noche%s – Hab. %s %s", noches, noches == 1 ? "" : "s", hab, tipo).trim());
+        item.setCantidad((int) noches);
+        item.setPrecioUnitario(precioPorNoche);
+        item.setSubtotal(precioTotal);
+        item.setEsLibre(false);
+        itemRepository.save(item);
     }
 
     public boolean estaDisponible(UUID habitacionId, LocalDate fechaEntrada, LocalDate fechaSalida) {

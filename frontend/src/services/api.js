@@ -37,6 +37,12 @@ export const getUsuariosPublicos = () => api.get('/auth/usuarios')
 // Habitaciones
 export const getHabitaciones = () => api.get('/habitaciones')
 export const getTiposHabitacion = () => api.get('/habitaciones/tipos')
+export const crearTipoHabitacion = (data) => api.post('/habitaciones/tipos', data)
+export const actualizarTipoHabitacion = (id, data) => api.put(`/habitaciones/tipos/${id}`, data)
+export const eliminarTipoHabitacion = (id) => api.delete(`/habitaciones/tipos/${id}`)
+export const crearTarifaTemporada = (tipoId, data) => api.post(`/habitaciones/tipos/${tipoId}/tarifas`, data)
+export const actualizarTarifaTemporada = (tipoId, tarifaId, data) => api.put(`/habitaciones/tipos/${tipoId}/tarifas/${tarifaId}`, data)
+export const eliminarTarifaTemporada = (tipoId, tarifaId) => api.delete(`/habitaciones/tipos/${tipoId}/tarifas/${tarifaId}`)
 export const buscarHabitacionPorCodigo = (codigo) => api.get(`/habitaciones/buscar/${encodeURIComponent(codigo)}`)
 export const crearHabitacion = (data) => api.post('/habitaciones', data)
 export const updateHabitacion = (id, data) => api.put(`/habitaciones/${id}`, data)
@@ -84,11 +90,30 @@ export const crearReservaAdmin     = (data) => api.post('/admin/reservas', data)
 export const confirmarReserva      = (id) => api.put(`/admin/reservas/${id}/confirmar`)
 export const completarReserva      = (id) => api.put(`/admin/reservas/${id}/completar`)
 export const cancelarReservaAdmin  = (id) => api.put(`/admin/reservas/${id}/cancelar`)
+export const checkinReserva        = (id) => api.post(`/admin/reservas/${id}/checkin`)
 export const getReservasProximas   = () => api.get('/staff/reservas/proximas')
+
+// Estadías activas
+export const getEstadiasActivas   = () => api.get('/admin/estadias')
+export const agregarCargo         = (ventaId, data) => api.post(`/admin/estadias/${ventaId}/cargo`, data)
+export const checkoutEstadia      = (ventaId, data) => api.post(`/admin/estadias/${ventaId}/checkout`, data)
+
+// Aseo — panel del jefe
+export const getAseoPanel        = (fecha) => api.get('/aseo/panel', { params: { fecha: fecha || '' } })
+export const getAseoPersonal     = () => api.get('/aseo/personal')
+export const crearAsignacionAseo = (data) => api.post('/aseo/asignaciones', data)
+export const actualizarAsignacionAseo = (id, data) => api.put(`/aseo/asignaciones/${id}`, data)
+export const eliminarAsignacionAseo   = (id) => api.delete(`/aseo/asignaciones/${id}`)
+
+// Aseo — vista de la mucama (usa aseoApi con sesión separada en sessionStorage)
+export const getMisAsignaciones  = (fecha) => api.get('/aseo/mis-asignaciones', { params: { fecha: fecha || '' } })
+export const iniciarAsignacion   = (id) => api.put(`/aseo/asignaciones/${id}/iniciar`)
+export const completarAsignacion = (id) => api.put(`/aseo/asignaciones/${id}/completar`)
 
 // Admin
 export const getMetricas        = () => api.get('/admin/metricas')
 export const getEstadoActual    = () => api.get('/admin/estado-actual')
+export const getEstadisticas    = () => api.get('/admin/estadisticas')
 export const enviarResumenDia   = () => api.post('/admin/resumen-dia/enviar')
 export const getUsuarios        = () => api.get('/admin/usuarios')
 export const crearUsuario       = (data) => api.post('/admin/usuarios', data)

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import RoomCard from '../components/RoomCard'
 import ModalLiberar from '../components/ModalLiberar'
-import { getHabitaciones, getMetricas, getReservasProximas } from '../services/api'
+import { getHabitaciones, getMetricas, getReservasProximas, getEstadiasActivas } from '../services/api'
 import { useSesion } from '../context/SesionContext'
 
 export default function Dashboard() {
@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [habitacionALiberar, setHabitacionALiberar] = useState(null)
   const [ahora, setAhora] = useState(new Date())
   const [proximas, setProximas] = useState([])
+  const [estadiasActivas, setEstadiasActivas] = useState([])
   const { sesion } = useSesion()
   const navigate = useNavigate()
 
@@ -28,12 +29,14 @@ export default function Dashboard() {
 
   const cargar = async () => {
     try {
-      const [hRes, pRes] = await Promise.allSettled([
+      const [hRes, pRes, eRes] = await Promise.allSettled([
         getHabitaciones(),
         getReservasProximas(),
+        sesion?.rol === 'jefe' ? getEstadiasActivas() : Promise.resolve({ data: [] }),
       ])
       if (hRes.status === 'fulfilled') setHabitaciones(hRes.value.data)
       if (pRes.status === 'fulfilled') setProximas(pRes.value.data)
+      if (eRes.status === 'fulfilled') setEstadiasActivas(eRes.value.data)
       if (sesion?.rol === 'jefe') {
         const mRes = await getMetricas()
         setMetricas(mRes.data)
@@ -47,6 +50,7 @@ export default function Dashboard() {
 
   const libres = habitaciones.filter(h => h.estado === 'libre').length
   const ocupadas = habitaciones.filter(h => h.estado === 'ocupado').length
+  const reservadas = habitaciones.filter(h => h.estado === 'reservado').length
   const mant = habitaciones.filter(h => h.estado === 'mantenimiento').length
 
   const alertas10min = habitaciones.filter(h => {
@@ -86,15 +90,24 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="card text-center">
             <div className="text-3xl font-bold text-green-400">{libres}</div>
-            <div className="text-muted text-sm mt-1">Habitaciones libres</div>
+            <div className="text-muted text-sm mt-1">Libres</div>
           </div>
           <div className="card text-center">
             <div className="text-3xl font-bold text-red-400">{ocupadas}</div>
             <div className="text-muted text-sm mt-1">Ocupadas</div>
           </div>
-          <div className="card text-center">
-            <div className="text-3xl font-bold text-yellow-400">{mant}</div>
-            <div className="text-muted text-sm mt-1">En mantención</div>
+          <div className={`card text-center ${reservadas > 0 ? 'border-blue-700/40' : ''}`}>
+            {reservadas > 0 ? (
+              <>
+                <div className="text-3xl font-bold text-blue-400">{reservadas}</div>
+                <div className="text-muted text-sm mt-1">Reservadas hoy</div>
+              </>
+            ) : (
+              <>
+                <div className="text-3xl font-bold text-yellow-400">{mant}</div>
+                <div className="text-muted text-sm mt-1">En mantención</div>
+              </>
+            )}
           </div>
           {metricas && (
             <div className="card text-center">
@@ -105,6 +118,41 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {/* Widget estadías activas */}
+        {sesion?.rol === 'jefe' && estadiasActivas.length > 0 && (
+          <div className="card mb-6 border-green-700/40">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                Estadías activas
+                <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
+                  {estadiasActivas.length}
+                </span>
+              </h2>
+              <button onClick={() => navigate('/estadias')} className="text-xs text-accent hover:underline">
+                Ver todas →
+              </button>
+            </div>
+            <div className="space-y-2">
+              {estadiasActivas.slice(0, 4).map(e => (
+                <div key={e.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-white/5 border border-border/50">
+                  <span className="text-lg shrink-0">🏠</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{e.huespedNombre || 'Huésped'}</p>
+                    <p className="text-xs text-muted truncate">Hab. {e.habitacionNumero} · {e.habitacionTipo}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-bold text-accent">${Number(e.total).toLocaleString('es-CL')}</p>
+                    <p className="text-xs text-muted">
+                      {e.fechaSalida ? `Sale ${new Date(e.fechaSalida + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}` : ''}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Widget reservas próximas */}
         {proximas.length > 0 && (

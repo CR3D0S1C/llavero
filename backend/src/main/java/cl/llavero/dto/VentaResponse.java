@@ -42,4 +42,12 @@ public class VentaResponse {
     private String codigoTransaccion;
 
     private List<VentaItemResponse> items;
+
+    // Campos estadia activa
+    private String estado;
+    private String reservaId;
+    private String huespedNombre;
+    private String huespedEmail;
+    private java.time.LocalDate fechaEntrada;
+    private java.time.LocalDate fechaSalida;
 }
