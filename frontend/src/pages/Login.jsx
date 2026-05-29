@@ -1,36 +1,37 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login, getUsuariosPublicos } from '../services/api'
+import { login } from '../services/api'
 import { useSesion } from '../context/SesionContext'
 import { toast } from '../utils/toast'
+import { nombreClave } from '../utils/nombre'
 
 export default function Login() {
-  const [usuarios, setUsuarios] = useState([])
   const [nombre, setNombre] = useState('')
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login: loginCtx, sesion } = useSesion()
   const navigate = useNavigate()
+  const inputRef = useRef(null)
 
   useEffect(() => {
     if (sesion) navigate('/dashboard', { replace: true })
   }, [sesion, navigate])
 
   useEffect(() => {
-    getUsuariosPublicos().then(r => setUsuarios(r.data)).catch(() => {})
-  }, [])
-
-  useEffect(() => {
-    if (sessionStorage.getItem('llavero_sesion_invalidada')) {
+    if (sessionStorage.getItem('llavero_sesion_expirada')) {
+      sessionStorage.removeItem('llavero_sesion_expirada')
+      setError('Sesión expirada — han pasado 2 horas. Ingresa nuevamente.')
+    } else if (sessionStorage.getItem('llavero_sesion_invalidada')) {
       sessionStorage.removeItem('llavero_sesion_invalidada')
-      setError('Tu sesión se cerró. Puede que hayas iniciado en otro dispositivo o que la sesión expirara.')
+      setError('Tu sesión se cerró. Puede que hayas iniciado en otro dispositivo.')
     }
   }, [])
 
-  // Soporte de teclado físico (números + backspace + Enter)
+  // Teclado físico: dígitos y backspace solo cuando el foco NO está en el input de nombre
   useEffect(() => {
     const handler = (e) => {
+      if (document.activeElement === inputRef.current) return
       if (e.key >= '0' && e.key <= '9') setPin(p => p.length < 4 ? p + e.key : p)
       else if (e.key === 'Backspace') setPin(p => p.slice(0, -1))
       else if (e.key === 'Enter' && nombre && pin.length === 4) ingresar()
@@ -47,19 +48,19 @@ export default function Login() {
   const borrar = () => setPin(p => p.slice(0, -1))
 
   const ingresar = async () => {
-    if (!nombre || pin.length !== 4) {
-      setError('Selecciona usuario e ingresa PIN de 4 dígitos')
+    if (!nombre.trim() || pin.length !== 4) {
+      setError('Escribe tu usuario e ingresa el PIN de 4 dígitos')
       return
     }
     setLoading(true)
     setError('')
     try {
-      const res = await login(nombre, pin)
+      const res = await login(nombre.trim(), pin)
       loginCtx(res.data)
-      toast.success(`Bienvenido, ${res.data.nombre}`)
+      toast.success(`Bienvenido, ${nombreClave(res.data.nombre)}`)
       navigate('/dashboard')
     } catch (e) {
-      setError(e.response?.data?.error || 'PIN incorrecto')
+      setError(e.response?.data?.message || 'Usuario o PIN incorrecto')
       setPin('')
     } finally {
       setLoading(false)
@@ -78,27 +79,25 @@ export default function Login() {
         </div>
 
         <div className="card space-y-6">
+          {/* Campo usuario */}
           <div>
-            <label className="text-xs text-muted mb-2 block">USUARIO</label>
-            <div className="grid grid-cols-1 gap-2">
-              {usuarios.map(u => (
-                <button
-                  key={u.nombre}
-                  onClick={() => { setNombre(u.nombre); setError('') }}
-                  className={`py-2.5 px-4 rounded-lg border transition-all text-left text-sm font-medium ${
-                    nombre === u.nombre
-                      ? 'border-accent bg-accent/10 text-accent'
-                      : 'border-border hover:border-gray-500 text-gray-300'
-                  }`}
-                >
-                  {u.nombre}
-                </button>
-              ))}
-            </div>
+            <label className="text-xs text-muted mb-2 block tracking-wider uppercase">Usuario</label>
+            <input
+              ref={inputRef}
+              type="text"
+              value={nombre}
+              onChange={e => { setNombre(e.target.value); setError('') }}
+              onKeyDown={e => { if (e.key === 'Enter' && nombre && pin.length === 4) ingresar() }}
+              placeholder="Escribe tu usuario..."
+              className="input w-full text-center font-mono tracking-widest"
+              autoComplete="off"
+              autoFocus
+            />
           </div>
 
+          {/* PIN */}
           <div>
-            <label className="text-xs text-muted mb-2 block">PIN</label>
+            <label className="text-xs text-muted mb-2 block tracking-wider uppercase">PIN</label>
             <div className="flex justify-center gap-3 mb-4">
               {[0,1,2,3].map(i => (
                 <div key={i} className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center text-2xl font-bold transition-all ${
@@ -131,7 +130,7 @@ export default function Login() {
 
           <button
             onClick={ingresar}
-            disabled={loading || !nombre || pin.length !== 4}
+            disabled={loading || !nombre.trim() || pin.length !== 4}
             className="btn-primary w-full py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Ingresando...' : 'Ingresar'}

@@ -31,4 +31,7 @@ public class VentaRequest {
 
     // Estadía activa (walk-in pago al salir)
     private Boolean pagoAlSalir;        // true = crea venta activa sin cobrar, pago en checkout
+
+    // Noches (walk-in con tarifa noche × N noches)
+    private Integer cantidadNoches;     // null o 1 = 1 noche (default)
 }

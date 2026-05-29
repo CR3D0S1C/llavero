@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
+import ModalConfirmar from '../components/ModalConfirmar'
 import { getProductos, crearProducto, updateProducto, eliminarProducto } from '../services/api'
 import { useSesion } from '../context/SesionContext'
 import { toast } from '../utils/toast'
@@ -69,15 +70,23 @@ export default function Productos() {
     setShowForm(true)
   }
 
-  const eliminar = async (id, nombre) => {
-    if (!confirm(`¿Desactivar el producto "${nombre}"?`)) return
-    try {
-      await eliminarProducto(id)
-      toast.success('Producto desactivado')
-      await cargar()
-    } catch (e) {
-      toast.error(e.response?.data?.error || 'Error al desactivar')
-    }
+  const [confirmar, setConfirmar] = useState(null)
+
+  const eliminar = (id, nombre) => {
+    setConfirmar({
+      titulo: `¿Desactivar "${nombre}"?`,
+      mensaje: 'El producto no aparecerá en el catálogo de ventas.',
+      textoBtn: 'Desactivar',
+      accion: async () => {
+        try {
+          await eliminarProducto(id)
+          toast.success('Producto desactivado')
+          await cargar()
+        } catch (e) {
+          toast.error(e.response?.data?.error || 'Error al desactivar')
+        }
+      }
+    })
   }
 
   const categorias = [...new Set(productos.map(p => p.categoria))]
@@ -85,6 +94,15 @@ export default function Productos() {
   return (
     <div className="min-h-screen bg-bg">
       <Navbar />
+      {confirmar && (
+        <ModalConfirmar
+          titulo={confirmar.titulo}
+          mensaje={confirmar.mensaje}
+          textoBtn={confirmar.textoBtn}
+          onConfirmar={() => { setConfirmar(null); confirmar.accion() }}
+          onCancelar={() => setConfirmar(null)}
+        />
+      )}
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Catálogo de Productos</h1>

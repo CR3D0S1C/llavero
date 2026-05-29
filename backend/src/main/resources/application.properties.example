@@ -19,7 +19,7 @@ server.port=8080
 # ===== JWT =====
 # Generar con: openssl rand -base64 32
 jwt.secret=${JWT_SECRET:cambiar-en-produccion-clave-minimo-32-chars-000000}
-jwt.expiration=86400000
+jwt.expiration=7200000
 
 # ===== LLAVERO =====
 llavero.codigo.supervisor=${LLAVERO_COD_SUPERVISOR:7777}

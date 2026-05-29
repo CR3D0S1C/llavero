@@ -400,15 +400,20 @@
         <ol class="pasos">
           <li>Abra el navegador en su celular o computador (Chrome, Safari o Edge).</li>
           <li>Escriba la dirección web que le entregó Sebastián en la barra de arriba y presione Enter.</li>
-          <li>Verá la pantalla de inicio. Toque su nombre en la lista.</li>
+          <li>Verá la pantalla de inicio con un campo de texto y un teclado numérico.</li>
+          <li>Escriba su <strong>nombre de usuario</strong> en el campo (ej: <code>admin</code> o el nombre que le asignaron).</li>
           <li>Ingrese su PIN de 4 dígitos.</li>
           <li>Presione <strong>Ingresar</strong>. Quedará en el Panel Principal.</li>
         </ol>
+        <div class="alerta alerta-info">
+          <span>💡</span>
+          <div><strong>¿Por qué no aparece la lista de usuarios?</strong> Por seguridad, el sistema no muestra quién tiene acceso. Solo el jefe sabe los nombres de usuario de cada persona.</div>
+        </div>
       </div>
 
       <div class="alerta alerta-info">
         <span>💡</span>
-        <div><strong>Sesión segura:</strong> Si usted inicia sesión desde el celular mientras ya estaba conectado en otro dispositivo, la sesión anterior se cierra sola. Solo puede haber una sesión activa de su usuario a la vez.</div>
+        <div><strong>Sesión segura — dura 2 horas:</strong> Si usted inicia sesión desde el celular mientras ya estaba conectado en otro dispositivo, la sesión anterior se cierra sola. Además, por seguridad, después de 2 horas el sistema cierra la sesión automáticamente y hay que volver a ingresar.</div>
       </div>
 
       <div class="alerta alerta-aviso">
@@ -644,40 +649,40 @@
       <p>Vaya al menú y seleccione <span class="chip">Usuarios</span>. Desde aquí usted controla quién puede entrar al sistema.</p>
 
       <div class="subseccion">
-        <h3>Agregar un cajero nuevo</h3>
+        <h3>Crear un nuevo usuario</h3>
         <ol class="pasos">
           <li>Haga clic en <strong>Nuevo usuario</strong>.</li>
-          <li>Escriba el nombre completo del cajero.</li>
+          <li>Escriba el <strong>nombre de usuario</strong> — este es el identificador con el que la persona entra al sistema. Use formato compacto sin espacios ni tildes (ej: si se llama Juan Pérez, puede llamarse <strong>jperez</strong>).</li>
+          <li>Seleccione el rol: <strong>Cajero</strong>, <strong>Jefe</strong> o <strong>Mucama / Aseo</strong>.</li>
           <li>Cree un PIN de 4 a 8 dígitos y escríbalo dos veces para confirmarlo.</li>
-          <li>Seleccione el rol: <strong>Cajero</strong> (lo normal) o <strong>Jefe</strong> (solo para personas de confianza).</li>
-          <li>Guarde. El cajero ya puede iniciar sesión.</li>
+          <li>Guarde. La persona ya puede iniciar sesión con ese nombre y PIN.</li>
         </ol>
         <div class="alerta alerta-aviso">
           <span>⚠️</span>
-          <div>Anote el PIN en un lugar seguro y entrégueselo personalmente al cajero. El sistema no puede mostrar PINes una vez creados.</div>
+          <div>Entréguele el nombre de usuario y el PIN personalmente. El sistema no puede mostrar PINes una vez creados. Los roles son: <strong>Cajero</strong> = puede vender y hacer aseo · <strong>Mucama/Aseo</strong> = solo ve la lista de aseo · <strong>Jefe</strong> = acceso total.</div>
         </div>
       </div>
 
       <div class="subseccion">
-        <h3>Cambiar el PIN de un cajero</h3>
+        <h3>Cambiar nombre o PIN de un usuario</h3>
         <ol class="pasos">
-          <li>En la lista de usuarios, haga clic en el ícono de editar ✏️ junto al cajero.</li>
-          <li>Ingrese el nuevo PIN y confírmelo.</li>
-          <li>Guarde. El cajero deberá usar el nuevo PIN desde ese momento.</li>
+          <li>En la lista de usuarios, haga clic en <strong>Editar</strong> junto al usuario.</li>
+          <li>Modifique el nombre de usuario o el PIN (escríbalo dos veces para confirmar).</li>
+          <li>Guarde. El cambio es inmediato — si cambió el nombre, la persona debe escribir el nombre nuevo la próxima vez que entre.</li>
         </ol>
       </div>
 
       <div class="subseccion">
-        <h3>Desactivar un cajero</h3>
-        <p>Si un cajero ya no trabaja con usted, desactívelo para que no pueda entrar al sistema.</p>
+        <h3>Desactivar un usuario</h3>
+        <p>Si alguien ya no trabaja con usted, desactívelo para que no pueda entrar al sistema.</p>
         <ol class="pasos">
-          <li>Haga clic en el ícono de desactivar 🚫 junto al cajero.</li>
-          <li>Confirme la acción.</li>
-          <li>El cajero no podrá entrar más. Sus ventas e historial quedan guardados.</li>
+          <li>Haga clic en <strong>Desactivar</strong> junto al usuario.</li>
+          <li>Confirme en el modal que aparece.</li>
+          <li>La persona no podrá entrar más. Sus ventas e historial quedan guardados.</li>
         </ol>
         <div class="alerta alerta-info">
           <span>💡</span>
-          <div>Los cajeros desactivados no se borran. Si alguien vuelve a trabajar con usted, contáctese con Sebastián para reactivarlo.</div>
+          <div>Los usuarios desactivados desaparecen de la lista. Solo aparecen los activos. Si alguien vuelve a trabajar, contáctese con Sebastián para reactivarlo.</div>
         </div>
       </div>
     </div>
@@ -781,8 +786,8 @@
           <td>Llame al hostal para que liberen o extiendan la habitación. Si el huésped ya se fue, deben liberarla en el sistema.</td>
         </tr>
         <tr>
-          <td><strong>Un cajero no recuerda su PIN</strong></td>
-          <td>Vaya a Usuarios → editar → asígnele un PIN nuevo. Entrégueselo.</td>
+          <td><strong>Un cajero no recuerda su nombre de usuario o PIN</strong></td>
+          <td>Vaya a Usuarios → editar → puede cambiarle el nombre o asignarle un PIN nuevo. Entréguesele ambos datos personalmente.</td>
         </tr>
         <tr>
           <td><strong>El sistema no carga desde mi casa</strong></td>

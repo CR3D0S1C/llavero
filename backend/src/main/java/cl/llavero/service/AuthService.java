@@ -70,14 +70,19 @@ public class AuthService {
         }
         intentosFallidos.remove(request.getNombre().toLowerCase());
 
-        // Buscar turno activo o crear uno nuevo
-        Turno turno = turnoRepository
-                .findByUsuarioIdAndCerradoFalse(usuario.getId())
-                .orElseGet(() -> {
-                    Turno nuevo = new Turno();
-                    nuevo.setUsuario(usuario);
-                    return turnoRepository.save(nuevo);
-                });
+        // Turno: solo para jefe y cajero (aseo no tiene turnos de caja)
+        String turnoId = null;
+        if (usuario.getRol() == cl.llavero.entity.Rol.jefe
+                || usuario.getRol() == cl.llavero.entity.Rol.cajero) {
+            Turno turno = turnoRepository
+                    .findByUsuarioIdAndCerradoFalse(usuario.getId())
+                    .orElseGet(() -> {
+                        Turno nuevo = new Turno();
+                        nuevo.setUsuario(usuario);
+                        return turnoRepository.save(nuevo);
+                    });
+            turnoId = turno.getId().toString();
+        }
 
         String sessionId = java.util.UUID.randomUUID().toString();
         usuario.setSessionId(sessionId);
@@ -87,7 +92,7 @@ public class AuthService {
                 usuario.getId().toString(),
                 usuario.getNombre(),
                 usuario.getRol().name(),
-                turno.getId().toString(),
+                turnoId,
                 sessionId
         );
 
@@ -96,7 +101,7 @@ public class AuthService {
                 usuario.getId().toString(),
                 usuario.getNombre(),
                 usuario.getRol().name(),
-                turno.getId().toString()
+                turnoId
         );
     }
 

@@ -468,6 +468,103 @@ public class EmailService {
             );
     }
 
+    // ── Reserva confirmada por el hostal ───────────────────────────────────────
+
+    @Async
+    public void enviarConfirmadaReservaAsync(Reserva reserva) {
+        try {
+            if (mailSender == null || mailUsername == null || mailUsername.isBlank()) return;
+            String emailHuesped = reserva.getHuesped().getEmail();
+            if (emailHuesped == null || emailHuesped.endsWith("@llavero.internal")) return;
+
+            long noches = java.time.temporal.ChronoUnit.DAYS.between(reserva.getFechaEntrada(), reserva.getFechaSalida());
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper h = new MimeMessageHelper(msg, false, "UTF-8");
+            h.setFrom(remitente);
+            h.setTo(emailHuesped);
+            h.setSubject("¡Reserva confirmada! · Hostal Mi Maravilla");
+            h.setText(construirEmailConfirmadaHtml(reserva, noches), true);
+            mailSender.send(msg);
+            System.out.println("[EmailService] Reserva confirmada enviada a " + emailHuesped);
+        } catch (Exception e) {
+            System.err.println("[EmailService] Error enviando confirmación: " + e.getMessage());
+        }
+    }
+
+    private String construirEmailConfirmadaHtml(Reserva r, long noches) {
+        java.time.format.DateTimeFormatter fmtFecha =
+            java.time.format.DateTimeFormatter.ofPattern("dd 'de' MMMM 'de' yyyy", new java.util.Locale("es", "CL"));
+        String montoStr = r.getMontoEstimado() != null ? "$" + fmt(r.getMontoEstimado()) : "A confirmar";
+        String emailContacto = (destino != null && !destino.isBlank()) ? destino : mailUsername;
+        String refHtml = (r.getReferenciaDeposito() != null && !r.getReferenciaDeposito().isBlank())
+            ? "<p style='margin:0 0 8px 0;font-size:13px;color:#6B6057'>Referencia de depósito registrada: <strong style='color:#1C4A5A'>" + esc(r.getReferenciaDeposito()) + "</strong></p>"
+            : "";
+        return """
+            <div style='font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:auto;color:#1a1a1a'>
+              <div style='background:#1C4A5A;padding:28px 24px;text-align:center'>
+                <p style='color:#C9943A;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin:0 0 6px'>Hostal Mi Maravilla</p>
+                <h1 style='color:#fff;font-weight:300;font-size:22px;margin:0 0 4px'>¡Reserva confirmada!</h1>
+                <p style='color:rgba(255,255,255,0.6);font-size:13px;margin:0'>Tu estadía ha sido reservada exitosamente</p>
+              </div>
+
+              <div style='padding:20px 24px;background:#F5EFE6;border-bottom:3px solid #C9943A'>
+                <p style='font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#6B6057;margin:0 0 4px'>Habitación</p>
+                <p style='font-size:18px;font-weight:500;color:#1C4A5A;margin:0'>
+                  Hab. %s · %s
+                </p>
+              </div>
+
+              <div style='padding:24px;background:#fff'>
+                <table style='width:100%%;border-collapse:collapse'>
+                  <tr>
+                    <td style='padding:10px 0;border-bottom:1px solid #DDD0C0;color:#6B6057;font-size:13px'>Titular</td>
+                    <td style='padding:10px 0;border-bottom:1px solid #DDD0C0;text-align:right;font-weight:500'>%s</td>
+                  </tr>
+                  <tr>
+                    <td style='padding:10px 0;border-bottom:1px solid #DDD0C0;color:#6B6057;font-size:13px'>Check-in</td>
+                    <td style='padding:10px 0;border-bottom:1px solid #DDD0C0;text-align:right;font-weight:500'>%s</td>
+                  </tr>
+                  <tr>
+                    <td style='padding:10px 0;border-bottom:1px solid #DDD0C0;color:#6B6057;font-size:13px'>Check-out</td>
+                    <td style='padding:10px 0;border-bottom:1px solid #DDD0C0;text-align:right;font-weight:500'>%s</td>
+                  </tr>
+                  <tr>
+                    <td style='padding:10px 0;border-bottom:1px solid #DDD0C0;color:#6B6057;font-size:13px'>Noches</td>
+                    <td style='padding:10px 0;border-bottom:1px solid #DDD0C0;text-align:right;font-weight:500'>%d noche%s</td>
+                  </tr>
+                  <tr>
+                    <td style='padding:10px 0;color:#6B6057;font-size:13px'>Total estimado</td>
+                    <td style='padding:10px 0;text-align:right;font-weight:700;color:#1C4A5A;font-size:16px'>%s</td>
+                  </tr>
+                </table>
+              </div>
+
+              <div style='padding:18px 24px;background:#f0fdf4;border-left:4px solid #22c55e'>
+                <p style='font-weight:600;color:#166534;margin:0 0 6px;font-size:14px'>✔ Depósito recibido — reserva activa</p>
+                %s
+                <p style='font-size:12px;color:#6B6057;margin:0'>
+                  Si tienes alguna consulta escríbenos a
+                  <a href='mailto:%s' style='color:#1C4A5A;font-weight:500'>%s</a>.
+                </p>
+              </div>
+
+              <p style='font-size:11px;color:#aaa;text-align:center;padding:16px;margin:0'>
+                Hostal Mi Maravilla · Este correo fue generado automáticamente.
+              </p>
+            </div>
+            """.formatted(
+                esc(r.getHabitacion().getNumero()),
+                r.getHabitacion().getTipo() != null ? esc(r.getHabitacion().getTipo().getLabel()) : "",
+                esc(r.getHuesped().getNombre()),
+                r.getFechaEntrada().format(fmtFecha),
+                r.getFechaSalida().format(fmtFecha),
+                noches, noches == 1 ? "" : "s",
+                montoStr,
+                refHtml,
+                esc(emailContacto), esc(emailContacto)
+            );
+    }
+
     // ── Comprobante de check-out ────────────────────────────────────────────────
 
     @Async

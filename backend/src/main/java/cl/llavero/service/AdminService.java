@@ -2,6 +2,7 @@ package cl.llavero.service;
 
 import cl.llavero.dto.EstadoActualResponse;
 import cl.llavero.dto.MetricasResponse;
+import cl.llavero.dto.OcupacionResponse;
 import cl.llavero.dto.UsuarioRequest;
 import cl.llavero.dto.UsuarioResponse;
 import cl.llavero.entity.*;
@@ -9,8 +10,13 @@ import cl.llavero.repository.*;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.format.TextStyle;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,17 +28,20 @@ public class AdminService {
     private final UsuarioRepository usuarioRepository;
     private final TurnoRepository turnoRepository;
     private final DteQueueRepository dteQueueRepository;
+    private final ProductoRepository productoRepository;
 
     public AdminService(VentaRepository ventaRepository,
                         HabitacionRepository habitacionRepository,
                         UsuarioRepository usuarioRepository,
                         TurnoRepository turnoRepository,
-                        DteQueueRepository dteQueueRepository) {
+                        DteQueueRepository dteQueueRepository,
+                        ProductoRepository productoRepository) {
         this.ventaRepository = ventaRepository;
         this.habitacionRepository = habitacionRepository;
         this.usuarioRepository = usuarioRepository;
         this.turnoRepository = turnoRepository;
         this.dteQueueRepository = dteQueueRepository;
+        this.productoRepository = productoRepository;
     }
 
     public MetricasResponse getMetricas() {
@@ -55,6 +64,22 @@ public class AdminService {
             porEstado.putIfAbsent(e.name(), 0L);
         }
         r.setHabitacionesPorEstado(porEstado);
+
+        List<MetricasResponse.ProductoBajoStock> bajoStock = productoRepository
+            .findByActivoTrueOrderByCategoria().stream()
+            .filter(p -> p.getStock() != null && p.getStock() <= p.getStockMinimo())
+            .sorted(Comparator.comparingInt(cl.llavero.entity.Producto::getStock))
+            .map(p -> {
+                MetricasResponse.ProductoBajoStock dto = new MetricasResponse.ProductoBajoStock();
+                dto.setNombre(p.getNombre());
+                dto.setIcono(p.getIcono());
+                dto.setStock(p.getStock());
+                dto.setStockMinimo(p.getStockMinimo() != null ? p.getStockMinimo() : 0);
+                return dto;
+            })
+            .toList();
+        r.setProductosBajoStock(bajoStock);
+
         return r;
     }
 
@@ -119,6 +144,7 @@ public class AdminService {
 
     public List<UsuarioResponse> getUsuarios() {
         return usuarioRepository.findAll().stream()
+                .filter(u -> Boolean.TRUE.equals(u.getActivo()))
                 .sorted((a, b) -> a.getNombre().compareToIgnoreCase(b.getNombre()))
                 .map(UsuarioResponse::new)
                 .toList();
@@ -151,6 +177,108 @@ public class AdminService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         u.setActivo(false);
         usuarioRepository.save(u);
+    }
+
+    public OcupacionResponse getOcupacion() {
+        LocalDate hoy = LocalDate.now();
+        LocalDate desde = hoy.withDayOfMonth(1).minusMonths(5); // 6 meses incluyendo el actual
+        int totalHabitaciones = habitacionRepository.findByActivaTrueOrderByNumero().size();
+
+        List<Venta> ventas = ventaRepository.findHostalBetween(desde, hoy);
+
+        // ── Por mes ──────────────────────────────────────────────────────
+        List<OcupacionResponse.MesStats> meses = new ArrayList<>();
+        for (int i = 5; i >= 0; i--) {
+            YearMonth ym = YearMonth.from(hoy).minusMonths(i);
+            List<Venta> delMes = ventas.stream()
+                .filter(v -> YearMonth.from(v.getFecha()).equals(ym))
+                .toList();
+
+            int noches = delMes.stream().mapToInt(v -> {
+                if (v.getSalidaEstimada() == null) return 1;
+                long n = ChronoUnit.DAYS.between(v.getFecha(), v.getSalidaEstimada().toLocalDate());
+                return (int) Math.max(1, n);
+            }).sum();
+
+            int capacidad = totalHabitaciones * ym.lengthOfMonth();
+            double tasa = capacidad > 0 ? (noches * 100.0) / capacidad : 0;
+
+            OcupacionResponse.MesStats ms = new OcupacionResponse.MesStats();
+            ms.setMes(ym.getMonth().getDisplayName(TextStyle.FULL, new Locale("es", "CL")));
+            ms.setAnio(ym.getYear());
+            ms.setNumeroMes(ym.getMonthValue());
+            ms.setVentas(delMes.size());
+            ms.setIngresos(sumar(delMes));
+            ms.setNochesVendidas(noches);
+            ms.setCapacidadTotal(capacidad);
+            ms.setTasaOcupacion(Math.round(tasa * 10.0) / 10.0);
+            meses.add(ms);
+        }
+
+        // ── Por tipo de habitación ───────────────────────────────────────
+        Map<String, List<Venta>> porTipo = ventas.stream()
+            .filter(v -> v.getHabitacion() != null && v.getHabitacion().getTipo() != null)
+            .collect(Collectors.groupingBy(v -> v.getHabitacion().getTipo().getLabel()));
+
+        List<OcupacionResponse.TipoStats> tipoStats = porTipo.entrySet().stream()
+            .map(e -> {
+                OcupacionResponse.TipoStats ts = new OcupacionResponse.TipoStats();
+                ts.setTipo(e.getKey());
+                ts.setTotal(sumar(e.getValue()));
+                ts.setVentas(e.getValue().size());
+                return ts;
+            })
+            .sorted(Comparator.comparing(OcupacionResponse.TipoStats::getTotal).reversed())
+            .toList();
+
+        // ── Por día de semana ────────────────────────────────────────────
+        String[] diasEs = {"Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"};
+        List<OcupacionResponse.DiaStats> diasStats = new ArrayList<>();
+        for (DayOfWeek dow : DayOfWeek.values()) {
+            List<Venta> delDia = ventas.stream()
+                .filter(v -> v.getFecha().getDayOfWeek() == dow)
+                .toList();
+            OcupacionResponse.DiaStats ds = new OcupacionResponse.DiaStats();
+            ds.setDia(diasEs[dow.getValue() - 1]);
+            ds.setVentas(delDia.size());
+            ds.setTotal(sumar(delDia));
+            diasStats.add(ds);
+        }
+
+        // ── Comparativo mes actual vs anterior ───────────────────────────
+        YearMonth mesActualYm = YearMonth.from(hoy);
+        YearMonth mesAnteriorYm = mesActualYm.minusMonths(1);
+
+        List<Venta> mesActualV = ventas.stream()
+            .filter(v -> YearMonth.from(v.getFecha()).equals(mesActualYm)).toList();
+        List<Venta> mesAnteriorV = ventas.stream()
+            .filter(v -> YearMonth.from(v.getFecha()).equals(mesAnteriorYm)).toList();
+
+        BigDecimal ingresoActual = sumar(mesActualV);
+        BigDecimal ingresoAnterior = sumar(mesAnteriorV);
+        double variacion = 0;
+        if (ingresoAnterior.compareTo(BigDecimal.ZERO) != 0) {
+            variacion = ingresoActual.subtract(ingresoAnterior)
+                .multiply(BigDecimal.valueOf(100))
+                .divide(ingresoAnterior, 1, RoundingMode.HALF_UP)
+                .doubleValue();
+        }
+
+        OcupacionResponse.ComparativoMes comp = new OcupacionResponse.ComparativoMes();
+        comp.setLabelMesActual(mesActualYm.getMonth().getDisplayName(TextStyle.FULL, new Locale("es", "CL")));
+        comp.setLabelMesAnterior(mesAnteriorYm.getMonth().getDisplayName(TextStyle.FULL, new Locale("es", "CL")));
+        comp.setIngresosMesActual(ingresoActual);
+        comp.setIngresosMesAnterior(ingresoAnterior);
+        comp.setVentasMesActual(mesActualV.size());
+        comp.setVentasMesAnterior(mesAnteriorV.size());
+        comp.setVariacionPct(variacion);
+
+        OcupacionResponse r = new OcupacionResponse();
+        r.setMeses(meses);
+        r.setPorTipo(tipoStats);
+        r.setPorDiaSemana(diasStats);
+        r.setComparativo(comp);
+        return r;
     }
 
     // Usado por el scheduler y el endpoint manual

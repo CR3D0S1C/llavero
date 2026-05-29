@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import Navbar from '../components/Navbar'
 import RoomCard from '../components/RoomCard'
 import ModalLiberar from '../components/ModalLiberar'
+import ModalConfirmar from '../components/ModalConfirmar'
 import {
   getHabitaciones, getTiposHabitacion, updateHabitacion,
   crearHabitacion, eliminarHabitacion,
@@ -36,16 +37,24 @@ export default function Habitaciones() {
     setHabitaciones(res.data)
   }
 
-  const eliminar = async (h) => {
-    if (!confirm(`¿Eliminar la habitación ${h.numero}? Esta acción la deja inactiva.`)) return
-    try {
-      await eliminarHabitacion(h.id)
-      toast.success(`${h.numero} eliminada`)
-      if (seleccionada?.id === h.id) setSeleccionada(null)
-      await cargar()
-    } catch (e) {
-      toast.error(e.response?.data?.error || 'No se pudo eliminar')
-    }
+  const [confirmar, setConfirmar] = useState(null)
+
+  const eliminar = (h) => {
+    setConfirmar({
+      titulo: `¿Eliminar habitación ${h.numero}?`,
+      mensaje: 'Quedará inactiva y no aparecerá en el sistema ni en el sitio web.',
+      textoBtn: 'Eliminar',
+      accion: async () => {
+        try {
+          await eliminarHabitacion(h.id)
+          toast.success(`${h.numero} eliminada`)
+          if (seleccionada?.id === h.id) setSeleccionada(null)
+          await cargar()
+        } catch (e) {
+          toast.error(e.response?.data?.error || 'No se pudo eliminar')
+        }
+      }
+    })
   }
 
   const seleccionar = (h) => {
@@ -96,9 +105,11 @@ export default function Habitaciones() {
     }
   }
 
-  const borrarFoto = async (fotoId) => {
-    if (!confirm('¿Eliminar esta foto?')) return
-    try {
+  const borrarFoto = (fotoId) => {
+    setConfirmar({
+      titulo: '¿Eliminar esta foto?',
+      textoBtn: 'Eliminar',
+      accion: async () => { try {
       await eliminarFotoHabitacion(seleccionada.id, fotoId)
       toast.success('Foto eliminada')
       const res = await getHabitaciones()
@@ -107,7 +118,8 @@ export default function Habitaciones() {
       if (actualizada) setSeleccionada(actualizada)
     } catch {
       toast.error('Error al eliminar foto')
-    }
+    }}
+    })
   }
 
   const guardar = async () => {
@@ -139,6 +151,15 @@ export default function Habitaciones() {
   return (
     <div className="min-h-screen bg-bg">
       <Navbar />
+      {confirmar && (
+        <ModalConfirmar
+          titulo={confirmar.titulo}
+          mensaje={confirmar.mensaje}
+          textoBtn={confirmar.textoBtn}
+          onConfirmar={() => { setConfirmar(null); confirmar.accion() }}
+          onCancelar={() => setConfirmar(null)}
+        />
+      )}
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
           <h1 className="text-2xl font-bold">Habitaciones</h1>

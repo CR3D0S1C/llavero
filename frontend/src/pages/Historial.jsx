@@ -97,7 +97,11 @@ export default function Historial() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <span className="font-semibold">{v.habitacionNumero} — {v.habitacionTipo}</span>
+                      <span className="font-semibold">
+                        {v.habitacionNumero
+                          ? `Hab. ${v.habitacionNumero} — ${v.habitacionTipo}`
+                          : '🏪 Minimarket'}
+                      </span>
                       <span className={`badge-${v.tipoDte}`}>{v.tipoDte}</span>
                       {v.dteEstado && <span className={`badge-${v.dteEstado}`}>{v.dteEstado}</span>}
                     </div>

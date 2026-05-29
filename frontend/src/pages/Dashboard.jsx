@@ -154,6 +154,34 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Widget stock bajo */}
+        {metricas?.productosBajoStock?.length > 0 && (
+          <div className="card mb-6 border-orange-700/40 bg-orange-950/10">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold flex items-center gap-2 text-orange-400">
+                ⚠️ Reposición pendiente
+                <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full">
+                  {metricas.productosBajoStock.length}
+                </span>
+              </h2>
+              <button onClick={() => navigate('/inventario')} className="text-xs text-accent hover:underline">
+                Ir a inventario →
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {metricas.productosBajoStock.map((p, i) => (
+                <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-700/30 text-sm">
+                  {p.icono && <span>{p.icono}</span>}
+                  <span className="font-medium">{p.nombre}</span>
+                  <span className={`text-xs font-bold ${p.stock === 0 ? 'text-red-400' : 'text-orange-400'}`}>
+                    {p.stock === 0 ? 'Sin stock' : `${p.stock} ud.`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Widget reservas próximas */}
         {proximas.length > 0 && (
           <div className="card mb-6">

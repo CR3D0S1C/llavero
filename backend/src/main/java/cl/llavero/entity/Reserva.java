@@ -50,6 +50,9 @@ public class Reserva {
     @Column(nullable = false, columnDefinition = "boolean default false")
     private Boolean conEstacionamiento = false;
 
+    @Column(name = "referencia_deposito", length = 200)
+    private String referenciaDeposito;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

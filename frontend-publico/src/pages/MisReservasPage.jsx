@@ -35,7 +35,7 @@ export default function MisReservasPage() {
   }, [huesped])
 
   const handleCancelar = async (id) => {
-    if (!confirm('¿Estás seguro de que deseas cancelar esta reserva?')) return
+    if (!window.confirm('¿Estás seguro de que deseas cancelar esta reserva?')) return
     setCancelando(id)
     try {
       await bookingApi.cancelarReserva(id)
@@ -148,7 +148,7 @@ export default function MisReservasPage() {
                     </div>
 
                     {/* Fechas */}
-                    <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className={`grid gap-4 mb-4 ${r.montoEstimado ? 'grid-cols-4' : 'grid-cols-3'}`}>
                       <div>
                         <p style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#6B6057', marginBottom: '4px' }}>Llegada</p>
                         <p style={{ fontSize: '0.9375rem', color: '#1E1E1E', fontWeight: 400 }}>{formatDate(r.fechaEntrada)}</p>
@@ -161,6 +161,14 @@ export default function MisReservasPage() {
                         <p style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#6B6057', marginBottom: '4px' }}>Duración</p>
                         <p style={{ fontSize: '0.9375rem', color: '#1E1E1E', fontWeight: 400 }}>{calcNoches(r.fechaEntrada, r.fechaSalida)}</p>
                       </div>
+                      {r.montoEstimado && (
+                        <div>
+                          <p style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#6B6057', marginBottom: '4px' }}>Total estimado</p>
+                          <p style={{ fontSize: '0.9375rem', color: '#1C4A5A', fontWeight: 600 }}>
+                            ${Number(r.montoEstimado).toLocaleString('es-CL')}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     {r.notas && (

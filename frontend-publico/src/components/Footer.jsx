@@ -25,13 +25,12 @@ export default function Footer() {
             <div className="space-y-3">
               {[
                 { to: '/', label: 'Inicio' },
-                { to: '/habitaciones', label: 'Habitaciones' },
-                { to: '/registro', label: 'Crear cuenta' },
-                { to: '/login', label: 'Iniciar sesión' },
+                { to: '/habitaciones', label: 'Ver habitaciones' },
+                { to: '/habitaciones', label: 'Reservar ahora' },
                 { to: '/mis-reservas', label: 'Mis reservas' },
-              ].map(({ to, label }) => (
+              ].map(({ to, label }, i) => (
                 <Link
-                  key={to}
+                  key={i}
                   to={to}
                   className="block text-sm transition-colors"
                   style={{ fontWeight: 300, color: 'rgba(255,255,255,0.55)' }}
@@ -50,7 +49,7 @@ export default function Footer() {
               Contacto
             </p>
             <div className="space-y-3 text-sm" style={{ fontWeight: 300 }}>
-              <p>La Serena, Región de Coquimbo<br />Chile</p>
+              <p>Vicuña 461, La Serena<br />Región de Coquimbo, Chile</p>
               <p>
                 <a
                   href="mailto:hostalmimaravilla@gmail.com"
@@ -61,7 +60,19 @@ export default function Footer() {
                   hostalmimaravilla@gmail.com
                 </a>
               </p>
-              <p>Reservas disponibles 24/7 online</p>
+              <p>
+                <a
+                  href="https://wa.me/56950455726"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#25D366' }}
+                  onMouseEnter={e => e.target.style.color = '#fff'}
+                  onMouseLeave={e => e.target.style.color = '#25D366'}
+                >
+                  WhatsApp +56 9 5045 5726
+                </a>
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.35)' }}>Reservas online 24/7</p>
             </div>
           </div>
         </div>
@@ -70,7 +81,7 @@ export default function Footer() {
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}
           className="flex flex-col md:flex-row items-center justify-between gap-4">
           <p style={{ fontSize: '11px', letterSpacing: '0.1em' }}>
-            © {new Date().getFullYear()} Hostal Mi Maravilla · Todos los derechos reservados
+            © 2014–{new Date().getFullYear()} Hostal Mi Maravilla · Todos los derechos reservados
           </p>
           <p style={{ fontSize: '11px', letterSpacing: '0.1em' }}>
             La Serena · Chile

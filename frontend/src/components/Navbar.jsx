@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useSesion } from '../context/SesionContext'
 import { logout } from '../services/api'
 import { toast } from '../utils/toast'
+import { nombreClave } from '../utils/nombre'
 
 // Visibles para todos
 const linksComunes = [
@@ -24,6 +25,7 @@ const linksAdmin = [
   { to: '/dte',         label: 'DTEs SII',                icon: '🧾', desc: 'Boletas y facturas pendientes' },
   { to: '/admin',       label: 'Métricas',                icon: '📈', desc: 'Resumen general del negocio' },
   { to: '/estadisticas',label: 'Estadísticas',            icon: '📊', desc: 'Ocupación, ingresos por tipo y temporada' },
+  { to: '/reporte',     label: 'Reporte de ventas',       icon: '📑', desc: 'Filtrar por fecha, exportar CSV' },
   { to: '/panel-aseo', label: 'Panel de Aseo',            icon: '🧹', desc: 'Asignación de habitaciones al personal' },
   { to: '/usuarios',   label: 'Usuarios',                icon: '👤', desc: 'Cajeros, mucamas y administradores' },
 ]
@@ -75,7 +77,7 @@ export default function Navbar() {
         {/* Usuario + salir (desktop) */}
         <div className="hidden md:flex items-center gap-3 ml-auto shrink-0">
           <span className="text-sm text-muted">
-            {sesion?.nombre}
+            {nombreClave(sesion?.nombre)}
             <span className={`ml-1 text-xs ${esJefe ? 'text-accent' : 'text-gray-500'}`}>
               ({sesion?.rol})
             </span>

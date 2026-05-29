@@ -2,6 +2,7 @@ package cl.llavero.controller;
 
 import cl.llavero.dto.*;
 import cl.llavero.entity.EstadoReserva;
+import org.springframework.format.annotation.DateTimeFormat;
 import cl.llavero.service.AdminService;
 import cl.llavero.service.EmailService;
 import cl.llavero.service.ReservaService;
@@ -10,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 import java.util.List;
 import java.util.Map;
@@ -41,6 +44,14 @@ public class AdminController {
     @GetMapping("/estadisticas")
     public ResponseEntity<OcupacionResponse> getEstadisticas() {
         return ResponseEntity.ok(adminService.getOcupacion());
+    }
+
+    @GetMapping("/reporte")
+    public ResponseEntity<ReporteResponse> getReporte(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(defaultValue = "todos") String tipo) {
+        return ResponseEntity.ok(ventaService.getReporte(desde, hasta, tipo));
     }
 
     @GetMapping("/estado-actual")
@@ -98,9 +109,11 @@ public class AdminController {
     }
 
     @PutMapping("/reservas/{id}/confirmar")
-    public ResponseEntity<?> confirmarReserva(@PathVariable UUID id) {
+    public ResponseEntity<?> confirmarReserva(@PathVariable UUID id,
+                                              @RequestBody(required = false) Map<String, String> body) {
         try {
-            return ResponseEntity.ok(reservaService.cambiarEstado(id, EstadoReserva.confirmada));
+            String ref = body != null ? body.get("referenciaDeposito") : null;
+            return ResponseEntity.ok(reservaService.confirmar(id, ref));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -138,6 +151,16 @@ public class AdminController {
     @GetMapping("/estadias")
     public ResponseEntity<List<VentaResponse>> getEstadiasActivas() {
         return ResponseEntity.ok(ventaService.getEstadiasActivas());
+    }
+
+    @PostMapping("/estadias/{ventaId}/cargos-batch")
+    public ResponseEntity<?> agregarCargos(@PathVariable UUID ventaId,
+                                           @RequestBody List<AgregarCargoRequest> items) {
+        try {
+            return ResponseEntity.ok(ventaService.agregarCargos(ventaId, items));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/estadias/{ventaId}/cargo")

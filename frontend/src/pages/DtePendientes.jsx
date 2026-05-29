@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
+import ModalConfirmar from '../components/ModalConfirmar'
 import { getDteTodos, marcarDteEmitido } from '../services/api'
 import { toast } from '../utils/toast'
 
@@ -20,8 +21,19 @@ export default function DtePendientes() {
     }
   }
 
-  const marcarEmitido = async (id) => {
-    if (!confirm('¿Marcar como emitido en el SII?')) return
+  const [confirmar, setConfirmar] = useState(null)
+
+  const marcarEmitido = (id) => {
+    setConfirmar({
+      id,
+      titulo: '¿Marcar como emitido?',
+      mensaje: 'Confirma que ya ingresaste este documento en el portal del SII.',
+      textoBtn: 'Sí, marcar emitido',
+      variante: 'normal',
+    })
+  }
+
+  const doMarcarEmitido = async (id) => {
     try {
       await marcarDteEmitido(id)
       toast.success('DTE marcado como emitido')
@@ -35,6 +47,18 @@ export default function DtePendientes() {
   const pendientes = dtes.filter(d => d.estado === 'pendiente').length
 
   return (
+    <>
+    {confirmar && (
+      <ModalConfirmar
+        titulo={confirmar.titulo}
+        mensaje={confirmar.mensaje}
+        textoBtn={confirmar.textoBtn}
+        variante={confirmar.variante}
+        onConfirmar={() => { const id = confirmar.id; setConfirmar(null); doMarcarEmitido(id) }}
+        onCancelar={() => setConfirmar(null)}
+      />
+    )}
+
     <div className="min-h-screen bg-bg">
       <Navbar />
       <div className="max-w-5xl mx-auto px-4 py-6">
@@ -128,5 +152,6 @@ export default function DtePendientes() {
         )}
       </div>
     </div>
+    </>
   )
 }

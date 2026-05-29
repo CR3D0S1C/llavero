@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
+import ModalConfirmar from '../components/ModalConfirmar'
 import { getUsuarios, crearUsuario, editarUsuario, desactivarUsuario } from '../services/api'
 import { toast } from '../utils/toast'
 
-const ROL_LABEL = { jefe: 'Jefe', cajero: 'Cajero' }
-const ROL_COLOR = { jefe: 'text-accent', cajero: 'text-blue-400' }
+const ROL_LABEL = { jefe: 'Jefe', cajero: 'Cajero', aseo: 'Mucama / Aseo' }
+const ROL_COLOR = { jefe: 'text-accent', cajero: 'text-blue-400', aseo: 'text-green-400' }
 
 export default function GestionUsuarios() {
   const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(true)
-  const [modal, setModal] = useState(null) // null | { modo: 'crear'|'editar', usuario?: {} }
+  const [modal, setModal] = useState(null)
+  const [confirmar, setConfirmar] = useState(null) // null | { modo: 'crear'|'editar', usuario?: {} }
 
   const cargar = () => {
     setLoading(true)
@@ -20,19 +22,24 @@ export default function GestionUsuarios() {
 
   useEffect(cargar, [])
 
-  const handleDesactivar = async (u) => {
-    if (!confirm(`¿Desactivar a ${u.nombre}? No podrá iniciar sesión.`)) return
-    try {
-      await desactivarUsuario(u.id)
-      toast.success(`${u.nombre} desactivado`)
-      cargar()
-    } catch {
-      toast.error('Error al desactivar usuario')
-    }
+  const handleDesactivar = (u) => {
+    setConfirmar({
+      titulo: `¿Desactivar a ${u.nombre}?`,
+      mensaje: 'No podrá iniciar sesión. Puedes crear un nuevo usuario si lo necesitas.',
+      textoBtn: 'Desactivar',
+      accion: async () => {
+        try {
+          await desactivarUsuario(u.id)
+          toast.success(`${u.nombre} desactivado`)
+          cargar()
+        } catch {
+          toast.error('Error al desactivar usuario')
+        }
+      }
+    })
   }
 
-  const activos   = usuarios.filter(u => u.activo)
-  const inactivos = usuarios.filter(u => !u.activo)
+  const activos = usuarios.filter(u => u.activo)
 
   return (
     <div className="min-h-screen bg-bg">
@@ -69,27 +76,19 @@ export default function GestionUsuarios() {
               )}
             </div>
 
-            {inactivos.length > 0 && (
-              <>
-                <h2 className="text-xs uppercase tracking-wider text-muted mb-2">Desactivados</h2>
-                <div className="space-y-2 opacity-50">
-                  {inactivos.map(u => (
-                    <div key={u.id} className="card flex items-center gap-3 py-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold text-gray-400">
-                        {u.nombre[0].toUpperCase()}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-400 line-through">{u.nombre}</div>
-                        <div className="text-xs text-muted">{ROL_LABEL[u.rol]}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
           </>
         )}
       </div>
+
+      {confirmar && (
+        <ModalConfirmar
+          titulo={confirmar.titulo}
+          mensaje={confirmar.mensaje}
+          textoBtn={confirmar.textoBtn}
+          onConfirmar={() => { setConfirmar(null); confirmar.accion() }}
+          onCancelar={() => setConfirmar(null)}
+        />
+      )}
 
       {modal && (
         <ModalUsuario
@@ -200,6 +199,7 @@ function ModalUsuario({ modo, usuario, onClose, onGuardado }) {
             >
               <option value="cajero">Cajero</option>
               <option value="jefe">Jefe (acceso total)</option>
+              <option value="aseo">Mucama / Aseo</option>
             </select>
           </div>
 

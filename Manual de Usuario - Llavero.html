@@ -358,21 +358,25 @@
         <ol class="pasos">
           <li>Abre el navegador (Chrome, Edge o Safari).</li>
           <li>Escribe la dirección que te entregó el jefe en la barra de arriba y presiona Enter.</li>
-          <li>Verás la pantalla de inicio con los nombres de los usuarios disponibles.</li>
-          <li>Toca tu nombre en la lista.</li>
-          <li>Ingresa tu PIN de 4 dígitos usando el teclado de la pantalla (o el teclado físico).</li>
+          <li>Verás la pantalla de inicio con un campo de texto y un teclado numérico.</li>
+          <li>Escribe tu nombre de usuario en el campo (el jefe te entregó este nombre al crearte).</li>
+          <li>Ingresa tu PIN de 4 dígitos usando el teclado de la pantalla o el teclado físico.</li>
           <li>Presiona <strong>Ingresar</strong>.</li>
         </ol>
+        <div class="alerta alerta-info">
+          <span>💡</span>
+          <div><strong>Formato del nombre de usuario:</strong> El nombre de usuario es compacto, sin espacios ni tildes. Por ejemplo, si te llamas "Juan Pérez" tu usuario puede ser <strong>jperez</strong>. El jefe te dice exactamente cuál es el tuyo.</div>
+        </div>
       </div>
 
       <div class="alerta alerta-aviso">
         <span>⚠️</span>
-        <div><strong>Importante sobre la sesión:</strong> Si ingresas desde un dispositivo nuevo (por ejemplo, el celular) mientras ya estás conectado en el computador, la sesión del computador se cierra automáticamente. Solo puede haber una sesión activa por usuario a la vez.</div>
+        <div><strong>La sesión dura 2 horas:</strong> Por seguridad, después de 2 horas sin actividad el sistema cierra tu sesión automáticamente y debes volver a ingresar. Si ingresas desde otro dispositivo, la sesión anterior también se cierra.</div>
       </div>
 
       <div class="alerta alerta-info">
         <span>💡</span>
-        <div><strong>PIN incorrecto:</strong> Si el sistema dice "PIN incorrecto", verifica que seleccionaste tu nombre y que el PIN tenga exactamente 4 dígitos. Pide al jefe que resetee tu PIN si no lo recuerdas.</div>
+        <div><strong>PIN incorrecto:</strong> Si el sistema dice "Usuario o PIN incorrecto", verifica que escribiste bien tu nombre de usuario y que el PIN tenga exactamente 4 dígitos. Pide al jefe que resetee tu PIN si no lo recuerdas.</div>
       </div>
     </div>
 
@@ -491,15 +495,40 @@
       </div>
 
       <div class="subseccion">
-        <h3>Venta de habitación</h3>
+        <h3>Venta de habitación (pago inmediato)</h3>
+        <ol class="pasos">
+          <li>Ve a <span class="pantalla">Nueva Venta</span> · modo <strong>Hostal</strong>.</li>
+          <li>Elige la habitación disponible.</li>
+          <li>Selecciona la tarifa (1h, 2h, 3h o <strong>Por noche</strong>).</li>
+          <li>Si elegiste <em>Por noche</em>, aparece el selector de noches — usa <strong>−</strong> y <strong>+</strong> para ajustar cuántas noches se queda. El sistema calcula la salida automáticamente.</li>
+          <li>Agrega productos del minimarket si corresponde.</li>
+          <li>Presiona <strong>Confirmar Venta</strong> y selecciona el método de pago.</li>
+          <li>Se genera el comprobante. Puedes imprimirlo con el botón de la impresora.</li>
+        </ol>
+      </div>
+
+      <div class="subseccion">
+        <h3>Estadía activa (pago al salir)</h3>
+        <p style="margin-bottom:10px; color:#4a5568">Úsalo cuando el huésped va a pagar al irse (no al llegar).</p>
+        <ol class="pasos">
+          <li>Ve a <span class="pantalla">Nueva Venta</span> · modo <strong>Hostal</strong>.</li>
+          <li>Elige habitación, tarifa y cantidad de noches.</li>
+          <li>Haz clic en el botón verde <strong>🏠 Estadía activa — pago al salir</strong>.</li>
+          <li>La habitación queda marcada como ocupada y aparece en <span class="pantalla">Estadías Activas</span>.</li>
+          <li>Durante la estadía puedes agregar cargos (minibar, desayuno, etc.).</li>
+          <li>Al irse, ve a Estadías Activas y haz el <strong>check-out</strong> cobrando el total.</li>
+        </ol>
+      </div>
+
+      <div class="subseccion">
+        <h3>Cargar productos a una estadía activa</h3>
         <ol class="pasos">
           <li>Ve a <span class="pantalla">Nueva Venta</span>.</li>
-          <li>Selecciona el tipo <strong>Habitación</strong>.</li>
-          <li>Elige la habitación disponible y el tiempo de estadía.</li>
-          <li>El precio se calcula automáticamente.</li>
-          <li>Selecciona el método de pago (efectivo, débito, crédito u otro).</li>
-          <li>Haz clic en <strong>Registrar Venta</strong>.</li>
-          <li>Se imprimirá o mostrará el comprobante. Puedes imprimirlo con el botón correspondiente.</li>
+          <li>Agrega los productos al carrito (modo hostal o minimarket).</li>
+          <li>En el carrito, si hay estadías en curso, aparece el menú <strong>Cargar a estadía activa</strong>.</li>
+          <li>Selecciona la habitación del huésped en ese menú.</li>
+          <li>El botón cambia a <strong>"➕ Cargar a Hab. X"</strong>. Presionalo.</li>
+          <li>Los ítems se suman al total de la estadía sin crear una venta nueva.</li>
         </ol>
       </div>
 
@@ -733,12 +762,16 @@
           <td>Otro cajero inició sesión con tu mismo usuario en otro dispositivo. Vuelve a entrar con tu PIN.</td>
         </tr>
         <tr>
-          <td><strong>No aparece mi nombre en la lista</strong></td>
-          <td>Pide al jefe que verifique que tu usuario esté activo en el sistema.</td>
+          <td><strong>No sé cuál es mi nombre de usuario</strong></td>
+          <td>Pide al jefe que te diga tu nombre de usuario. No es tu nombre completo — es una versión compacta sin espacios (ej: jperez).</td>
         </tr>
         <tr>
-          <td><strong>El PIN dice incorrecto pero estoy seguro de que es correcto</strong></td>
-          <td>Puede que el PIN haya sido cambiado. Pide al jefe que lo resetee.</td>
+          <td><strong>Dice "Usuario o PIN incorrecto"</strong></td>
+          <td>Verifica que escribiste bien el nombre de usuario (sin espacios, todo minúscula) y que el PIN tenga exactamente 4 dígitos. Pide al jefe que lo resetee si no lo recuerdas.</td>
+        </tr>
+        <tr>
+          <td><strong>Se cerró la sesión sola</strong></td>
+          <td>La sesión dura 2 horas por seguridad. Vuelve a ingresar con tu nombre y PIN. También puede pasar si alguien inició sesión con tu mismo usuario en otro dispositivo.</td>
         </tr>
         <tr>
           <td><strong>La habitación quedó en "Ocupada" pero el huésped se fue</strong></td>
@@ -768,8 +801,8 @@
 
   <!-- PIE -->
   <div class="pie">
-    Sistema Llavero · Hostal Mi Maravilla · La Serena, Chile · 2026<br>
-    Manual de uso para personal operativo — versión 1.0
+    Sistema Llavero · Hostal Mi Maravilla · Vicuña 461, La Serena · 2026<br>
+    Manual de uso para personal operativo — versión 2.0
   </div>
 
 </div>

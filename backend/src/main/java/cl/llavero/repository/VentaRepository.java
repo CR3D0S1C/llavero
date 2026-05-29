@@ -31,4 +31,7 @@ public interface VentaRepository extends JpaRepository<Venta, UUID> {
 
     @Query("SELECT v FROM Venta v WHERE v.estado = :estado ORDER BY v.createdAt ASC")
     List<Venta> findByEstado(@Param("estado") EstadoVenta estado);
+
+    @Query("SELECT v FROM Venta v WHERE v.fecha >= :desde AND v.fecha <= :hasta ORDER BY v.fecha DESC, v.createdAt DESC")
+    List<Venta> findByFechaBetween(@Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);
 }

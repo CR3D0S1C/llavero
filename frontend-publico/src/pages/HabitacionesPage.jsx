@@ -9,11 +9,15 @@ const ESTADO_CONFIG = {
   no_disponible: { label: 'No disponible', bg: 'rgba(30,30,30,0.7)',   color: 'rgba(255,255,255,0.7)' },
 }
 
-const FALLBACK_IMGS = [
-  'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80',
-  'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800&q=80',
-  'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=80',
-]
+const TIPO_FALLBACK = {
+  'Habitación Individual':        '/uploads/habitaciones/hostal-doble-cama-01.webp',
+  'Habitación Doble Matrimonial': '/uploads/habitaciones/hostal-doble-cama-01.webp',
+  'Habitación Queen':             '/uploads/habitaciones/hostal-doble-cama-02.webp',
+  'Habitación Triple':            '/uploads/habitaciones/hostal-doble-cama-01.webp',
+  'Habitación Familiar':          '/uploads/habitaciones/hostal-sala-cuadros.webp',
+  'Dormitorio Compartido':        '/uploads/habitaciones/hostal-sala-cuadros.webp',
+}
+const FALLBACK_DEFAULT = '/uploads/habitaciones/hostal-doble-cama-01.webp'
 
 const C = {
   teal: '#1C4A5A', cream: '#F5EFE6', sand: '#E8D5B7',
@@ -22,7 +26,7 @@ const C = {
 
 function HabitacionCard({ hab, index, detallePath }) {
   const portada = hab.fotos?.find(f => f.esPortada) || hab.fotos?.[0]
-  const imgSrc = portada?.url || FALLBACK_IMGS[index % FALLBACK_IMGS.length]
+  const imgSrc = portada?.url || TIPO_FALLBACK[hab.tipoLabel] || FALLBACK_DEFAULT
   const estado = ESTADO_CONFIG[hab.estadoPublico] || ESTADO_CONFIG.no_disponible
   const precioDesde = hab.precios?.length
     ? Math.min(...hab.precios.map(p => Number(p.precio)))
@@ -36,6 +40,7 @@ function HabitacionCard({ hab, index, detallePath }) {
         <img
           src={imgSrc}
           alt={hab.tipoLabel}
+          loading="lazy"
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
         <div
@@ -136,6 +141,7 @@ export default function HabitacionesPage() {
   const [habitaciones, setHabitaciones] = useState([])
   const [loading, setLoading] = useState(true)
   const [buscando, setBuscando] = useState(false)
+  const [errorCarga, setErrorCarga] = useState(false)
 
   const [form, setForm] = useState({ fechaEntrada: '', fechaSalida: '', personas: '' })
   const [filtroActivo, setFiltroActivo] = useState(null)
@@ -144,9 +150,12 @@ export default function HabitacionesPage() {
   const hoy = new Date().toISOString().split('T')[0]
 
   useEffect(() => {
+    document.title = 'Habitaciones disponibles · Hostal Mi Maravilla'
     publicApi.getHabitaciones()
       .then(r => setHabitaciones(r.data))
+      .catch(() => setErrorCarga(true))
       .finally(() => setLoading(false))
+    return () => { document.title = 'Hostal Mi Maravilla · La Serena, Chile' }
   }, [])
 
   const handleBuscar = async () => {
@@ -336,7 +345,22 @@ export default function HabitacionesPage() {
         )}
 
         {/* Grid */}
-        {loading || buscando ? (
+        {errorCarga ? (
+          <div style={{ textAlign: 'center', padding: '6rem 0' }}>
+            <p className="font-heading" style={{ fontSize: '2rem', fontWeight: 300, color: C.teal, marginBottom: '1rem' }}>
+              No pudimos cargar las habitaciones
+            </p>
+            <p style={{ color: C.warm, fontWeight: 300, marginBottom: '1.5rem' }}>
+              Por favor intenta nuevamente o contáctanos por WhatsApp.
+            </p>
+            <button
+              onClick={() => { setErrorCarga(false); setLoading(true); publicApi.getHabitaciones().then(r => setHabitaciones(r.data)).catch(() => setErrorCarga(true)).finally(() => setLoading(false)) }}
+              style={{ fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase', padding: '12px 28px', background: C.teal, color: '#fff', border: 'none', cursor: 'pointer' }}
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : loading || buscando ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.5rem' }}>
             {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
           </div>

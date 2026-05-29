@@ -1,9 +1,17 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { publicApi, bookingApi } from '../api'
 import { useAuth } from '../context/AuthContext'
 
-const FALLBACK_IMG = 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1200&q=80'
+const TIPO_FALLBACK = {
+  'Habitación Individual':        '/uploads/habitaciones/hostal-doble-cama-01.webp',
+  'Habitación Doble Matrimonial': '/uploads/habitaciones/hostal-doble-cama-01.webp',
+  'Habitación Queen':             '/uploads/habitaciones/hostal-doble-cama-02.webp',
+  'Habitación Triple':            '/uploads/habitaciones/hostal-doble-cama-01.webp',
+  'Habitación Familiar':          '/uploads/habitaciones/hostal-sala-cuadros.webp',
+  'Dormitorio Compartido':        '/uploads/habitaciones/hostal-sala-cuadros.webp',
+}
+const FALLBACK_IMG = '/uploads/habitaciones/hostal-doble-cama-01.webp'
 
 const C = {
   teal: '#1C4A5A',
@@ -56,12 +64,14 @@ export default function HabitacionDetallePage() {
     publicApi.getHabitacion(id)
       .then(r => {
         setHab(r.data)
+        document.title = `${r.data.tipoLabel} · Hostal Mi Maravilla`
         const portadaIdx = r.data.fotos?.findIndex(f => f.esPortada)
         if (portadaIdx > 0) setFotoActual(portadaIdx)
         if (r.data.precios?.length > 0) setTarifaSeleccionada(0)
       })
       .catch(() => navigate('/habitaciones'))
       .finally(() => setLoading(false))
+    return () => { document.title = 'Hostal Mi Maravilla · La Serena, Chile' }
   }, [id])
 
   useEffect(() => {
@@ -85,11 +95,19 @@ export default function HabitacionDetallePage() {
 
   const noches = useMemo(() => diffDays(fechaEntrada, fechaSalida), [fechaEntrada, fechaSalida])
 
+  const tarifaTemporada = useMemo(() => {
+    if (!hab?.tarifasTemporada?.length || !fechaEntrada || !fechaSalida) return null
+    return hab.tarifasTemporada
+      .filter(t => t.fechaDesde <= fechaSalida && t.fechaHasta >= fechaEntrada)
+      .sort((a, b) => Number(b.precio) - Number(a.precio))[0] || null
+  }, [hab, fechaEntrada, fechaSalida])
+
   const precioTotal = useMemo(() => {
-    if (!hab?.precios?.length || tarifaSeleccionada === null || !noches) return null
-    const tarifa = hab.precios[tarifaSeleccionada]
-    return Number(tarifa.precio) * noches
-  }, [hab, tarifaSeleccionada, noches])
+    if (!noches) return null
+    if (tarifaTemporada) return Number(tarifaTemporada.precio) * noches
+    if (!hab?.precios?.length || tarifaSeleccionada === null) return null
+    return Number(hab.precios[tarifaSeleccionada].precio) * noches
+  }, [hab, tarifaSeleccionada, noches, tarifaTemporada])
 
   const handleReservar = async () => {
     setReservando(true)
@@ -164,7 +182,7 @@ export default function HabitacionDetallePage() {
         {/* Imagen con fade */}
         <div key={fotoActual} style={{ width: '100%', height: '100%', animation: 'fadeIn 0.4s ease both' }}>
           <img
-            src={hab.fotos?.[fotoActual]?.url || FALLBACK_IMG}
+            src={hab.fotos?.[fotoActual]?.url || TIPO_FALLBACK[hab.tipoLabel] || FALLBACK_IMG}
             alt={hab.tipoLabel}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
@@ -304,8 +322,9 @@ export default function HabitacionDetallePage() {
             {/* Precio desde */}
             {precioMin && (
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                <span style={{ fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warm }}>Desde</span>
                 <span style={{ fontSize: '2rem', fontWeight: 600, color: C.teal }}>${precioMin.toLocaleString('es-CL')}</span>
-                <span style={{ color: C.warm, fontSize: '0.875rem' }}>/ por tarifa</span>
+                <span style={{ color: C.warm, fontSize: '0.875rem' }}>/ noche</span>
               </div>
             )}
 
@@ -328,6 +347,23 @@ export default function HabitacionDetallePage() {
                     {a.trim()}
                   </span>
                 ))}
+              </div>
+            )}
+
+            {/* ── Banner temporada (cuando hay fechas seleccionadas) ── */}
+            {tarifaTemporada && fechaEntrada && fechaSalida && (
+              <div style={{
+                background: '#fffbeb', border: `1px solid ${C.sand}`,
+                borderLeft: `4px solid ${C.gold}`,
+                padding: '0.875rem 1rem', marginBottom: '1.5rem',
+              }}>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: C.charcoal, marginBottom: '3px' }}>
+                  ★ {tarifaTemporada.label}
+                </p>
+                <p style={{ fontSize: '12px', color: C.warm }}>
+                  Precio vigente para esas fechas:{' '}
+                  <strong style={{ color: C.gold }}>${Number(tarifaTemporada.precio).toLocaleString('es-CL')} / noche</strong>
+                </p>
               </div>
             )}
 
@@ -552,19 +588,39 @@ export default function HabitacionDetallePage() {
                   )}
 
                   {/* Resumen precio */}
-                  {noches > 0 && tarifaSeleccionada !== null && hab.precios?.[tarifaSeleccionada] && (
+                  {noches > 0 && precioTotal !== null && (
                     <div style={{
-                      background: '#F5EFE6', border: `1px solid ${C.sand}`,
+                      background: tarifaTemporada ? '#fffbeb' : '#F5EFE6',
+                      border: tarifaTemporada ? `1px solid ${C.sand}` : `1px solid ${C.sand}`,
+                      borderLeft: tarifaTemporada ? `3px solid ${C.gold}` : `3px solid ${C.sand}`,
                       padding: '0.875rem 1rem', marginBottom: '1rem',
                     }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '13px', color: C.warm }}>
-                          ${Number(hab.precios[tarifaSeleccionada].precio).toLocaleString('es-CL')} × {noches} noche{noches !== 1 ? 's' : ''}
-                        </span>
-                        <span style={{ fontSize: '13px', color: C.charcoal, fontWeight: 500 }}>
-                          ${precioTotal?.toLocaleString('es-CL')}
-                        </span>
-                      </div>
+                      {tarifaTemporada ? (
+                        <div style={{ marginBottom: '4px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '12px', color: C.gold, fontWeight: 600 }}>
+                              ★ {tarifaTemporada.label}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                            <span style={{ fontSize: '13px', color: C.warm }}>
+                              ${Number(tarifaTemporada.precio).toLocaleString('es-CL')} × {noches} noche{noches !== 1 ? 's' : ''}
+                            </span>
+                            <span style={{ fontSize: '13px', color: C.charcoal, fontWeight: 500 }}>
+                              ${precioTotal?.toLocaleString('es-CL')}
+                            </span>
+                          </div>
+                        </div>
+                      ) : tarifaSeleccionada !== null && hab.precios?.[tarifaSeleccionada] ? (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '13px', color: C.warm }}>
+                            ${Number(hab.precios[tarifaSeleccionada].precio).toLocaleString('es-CL')} × {noches} noche{noches !== 1 ? 's' : ''}
+                          </span>
+                          <span style={{ fontSize: '13px', color: C.charcoal, fontWeight: 500 }}>
+                            ${precioTotal?.toLocaleString('es-CL')}
+                          </span>
+                        </div>
+                      ) : null}
                       <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: '6px', display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ fontSize: '13px', fontWeight: 600, color: C.teal }}>Total estimado</span>
                         <span style={{ fontSize: '1rem', fontWeight: 700, color: C.teal }}>${precioTotal?.toLocaleString('es-CL')}</span>
@@ -649,7 +705,7 @@ export default function HabitacionDetallePage() {
                     style={{
                       width: '100%',
                       fontSize: '12px', letterSpacing: '0.16em', textTransform: 'uppercase',
-                      padding: '15px',
+                      padding: '16px',
                       background: canBook ? C.teal : C.sand,
                       color: canBook ? '#fff' : C.warm,
                       border: 'none',
@@ -663,17 +719,31 @@ export default function HabitacionDetallePage() {
                     {reservando ? 'Enviando reserva...' : 'Solicitar reserva'}
                   </button>
 
-                  {!huesped && (
-                    <p style={{ fontSize: '12px', textAlign: 'center', color: C.warm, marginTop: '1rem' }}>
-                      ¿Ya tienes cuenta?{' '}
-                      <button
-                        onClick={() => navigate('/login')}
-                        style={{ color: C.teal, background: 'none', border: 'none', cursor: 'pointer', borderBottom: `1px solid ${C.teal}`, paddingBottom: '1px', fontSize: '12px' }}
-                      >
-                        Inicia sesión
-                      </button>
+                  {/* Feedback de por qué está deshabilitado */}
+                  {!canBook && !reservando && (
+                    <p style={{ fontSize: '11px', textAlign: 'center', color: C.warm, marginTop: '0.75rem', lineHeight: 1.5 }}>
+                      {!fechaEntrada || !fechaSalida
+                        ? 'Elige fechas de llegada y salida'
+                        : disponible === false
+                        ? 'Esta habitación no está disponible para esas fechas'
+                        : disponible === null && fechaEntrada && fechaSalida
+                        ? 'Verificando disponibilidad...'
+                        : !guestValido
+                        ? 'Completa tu nombre y email para continuar'
+                        : ''}
                     </p>
                   )}
+
+                  {/* Trust signals */}
+                  <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {[
+                      '✓ Reserva sin crear cuenta',
+                      '✓ Mejor precio directo · sin intermediarios',
+                      '✓ Cancelación gratuita hasta 48h antes',
+                    ].map((t, i) => (
+                      <p key={i} style={{ fontSize: '11px', color: C.warm, fontWeight: 300 }}>{t}</p>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

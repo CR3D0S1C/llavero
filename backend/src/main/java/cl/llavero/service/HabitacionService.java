@@ -5,14 +5,18 @@ import cl.llavero.dto.HabitacionLogResponse;
 import cl.llavero.dto.HabitacionPrecioDto;
 import cl.llavero.dto.HabitacionResponse;
 import cl.llavero.dto.HabitacionUpdateRequest;
+import cl.llavero.dto.TarifaTemporadaRequest;
+import cl.llavero.dto.TipoHabitacionRequest;
 import cl.llavero.entity.EstadoHabitacion;
 import cl.llavero.entity.Habitacion;
 import cl.llavero.entity.HabitacionLog;
 import cl.llavero.entity.HabitacionPrecio;
+import cl.llavero.entity.TarifaTemporada;
 import cl.llavero.entity.TipoHabitacion;
 import cl.llavero.repository.HabitacionLogRepository;
 import cl.llavero.repository.HabitacionPrecioRepository;
 import cl.llavero.repository.HabitacionRepository;
+import cl.llavero.repository.TarifaTemporadaRepository;
 import cl.llavero.repository.TipoHabitacionRepository;
 import cl.llavero.repository.UsuarioRepository;
 import cl.llavero.repository.VentaRepository;
@@ -21,9 +25,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -42,19 +50,22 @@ public class HabitacionService {
     private final HabitacionLogRepository logRepository;
     private final UsuarioRepository usuarioRepository;
     private final TipoHabitacionRepository tipoRepository;
+    private final TarifaTemporadaRepository tarifaRepository;
 
     public HabitacionService(HabitacionRepository habitacionRepository,
                              HabitacionPrecioRepository precioRepository,
                              VentaRepository ventaRepository,
                              HabitacionLogRepository logRepository,
                              UsuarioRepository usuarioRepository,
-                             TipoHabitacionRepository tipoRepository) {
+                             TipoHabitacionRepository tipoRepository,
+                             TarifaTemporadaRepository tarifaRepository) {
         this.habitacionRepository = habitacionRepository;
         this.precioRepository = precioRepository;
         this.ventaRepository = ventaRepository;
         this.logRepository = logRepository;
         this.usuarioRepository = usuarioRepository;
         this.tipoRepository = tipoRepository;
+        this.tarifaRepository = tarifaRepository;
     }
 
     private void registrarLog(Habitacion h, String anterior, String nuevo) {
@@ -81,6 +92,97 @@ public class HabitacionService {
 
     public List<TipoHabitacion> listarTipos() {
         return tipoRepository.findAll();
+    }
+
+    @Transactional
+    public TipoHabitacion crearTipo(TipoHabitacionRequest req) {
+        if (req.id() == null || req.id().isBlank()) throw new RuntimeException("El ID es obligatorio");
+        if (req.label() == null || req.label().isBlank()) throw new RuntimeException("El nombre es obligatorio");
+        if (req.bano() == null || req.bano().isBlank()) throw new RuntimeException("El tipo de baño es obligatorio");
+        String idNorm = req.id().trim().toLowerCase().replaceAll("[^a-z0-9]+", "-");
+        if (tipoRepository.existsById(idNorm)) throw new RuntimeException("Ya existe un tipo con el ID: " + idNorm);
+        TipoHabitacion t = new TipoHabitacion();
+        t.setId(idNorm);
+        t.setLabel(req.label().trim());
+        t.setBano(req.bano().trim());
+        t.setColor(req.color() != null && !req.color().isBlank() ? req.color().trim() : "#6B6057");
+        t.setAmenidades(req.amenidades() != null ? req.amenidades().trim() : null);
+        return tipoRepository.save(t);
+    }
+
+    @Transactional
+    public TipoHabitacion actualizarTipo(String id, TipoHabitacionRequest req) {
+        TipoHabitacion t = tipoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tipo no encontrado: " + id));
+        if (req.label() != null && !req.label().isBlank()) t.setLabel(req.label().trim());
+        if (req.bano() != null && !req.bano().isBlank()) t.setBano(req.bano().trim());
+        if (req.color() != null) t.setColor(req.color().trim());
+        if (req.amenidades() != null) t.setAmenidades(req.amenidades().trim());
+        return tipoRepository.save(t);
+    }
+
+    // ── Tarifas de temporada ──────────────────────────────────────────────────
+
+    @Transactional
+    public TarifaTemporada crearTarifa(String tipoId, TarifaTemporadaRequest req) {
+        TipoHabitacion tipo = tipoRepository.findById(tipoId)
+            .orElseThrow(() -> new IllegalArgumentException("Tipo no encontrado: " + tipoId));
+        if (req.label() == null || req.label().isBlank())
+            throw new IllegalArgumentException("El nombre de la tarifa es obligatorio");
+        if (req.fechaDesde() == null || req.fechaHasta() == null)
+            throw new IllegalArgumentException("Las fechas son obligatorias");
+        if (!req.fechaDesde().isBefore(req.fechaHasta()))
+            throw new IllegalArgumentException("La fecha de fin debe ser posterior a la de inicio");
+        if (req.precio() == null || req.precio().compareTo(BigDecimal.ZERO) <= 0)
+            throw new IllegalArgumentException("El precio debe ser mayor a cero");
+        TarifaTemporada t = new TarifaTemporada();
+        t.setTipo(tipo);
+        t.setLabel(req.label().trim());
+        t.setFechaDesde(req.fechaDesde());
+        t.setFechaHasta(req.fechaHasta());
+        t.setPrecio(req.precio());
+        return tarifaRepository.save(t);
+    }
+
+    @Transactional
+    public TarifaTemporada actualizarTarifa(String tipoId, UUID tarifaId, TarifaTemporadaRequest req) {
+        TarifaTemporada t = tarifaRepository.findById(tarifaId)
+            .orElseThrow(() -> new IllegalArgumentException("Tarifa no encontrada"));
+        if (!t.getTipo().getId().equals(tipoId))
+            throw new IllegalArgumentException("La tarifa no pertenece a este tipo");
+        if (req.label() != null && !req.label().isBlank()) t.setLabel(req.label().trim());
+        if (req.fechaDesde() != null) t.setFechaDesde(req.fechaDesde());
+        if (req.fechaHasta() != null) t.setFechaHasta(req.fechaHasta());
+        if (req.precio() != null && req.precio().compareTo(BigDecimal.ZERO) > 0) t.setPrecio(req.precio());
+        if (!t.getFechaDesde().isBefore(t.getFechaHasta()))
+            throw new IllegalArgumentException("La fecha de fin debe ser posterior a la de inicio");
+        return tarifaRepository.save(t);
+    }
+
+    @Transactional
+    public void eliminarTarifa(String tipoId, UUID tarifaId) {
+        TarifaTemporada t = tarifaRepository.findById(tarifaId)
+            .orElseThrow(() -> new IllegalArgumentException("Tarifa no encontrada"));
+        if (!t.getTipo().getId().equals(tipoId))
+            throw new IllegalArgumentException("La tarifa no pertenece a este tipo");
+        tarifaRepository.delete(t);
+    }
+
+    // Devuelve la tarifa con mayor precio que solapa con el rango dado
+    public Optional<TarifaTemporada> getTarifaVigente(String tipoId, LocalDate desde, LocalDate hasta) {
+        return tarifaRepository.findSolapadas(tipoId, desde, hasta)
+            .stream()
+            .max(Comparator.comparing(TarifaTemporada::getPrecio));
+    }
+
+    @Transactional
+    public void eliminarTipo(String id) {
+        TipoHabitacion t = tipoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tipo no encontrado: " + id));
+        long uso = habitacionRepository.countByTipoId(id);
+        if (uso > 0) throw new RuntimeException(
+                "No se puede eliminar: " + uso + " habitación(es) usan este tipo");
+        tipoRepository.delete(t);
     }
 
     public HabitacionResponse buscarPorCodigo(String codigo) {
@@ -210,6 +312,26 @@ public class HabitacionService {
         return mapear(h);
     }
 
+    // Marcar habitación como libre tras aseo completo
+    @Transactional
+    public HabitacionResponse completarAseo(UUID id, String operador) {
+        Habitacion h = habitacionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Habitación no encontrada"));
+        if (h.getEstado() != EstadoHabitacion.aseo)
+            throw new IllegalArgumentException("La habitación no está en estado de aseo");
+        String anterior = h.getEstado().name();
+        h.setEstado(EstadoHabitacion.libre);
+        h.setNota(null);
+        habitacionRepository.save(h);
+        HabitacionLog log = new HabitacionLog();
+        log.setHabitacion(h);
+        log.setEstadoAnterior(anterior);
+        log.setEstadoNuevo("libre");
+        log.setUsuarioNombre(operador != null ? operador : "Aseo");
+        logRepository.save(log);
+        return mapear(h);
+    }
+
     public List<HabitacionLogResponse> getLogs() {
         DateTimeFormatter fFecha = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         DateTimeFormatter fHora  = DateTimeFormatter.ofPattern("HH:mm");
@@ -316,6 +438,18 @@ public class HabitacionService {
             dto.setPrecio(p.getPrecio());
             return dto;
         }).collect(Collectors.toList()));
+
+        if (h.getTipo() != null) {
+            r.setTarifasTemporada(h.getTipo().getTarifas().stream().map(t -> {
+                HabitacionResponse.TarifaDto dto = new HabitacionResponse.TarifaDto();
+                dto.setId(t.getId());
+                dto.setLabel(t.getLabel());
+                dto.setFechaDesde(t.getFechaDesde());
+                dto.setFechaHasta(t.getFechaHasta());
+                dto.setPrecio(t.getPrecio());
+                return dto;
+            }).collect(Collectors.toList()));
+        }
 
         // Incluir salida estimada para rooms ocupadas
         if (h.getEstado() == EstadoHabitacion.ocupado) {

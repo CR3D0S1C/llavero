@@ -2,6 +2,7 @@ package cl.llavero.service;
 
 import cl.llavero.dto.AgregarCargoRequest;
 import cl.llavero.dto.CheckoutRequest;
+import cl.llavero.dto.ReporteResponse;
 import cl.llavero.dto.VentaItemRequest;
 import cl.llavero.dto.VentaItemResponse;
 import cl.llavero.dto.VentaRequest;
@@ -17,7 +18,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -62,15 +65,18 @@ public class VentaService {
         this.reservaRepository = reservaRepository;
     }
 
-    private LocalDateTime calcularSalida(String duracion, String earlyCheckin) {
+    private LocalDateTime calcularSalida(String duracion, String earlyCheckin, int noches) {
         LocalDateTime ahora = LocalDateTime.now();
-        return switch (duracion != null ? duracion : "1h") {
+        String d = duracion != null ? duracion.toLowerCase() : "1h";
+        if (d.contains("noche")) {
+            return "hoy".equals(earlyCheckin)
+                    ? LocalDate.now().atTime(12, 0)
+                    : LocalDate.now().plusDays(noches).atTime(12, 0);
+        }
+        return switch (d) {
             case "2h" -> ahora.plusHours(2);
             case "3h" -> ahora.plusHours(3);
-            case "noche" -> "hoy".equals(earlyCheckin)
-                    ? LocalDate.now().atTime(12, 0)
-                    : LocalDate.now().plusDays(1).atTime(12, 0);
-            default -> ahora.plusHours(1);
+            default   -> ahora.plusHours(1);
         };
     }
 
@@ -111,9 +117,11 @@ public class VentaService {
         venta.setCreatedAt(LocalDateTime.now());
         venta.setObservacion(request.getObservacion());
         venta.setTipoDte(TipoDte.valueOf(request.getTipoDte()));
+        int noches = (request.getCantidadNoches() != null && request.getCantidadNoches() > 1)
+                ? request.getCantidadNoches() : 1;
         venta.setDuracion(conHabitacion ? request.getDuracion() : null);
         venta.setSalidaEstimada(conHabitacion
-                ? calcularSalida(request.getDuracion(), request.getEarlyCheckin())
+                ? calcularSalida(request.getDuracion(), request.getEarlyCheckin(), noches)
                 : null);
 
         if (TipoDte.factura.name().equals(request.getTipoDte())) {
@@ -340,6 +348,33 @@ public class VentaService {
     }
 
     @Transactional
+    public VentaResponse agregarCargos(UUID ventaId, List<AgregarCargoRequest> items) {
+        Venta venta = ventaRepository.findById(ventaId)
+            .orElseThrow(() -> new RuntimeException("Estadía no encontrada"));
+        if (venta.getEstado() != EstadoVenta.activa)
+            throw new RuntimeException("Solo se pueden agregar cargos a estadías activas");
+
+        BigDecimal totalCargos = BigDecimal.ZERO;
+        for (AgregarCargoRequest req : items) {
+            VentaItem item = new VentaItem();
+            item.setVenta(venta);
+            item.setTipo(TipoItem.valueOf(req.tipo() != null ? req.tipo() : "libre"));
+            item.setDescripcion(req.descripcion());
+            item.setCantidad(req.cantidad() != null ? req.cantidad() : 1);
+            item.setPrecioUnitario(req.precioUnitario());
+            BigDecimal subtotal = req.precioUnitario().multiply(BigDecimal.valueOf(item.getCantidad()));
+            item.setSubtotal(subtotal);
+            item.setEsLibre(false);
+            itemRepository.save(item);
+            totalCargos = totalCargos.add(subtotal);
+        }
+
+        venta.setTotal(venta.getTotal().add(totalCargos));
+        venta = ventaRepository.save(venta);
+        return mapear(ventaRepository.findById(venta.getId()).orElseThrow());
+    }
+
+    @Transactional
     public VentaResponse checkout(UUID ventaId, CheckoutRequest req, String usuarioId) {
         Venta venta = ventaRepository.findById(ventaId)
             .orElseThrow(() -> new RuntimeException("Estadía no encontrada"));
@@ -465,5 +500,48 @@ public class VentaService {
         }).collect(Collectors.toList()));
 
         return r;
+    }
+
+    public ReporteResponse getReporte(LocalDate desde, LocalDate hasta, String tipo) {
+        List<Venta> todas = ventaRepository.findByFechaBetween(desde, hasta);
+
+        List<Venta> ventas = (tipo == null || tipo.equals("todos"))
+            ? todas
+            : todas.stream()
+                .filter(v -> tipo.equals(v.getTipoVenta() != null ? v.getTipoVenta().name() : "hostal"))
+                .toList();
+
+        Map<String, BigDecimal> porMetodo = new LinkedHashMap<>();
+        Map<String, Integer> cantPorMetodo = new LinkedHashMap<>();
+        for (MetodoPago mp : MetodoPago.values()) {
+            List<Venta> del = ventas.stream().filter(v -> mp.equals(v.getMetodoPago())).toList();
+            porMetodo.put(mp.name(), sumarVentas(del));
+            cantPorMetodo.put(mp.name(), del.size());
+        }
+
+        List<Venta> hostal = ventas.stream()
+            .filter(v -> v.getTipoVenta() == null || TipoVenta.hostal.equals(v.getTipoVenta()))
+            .toList();
+        List<Venta> minimarket = ventas.stream()
+            .filter(v -> TipoVenta.minimarket.equals(v.getTipoVenta()))
+            .toList();
+
+        ReporteResponse r = new ReporteResponse();
+        r.setDesde(desde);
+        r.setHasta(hasta);
+        r.setTotalTransacciones(ventas.size());
+        r.setTotalGeneral(sumarVentas(ventas));
+        r.setPorMetodoPago(porMetodo);
+        r.setCantidadPorMetodoPago(cantPorMetodo);
+        r.setTotalHostal(sumarVentas(hostal));
+        r.setTotalMinimarket(sumarVentas(minimarket));
+        r.setCantHostal(hostal.size());
+        r.setCantMinimarket(minimarket.size());
+        r.setVentas(ventas.stream().map(this::mapear).toList());
+        return r;
+    }
+
+    private BigDecimal sumarVentas(List<Venta> vs) {
+        return vs.stream().map(Venta::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

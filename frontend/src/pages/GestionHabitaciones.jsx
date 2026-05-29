@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import ModalConfirmar from '../components/ModalConfirmar'
 import { getHabitaciones, cambiarEstadoJefe, getHabitacionLog, eliminarHabitacion } from '../services/api'
 import { toast } from '../utils/toast'
 
@@ -8,6 +9,7 @@ const ESTADOS = [
   { value: 'todas',        label: 'Todas',        color: 'bg-gray-700 text-white' },
   { value: 'libre',        label: 'Libre',        color: 'bg-green-900/60 text-green-300' },
   { value: 'ocupado',      label: 'Ocupada',      color: 'bg-red-900/60 text-red-300' },
+  { value: 'reservado',    label: 'Reservada',    color: 'bg-blue-900/60 text-blue-300' },
   { value: 'aseo',         label: 'En Aseo',      color: 'bg-orange-900/60 text-orange-300' },
   { value: 'mantenimiento',label: 'Mantención',   color: 'bg-yellow-900/60 text-yellow-300' },
   { value: 'deshabilitada',label: 'Deshabilitada',color: 'bg-gray-800 text-gray-400' },
@@ -16,6 +18,7 @@ const ESTADOS = [
 const estadoDot = {
   libre:        'bg-green-500',
   ocupado:      'bg-red-500',
+  reservado:    'bg-blue-500',
   aseo:         'bg-orange-500',
   mantenimiento:'bg-yellow-500',
   deshabilitada:'bg-gray-500',
@@ -24,6 +27,7 @@ const estadoDot = {
 const estadoLabel = {
   libre:        'Libre',
   ocupado:      'Ocupada',
+  reservado:    'Reservada',
   aseo:         'En Aseo',
   mantenimiento:'Mantención',
   deshabilitada:'Deshabilitada',
@@ -34,6 +38,7 @@ const acciones = {
   libre:         [{ estado: 'mantenimiento', label: 'Mantención', color: 'text-yellow-400 border-yellow-700 hover:bg-yellow-900/30' },
                   { estado: 'deshabilitada', label: 'Deshabilitar', color: 'text-gray-400 border-gray-600 hover:bg-gray-700/30' }],
   ocupado:       [{ estado: 'aseo', label: '→ Aseo', color: 'text-orange-400 border-orange-700 hover:bg-orange-900/30' }],
+  reservado:     [{ estado: 'libre', label: 'Liberar', color: 'text-green-400 border-green-700 hover:bg-green-900/30' }],
   aseo:          [{ estado: 'libre',  label: 'Liberar', color: 'text-green-400 border-green-700 hover:bg-green-900/30' }],
   mantenimiento: [{ estado: 'libre',  label: 'Liberar', color: 'text-green-400 border-green-700 hover:bg-green-900/30' },
                   { estado: 'deshabilitada', label: 'Deshabilitar', color: 'text-gray-400 border-gray-600 hover:bg-gray-700/30' }],
@@ -62,32 +67,42 @@ export default function GestionHabitaciones() {
     }
   }
 
-  const cambiar = async (habitacion, nuevoEstado) => {
-    if (!confirm(`¿Cambiar ${habitacion.numero} a "${estadoLabel[nuevoEstado]}"?`)) return
-    setProcesando(habitacion.id)
-    try {
-      await cambiarEstadoJefe(habitacion.id, nuevoEstado)
-      toast.success(`${habitacion.numero} → ${estadoLabel[nuevoEstado]}`)
-      await cargar()
-    } catch (e) {
-      toast.error(e.response?.data?.error || 'Error al cambiar estado')
-    } finally {
-      setProcesando(null)
-    }
+  const [confirmar, setConfirmar] = useState(null)
+
+  const cambiar = (habitacion, nuevoEstado) => {
+    setConfirmar({
+      titulo: `¿Cambiar Hab. ${habitacion.numero} a ${estadoLabel[nuevoEstado]}?`,
+      textoBtn: 'Sí, cambiar',
+      variante: 'normal',
+      accion: async () => {
+        setProcesando(habitacion.id)
+        try {
+          await cambiarEstadoJefe(habitacion.id, nuevoEstado)
+          toast.success(`${habitacion.numero} → ${estadoLabel[nuevoEstado]}`)
+          await cargar()
+        } catch (e) {
+          toast.error(e.response?.data?.error || 'Error al cambiar estado')
+        } finally { setProcesando(null) }
+      }
+    })
   }
 
-  const eliminar = async (habitacion) => {
-    if (!confirm(`¿Eliminar la habitación ${habitacion.numero}? Quedará inactiva.`)) return
-    setProcesando(habitacion.id)
-    try {
-      await eliminarHabitacion(habitacion.id)
-      toast.success(`${habitacion.numero} eliminada`)
-      await cargar()
-    } catch (e) {
-      toast.error(e.response?.data?.error || 'Error al eliminar')
-    } finally {
-      setProcesando(null)
-    }
+  const eliminar = (habitacion) => {
+    setConfirmar({
+      titulo: `¿Eliminar la habitación ${habitacion.numero}?`,
+      mensaje: 'Quedará inactiva y no aparecerá en el sistema.',
+      textoBtn: 'Eliminar',
+      accion: async () => {
+        setProcesando(habitacion.id)
+        try {
+          await eliminarHabitacion(habitacion.id)
+          toast.success(`${habitacion.numero} eliminada`)
+          await cargar()
+        } catch (e) {
+          toast.error(e.response?.data?.error || 'Error al eliminar')
+        } finally { setProcesando(null) }
+      }
+    })
   }
 
   const conteo = (estado) => habitaciones.filter(h => estado === 'todas' || h.estado === estado).length
@@ -99,6 +114,16 @@ export default function GestionHabitaciones() {
   return (
     <div className="min-h-screen bg-bg">
       <Navbar />
+      {confirmar && (
+        <ModalConfirmar
+          titulo={confirmar.titulo}
+          mensaje={confirmar.mensaje}
+          textoBtn={confirmar.textoBtn}
+          variante={confirmar.variante}
+          onConfirmar={() => { setConfirmar(null); confirmar.accion() }}
+          onCancelar={() => setConfirmar(null)}
+        />
+      )}
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>

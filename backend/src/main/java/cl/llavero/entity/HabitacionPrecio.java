@@ -24,7 +24,7 @@ public class HabitacionPrecio {
     @Column(nullable = false)
     private Integer personas;
 
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false, length = 30)
     private String duracion;
 
     @Column(nullable = false, precision = 10, scale = 2)

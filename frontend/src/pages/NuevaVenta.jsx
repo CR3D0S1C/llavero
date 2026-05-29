@@ -3,16 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import RoomCard from '../components/RoomCard'
 import ModalDTE from '../components/ModalDTE'
+import ModalConfirmar from '../components/ModalConfirmar'
 import ModalEarlyCheckin from '../components/ModalEarlyCheckin'
 import ComprobanteVenta from '../components/ComprobanteVenta'
 import {
   getHabitaciones, getProductos, crearVenta,
-  buscarProductoPorCodigo, buscarHabitacionPorCodigo
+  buscarProductoPorCodigo, buscarHabitacionPorCodigo,
+  getEstadiasActivas, agregarCargosBatch
 } from '../services/api'
 import { useSesion } from '../context/SesionContext'
 import { toast } from '../utils/toast'
 
 const CODIGO_SUPERVISOR = '7777'
+const esNoche = (d) => d?.toLowerCase().includes('noche')
 
 export default function NuevaVenta() {
   const [modo, setModo] = useState('hostal') // 'hostal' | 'minimarket'
@@ -32,14 +35,18 @@ export default function NuevaVenta() {
   const [loading, setLoading] = useState(false)
   const [codigoBarras, setCodigoBarras] = useState('')
   const [ventaConfirmada, setVentaConfirmada] = useState(null)
+  const [cantidadNoches, setCantidadNoches] = useState(1)
+  const [estadias, setEstadias] = useState([])
+  const [estadiaSel, setEstadiaSel] = useState(null)
   const scannerRef = useRef(null)
   const navigate = useNavigate()
   const { sesion } = useSesion()
 
   useEffect(() => {
-    Promise.all([getHabitaciones(), getProductos()]).then(([h, p]) => {
+    Promise.all([getHabitaciones(), getProductos(), getEstadiasActivas()]).then(([h, p, e]) => {
       setHabitaciones(h.data.filter(x => x.estado === 'libre'))
       setProductos(p.data)
+      setEstadias(e.data || [])
     })
   }, [])
 
@@ -51,22 +58,31 @@ export default function NuevaVenta() {
     }
   }, [modo, items.length])
 
+  const [confirmarModo, setConfirmarModo] = useState(null)
+
   const cambiarModo = (nuevo) => {
-    if (items.length > 0 && !confirm('Cambiar de modo descarta los ítems del carrito. ¿Continuar?')) return
+    if (items.length > 0) { setConfirmarModo(nuevo); return }
     setModo(nuevo)
     setHabitacionSel(null)
     setTarifaSel(null)
     setItems([])
     setEarlyCheckinVal(null)
+    setCantidadNoches(1)
+    setEstadiaSel(null)
   }
 
-  const seleccionarTarifa = (precio) => {
+  const seleccionarTarifa = (precio, noches = cantidadNoches) => {
     if (!habitacionSel) return
     const existe = items.find(i => i.tipo === 'habitacion')
+    const esTarifaNoche = esNoche(precio.duracion)
+    const n = esTarifaNoche ? noches : 1
+    const desc = esTarifaNoche && n > 1
+      ? `Hab. ${habitacionSel.numero} ${habitacionSel.tipoLabel} — ${n} noches (${precio.personas} pers.)`
+      : `Hab. ${habitacionSel.numero} ${habitacionSel.tipoLabel} ${precio.duracion} (${precio.personas} pers.)`
     const item = {
       tipo: 'habitacion',
-      descripcion: `${habitacionSel.numero} ${habitacionSel.tipoLabel} ${precio.duracion} (${precio.personas} pers.)`,
-      cantidad: 1,
+      descripcion: desc,
+      cantidad: n,
       precioUnitario: precio.precio,
       esLibre: false
     }
@@ -79,10 +95,16 @@ export default function NuevaVenta() {
     setEarlyCheckinVal(null)
   }
 
+  const cambiarNoches = (delta) => {
+    const nuevas = Math.max(1, cantidadNoches + delta)
+    setCantidadNoches(nuevas)
+    if (esNoche(tarifaSel?.duracion)) seleccionarTarifa(tarifaSel, nuevas)
+  }
+
   const handleConfirmarClick = () => {
     if (modo === 'hostal' && habitacionSel && tarifaSel) {
       const hora = new Date().getHours()
-      if (tarifaSel.duracion === 'noche' && hora < 12) {
+      if (esNoche(tarifaSel.duracion) && hora < 12) {
         setShowEarlyCheckin(true)
         return
       }
@@ -190,6 +212,26 @@ export default function NuevaVenta() {
     ? (habitacionSel ? !!tarifaSel : items.length > 0)
     : items.length > 0
 
+  const cargarAEstadia = async () => {
+    if (!estadiaSel || items.length === 0) return
+    setLoading(true)
+    try {
+      const cargos = items.map(i => ({
+        tipo: i.tipo === 'habitacion' ? 'producto' : i.tipo,
+        descripcion: i.descripcion,
+        cantidad: i.cantidad,
+        precioUnitario: i.precioUnitario,
+      }))
+      await agregarCargosBatch(estadiaSel.id, cargos)
+      toast.success(`${items.length} ítem${items.length > 1 ? 's' : ''} cargado${items.length > 1 ? 's' : ''} a Hab. ${estadiaSel.habitacionNumero}`)
+      navigate('/estadias')
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Error al cargar a estadía')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const confirmarVenta = async (tipoDte, receptor, pago, pagoAlSalir = false) => {
     if (!puedeConfirmar) return
     setLoading(true)
@@ -202,6 +244,7 @@ export default function NuevaVenta() {
           habitacionId: habitacionSel.id,
           duracion: tarifaSel?.duracion,
           earlyCheckin: earlyCheckinVal,
+          cantidadNoches: esNoche(tarifaSel?.duracion) ? cantidadNoches : 1,
         } : {}),
         ...(receptor ? {
           receptorRut: receptor.rut,
@@ -335,6 +378,31 @@ export default function NuevaVenta() {
                         </button>
                       ))}
                     </div>
+                    {/* Selector de noches (solo tarifa noche) */}
+                    {esNoche(tarifaSel?.duracion) && (
+                      <div className="mt-3 p-3 rounded-lg bg-accent/5 border border-accent/20">
+                        <p className="text-xs font-semibold text-accent mb-2">Cantidad de noches</p>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => cambiarNoches(-1)}
+                            className="w-8 h-8 rounded border border-border hover:border-accent text-muted hover:text-white font-bold"
+                          >−</button>
+                          <span className="text-xl font-bold tabular-nums w-8 text-center">{cantidadNoches}</span>
+                          <button
+                            onClick={() => cambiarNoches(+1)}
+                            className="w-8 h-8 rounded border border-border hover:border-accent text-muted hover:text-white font-bold"
+                          >+</button>
+                          <span className="text-sm text-muted ml-2">
+                            → Salida: {(() => {
+                              const d = new Date()
+                              d.setDate(d.getDate() + cantidadNoches)
+                              return d.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                     {tarifaVigenteHoy && (
                       <div className="mt-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
                         <p className="text-sm font-semibold text-yellow-400">
@@ -465,15 +533,47 @@ export default function NuevaVenta() {
                 </div>
               </div>
 
-              <button
-                onClick={handleConfirmarClick}
-                disabled={!puedeConfirmar || loading}
-                className="btn-primary w-full mt-4 py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Procesando...' : 'Confirmar Venta'}
-              </button>
+              {/* Cargar a estadía activa */}
+              {estadias.length > 0 && items.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <p className="text-xs text-muted mb-1.5">Cargar a estadía activa</p>
+                  <select
+                    value={estadiaSel?.id || ''}
+                    onChange={e => {
+                      const sel = estadias.find(s => s.id === e.target.value)
+                      setEstadiaSel(sel || null)
+                    }}
+                    className="input w-full text-sm"
+                  >
+                    <option value="">— Nueva venta independiente —</option>
+                    {estadias.map(e => (
+                      <option key={e.id} value={e.id}>
+                        Hab. {e.habitacionNumero} {e.habitacionTipo && `(${e.habitacionTipo})`}{e.huespedNombre ? ` · ${e.huespedNombre}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
-              {modo === 'hostal' && habitacionSel && tarifaSel && (
+              {estadiaSel ? (
+                <button
+                  onClick={cargarAEstadia}
+                  disabled={loading || items.length === 0}
+                  className="w-full mt-3 py-3 text-base rounded-lg font-medium border border-dashed border-accent/60 text-accent hover:bg-accent/10 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Cargando…' : `➕ Cargar a Hab. ${estadiaSel.habitacionNumero}`}
+                </button>
+              ) : (
+                <button
+                  onClick={handleConfirmarClick}
+                  disabled={!puedeConfirmar || loading}
+                  className="btn-primary w-full mt-4 py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Procesando...' : 'Confirmar Venta'}
+                </button>
+              )}
+
+              {!estadiaSel && modo === 'hostal' && habitacionSel && tarifaSel && (
                 <button
                   onClick={() => confirmarVenta(null, null, null, true)}
                   disabled={loading}
@@ -483,7 +583,7 @@ export default function NuevaVenta() {
                 </button>
               )}
 
-              {modo === 'hostal' && tarifaSel?.duracion === 'noche' && new Date().getHours() < 12 && (
+              {!estadiaSel && modo === 'hostal' && esNoche(tarifaSel?.duracion) && new Date().getHours() < 12 && (
                 <p className="text-xs text-yellow-500/70 mt-2 text-center">
                   Llegada temprana — se consultará por early check-in
                 </p>
@@ -492,6 +592,24 @@ export default function NuevaVenta() {
           </div>
         </div>
       </div>
+
+      {confirmarModo && (
+        <ModalConfirmar
+          titulo="¿Cambiar de modo?"
+          mensaje="Los ítems del carrito se descartarán."
+          textoBtn="Sí, cambiar"
+          variante="normal"
+          onConfirmar={() => {
+            const nuevo = confirmarModo
+            setConfirmarModo(null)
+            setModo(nuevo)
+            setHabitacionSel(null); setTarifaSel(null)
+            setItems([]); setEarlyCheckinVal(null)
+            setCantidadNoches(1); setEstadiaSel(null)
+          }}
+          onCancelar={() => setConfirmarModo(null)}
+        />
+      )}
 
       {showEarlyCheckin && (
         <ModalEarlyCheckin

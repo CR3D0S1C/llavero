@@ -18,6 +18,7 @@ import Reservas from './pages/Reservas'
 import Estadias from './pages/Estadias'
 import GestionTipos from './pages/GestionTipos'
 import Estadisticas from './pages/Estadisticas'
+import Reporte from './pages/Reporte'
 import Aseo from './pages/Aseo'
 import PanelAseo from './pages/PanelAseo'
 
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/estadias" element={<ProtectedRoute soloJefe><Estadias /></ProtectedRoute>} />
           <Route path="/tipos" element={<ProtectedRoute soloJefe><GestionTipos /></ProtectedRoute>} />
           <Route path="/estadisticas" element={<ProtectedRoute soloJefe><Estadisticas /></ProtectedRoute>} />
+          <Route path="/reporte" element={<ProtectedRoute soloJefe><Reporte /></ProtectedRoute>} />
           <Route path="/aseo" element={<Aseo />} />
           <Route path="/panel-aseo" element={<ProtectedRoute soloJefe><PanelAseo /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" />} />

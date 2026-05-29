@@ -65,4 +65,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, UUID> {
         @Param("fechaEntrada") LocalDate fechaEntrada,
         @Param("fechaSalida") LocalDate fechaSalida
     );
+
+    @Query("SELECT r FROM Reserva r WHERE r.estado = 'confirmada' AND r.fechaEntrada = :fecha")
+    List<Reserva> findConfirmadasParaHoy(@Param("fecha") LocalDate fecha);
 }

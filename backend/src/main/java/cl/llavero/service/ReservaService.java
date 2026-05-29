@@ -153,6 +153,17 @@ public class ReservaService {
         return ReservaResponse.from(r);
     }
 
+    public ReservaResponse confirmar(UUID reservaId, String referenciaDeposito) {
+        Reserva r = reservaRepository.findById(reservaId)
+            .orElseThrow(() -> new IllegalArgumentException("Reserva no encontrada"));
+        r.setEstado(EstadoReserva.confirmada);
+        if (referenciaDeposito != null && !referenciaDeposito.isBlank())
+            r.setReferenciaDeposito(referenciaDeposito.trim());
+        reservaRepository.save(r);
+        emailService.enviarConfirmadaReservaAsync(r);
+        return ReservaResponse.from(r);
+    }
+
     public ReservaResponse cancelar(UUID reservaId, UUID huespedId) {
         Reserva r = reservaRepository.findById(reservaId)
             .orElseThrow(() -> new IllegalArgumentException("Reserva no encontrada"));

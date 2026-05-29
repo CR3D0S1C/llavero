@@ -23,7 +23,8 @@ public record ReservaResponse(
     String notas,
     Integer personas,
     Boolean conEstacionamiento,
-    LocalDateTime createdAt
+    LocalDateTime createdAt,
+    String referenciaDeposito
 ) {
     public static ReservaResponse from(Reserva r) {
         return new ReservaResponse(
@@ -41,7 +42,8 @@ public record ReservaResponse(
             r.getNotas(),
             r.getPersonas(),
             r.getConEstacionamiento(),
-            r.getCreatedAt()
+            r.getCreatedAt(),
+            r.getReferenciaDeposito()
         );
     }
 }

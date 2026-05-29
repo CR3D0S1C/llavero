@@ -4,6 +4,8 @@ import cl.llavero.dto.HabitacionCreateRequest;
 import cl.llavero.dto.HabitacionLogResponse;
 import cl.llavero.dto.HabitacionResponse;
 import cl.llavero.dto.HabitacionUpdateRequest;
+import cl.llavero.dto.TarifaTemporadaRequest;
+import cl.llavero.dto.TipoHabitacionRequest;
 import cl.llavero.entity.HabitacionFoto;
 import cl.llavero.entity.TipoHabitacion;
 import cl.llavero.service.FotoService;
@@ -13,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -37,6 +40,96 @@ public class HabitacionController {
     @GetMapping("/tipos")
     public ResponseEntity<List<TipoHabitacion>> listarTipos() {
         return ResponseEntity.ok(habitacionService.listarTipos());
+    }
+
+    @PostMapping("/tipos")
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<?> crearTipo(@RequestBody TipoHabitacionRequest req) {
+        try {
+            return ResponseEntity.ok(habitacionService.crearTipo(req));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/tipos/{id}")
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<?> actualizarTipo(@PathVariable String id,
+                                            @RequestBody TipoHabitacionRequest req) {
+        try {
+            return ResponseEntity.ok(habitacionService.actualizarTipo(id, req));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/tipos/{id}")
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<?> eliminarTipo(@PathVariable String id) {
+        try {
+            habitacionService.eliminarTipo(id);
+            return ResponseEntity.ok(Map.of("mensaje", "Tipo eliminado"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/tipos/{tipoId}/tarifas")
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<?> crearTarifa(@PathVariable String tipoId,
+                                         @RequestBody TarifaTemporadaRequest req) {
+        try {
+            return ResponseEntity.ok(habitacionService.crearTarifa(tipoId, req));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/tipos/{tipoId}/tarifas/{tarifaId}")
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<?> actualizarTarifa(@PathVariable String tipoId,
+                                              @PathVariable UUID tarifaId,
+                                              @RequestBody TarifaTemporadaRequest req) {
+        try {
+            return ResponseEntity.ok(habitacionService.actualizarTarifa(tipoId, tarifaId, req));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/tipos/{tipoId}/tarifas/{tarifaId}")
+    @PreAuthorize("hasRole('JEFE')")
+    public ResponseEntity<?> eliminarTarifa(@PathVariable String tipoId,
+                                            @PathVariable UUID tarifaId) {
+        try {
+            habitacionService.eliminarTarifa(tipoId, tarifaId);
+            return ResponseEntity.ok(Map.of("mensaje", "Tarifa eliminada"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Endpoint público: tarifa vigente para un tipo y rango de fechas
+    @GetMapping("/tipos/{tipoId}/tarifa-vigente")
+    public ResponseEntity<?> getTarifaVigente(@PathVariable String tipoId,
+                                              @RequestParam String fechaEntrada,
+                                              @RequestParam String fechaSalida) {
+        try {
+            LocalDate desde = LocalDate.parse(fechaEntrada);
+            LocalDate hasta = LocalDate.parse(fechaSalida);
+            return habitacionService.getTarifaVigente(tipoId, desde, hasta)
+                .map(t -> ResponseEntity.ok(Map.of(
+                    "aplicaTarifa", true,
+                    "id", t.getId().toString(),
+                    "label", t.getLabel(),
+                    "precio", t.getPrecio(),
+                    "fechaDesde", t.getFechaDesde().toString(),
+                    "fechaHasta", t.getFechaHasta().toString()
+                )))
+                .orElse(ResponseEntity.ok(Map.of("aplicaTarifa", false)));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/buscar/{codigo}")

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { getReservas, crearReservaAdmin, confirmarReserva, completarReserva, cancelarReservaAdmin, checkinReserva, getHabitaciones } from '../services/api'
+import ModalConfirmar from '../components/ModalConfirmar'
 import { toast } from '../utils/toast'
 
 const TABS = [
@@ -45,6 +46,10 @@ export default function Reservas() {
 
   const [checkinReservaData, setCheckinReservaData] = useState(null)
   const [checkinando, setCheckinando] = useState(false)
+  const [confirmandoReserva, setConfirmandoReserva] = useState(null)
+  const [confirmar, setConfirmar] = useState(null)
+  const [refDeposito, setRefDeposito] = useState('')
+  const [confirmandoDeposito, setConfirmandoDeposito] = useState(false)
 
   useEffect(() => { cargar() }, [])
 
@@ -108,6 +113,22 @@ export default function Reservas() {
       toast.error(e.response?.data?.error || 'Error al procesar')
     } finally {
       setAccionando(null)
+    }
+  }
+
+  const handleConfirmarDeposito = async () => {
+    if (!confirmandoReserva) return
+    setConfirmandoDeposito(true)
+    try {
+      await confirmarReserva(confirmandoReserva.id, refDeposito ? { referenciaDeposito: refDeposito } : {})
+      toast.success('Reserva confirmada' + (refDeposito ? ' — email enviado al huésped' : ''))
+      setConfirmandoReserva(null)
+      setRefDeposito('')
+      await cargar()
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Error al confirmar')
+    } finally {
+      setConfirmandoDeposito(false)
     }
   }
 
@@ -212,18 +233,80 @@ export default function Reservas() {
                 key={r.id}
                 reserva={r}
                 accionando={accionando}
-                onConfirmar={() => accion(confirmarReserva, r.id, 'Reserva confirmada')}
+                onConfirmar={() => { setConfirmandoReserva(r); setRefDeposito('') }}
                 onCompletar={() => accion(completarReserva, r.id, 'Reserva marcada como completada')}
                 onCheckin={() => setCheckinReservaData(r)}
-                onCancelar={() => {
-                  if (window.confirm(`¿Cancelar la reserva de ${r.huespedNombre}?`))
-                    accion(cancelarReservaAdmin, r.id, 'Reserva cancelada')
-                }}
+                onCancelar={() => setConfirmar({
+                  titulo: `¿Cancelar la reserva de ${r.huespedNombre}?`,
+                  mensaje: 'Esta acción no se puede deshacer. El huésped no será notificado automáticamente.',
+                  textoBtn: 'Sí, cancelar',
+                  accion: () => accion(cancelarReservaAdmin, r.id, 'Reserva cancelada')
+                })}
               />
             ))}
           </div>
         )}
       </div>
+
+      {confirmar && (
+        <ModalConfirmar
+          titulo={confirmar.titulo}
+          mensaje={confirmar.mensaje}
+          textoBtn={confirmar.textoBtn}
+          onConfirmar={() => { setConfirmar(null); confirmar.accion() }}
+          onCancelar={() => setConfirmar(null)}
+        />
+      )}
+
+      {/* Modal confirmar depósito */}
+      {confirmandoReserva && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="card w-full max-w-md">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold">✓ Confirmar reserva</h2>
+              <button onClick={() => setConfirmandoReserva(null)} className="text-muted hover:text-white text-xl leading-none">×</button>
+            </div>
+            <div className="bg-white/5 rounded-lg p-4 mb-4 space-y-1.5 text-sm">
+              <p className="font-semibold text-base">{confirmandoReserva.huespedNombre}</p>
+              <p className="text-muted">{confirmandoReserva.huespedEmail}</p>
+              <p className="text-muted">Hab. {confirmandoReserva.habitacionNumero} · {fmt(confirmandoReserva.fechaEntrada)} → {fmt(confirmandoReserva.fechaSalida)}</p>
+              {confirmandoReserva.montoEstimado && (
+                <p className="text-accent font-semibold">${Number(confirmandoReserva.montoEstimado).toLocaleString('es-CL')}</p>
+              )}
+            </div>
+            <div className="mb-5">
+              <label className="block text-xs text-muted uppercase tracking-wide mb-1.5">
+                Referencia de depósito <span className="normal-case text-gray-600">(opcional)</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: TRF-20240528, comprobante bancario..."
+                value={refDeposito}
+                onChange={e => setRefDeposito(e.target.value)}
+                className="input w-full"
+                autoFocus
+              />
+              <p className="text-xs text-muted mt-1.5">
+                {refDeposito
+                  ? 'Se enviará email de confirmación con esta referencia al huésped.'
+                  : 'Si dejas vacío igual se confirma, pero sin referencia en el email.'}
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleConfirmarDeposito}
+                disabled={confirmandoDeposito}
+                className="flex-1 btn-primary py-2.5 disabled:opacity-50"
+              >
+                {confirmandoDeposito ? 'Confirmando...' : '✓ Confirmar reserva'}
+              </button>
+              <button onClick={() => setConfirmandoReserva(null)} className="btn-ghost px-4">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Check-in */}
       {checkinReservaData && (

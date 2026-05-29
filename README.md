@@ -50,11 +50,11 @@ Hay dos SPAs independientes servidas por el mismo backend. La SPA pública usa u
 ## Funcionalidades
 
 ### Autenticación y sesiones (staff)
-- Login con **nombre + PIN de 4 dígitos** (sin contraseñas).
-- Los nombres de usuario se cargan dinámicamente desde `/api/auth/usuarios`.
-- JWT con expiración de 24 horas.
+- Login con **nombre de usuario + PIN de 4 dígitos**. El nombre es el identificador de login (ej: `scruchaga`). No se muestra lista de usuarios para no exponer quién tiene acceso.
+- **Formato nombre clave**: primera letra del nombre + apellido, todo minúscula, sin espacios ni caracteres especiales. El admin define el nombre al crear el usuario.
+- JWT con expiración de **2 horas**. Al expirar el sistema cierra sesión automáticamente y muestra el mensaje correspondiente.
 - **Sesión única por usuario**: el `sessionId` (UUID) se embebe en el JWT y se verifica en cada request. Si un usuario inicia sesión en otro dispositivo, la sesión anterior queda inválida.
-- **Protección de fuerza bruta**: tras 5 intentos fallidos el IP/usuario queda bloqueado 30 minutos. Mensaje genérico "Usuario o PIN incorrecto" para no enumerar usuarios.
+- **Protección de fuerza bruta**: tras 5 intentos fallidos el usuario queda bloqueado 30 minutos. El login retorna HTTP 401 con mensaje genérico.
 
 ### Autenticación de huéspedes (sitio público)
 - Registro con nombre, email y contraseña (BCrypt). El registro puede deshabilitarse desde `application.properties` (`app.registro.habilitado=false`).
@@ -86,12 +86,14 @@ Hay dos SPAs independientes servidas por el mismo backend. La SPA pública usa u
 
 ### Ventas
 - **Dos modos**: Hostal y Minimarket (toggle arriba de la página).
-- En **modo Hostal**: habitación opcional — podés vender productos sueltos sin asignarlos a una habitación.
-- Tarifas por hora (1h, 2h, 3h) y tarifa noche (salida 12:00 del día siguiente).
+- En **modo Hostal**: habitación opcional — se pueden vender productos sueltos sin asignarlos a una habitación.
+- Tarifas por hora (1h, 2h, 3h) y tarifa noche. Al seleccionar tarifa noche aparece un **selector de noches** (− N +) con la fecha de salida calculada automáticamente.
 - **Early check-in**: si se vende tarifa noche entre 00:00 y 11:59, el sistema consulta si fue sin costo, con costo (+$8.000) o si salen a las 12:00 del mismo día.
+- **Walk-in pago al salir**: botón "Estadía activa — pago al salir" que crea la estadía activa sin cobrar. El cobro ocurre al hacer check-out.
+- **Cargo a estadía activa**: si hay estadías en curso, el vendedor puede elegir cargar los ítems del carrito directamente a la cuenta de un huésped hospedado (sin crear una venta nueva).
 - En **modo Minimarket**: input siempre enfocado para la pistola de código de barras.
 - Ítems libres con código supervisor (7777).
-- Anulación con clave (1271) — devuelve stock y libera habitación. Envía alerta al jefe.
+- Anulación con clave — devuelve stock y libera habitación. Envía alerta al jefe.
 - **Método de pago registrado** en cada venta (efectivo / transferencia / débito / crédito / otro).
 
 ### Inventario (minimarket)
@@ -127,8 +129,36 @@ Todos los envíos son asíncronos (`@Async`).
 
 ### Gestión de usuarios (solo jefe)
 - CRUD completo desde `/llavero/usuarios`.
-- Cajeros o jefes con PIN de 4 a 8 dígitos (SHA-256).
-- Desactivar preserva historial de ventas.
+- Roles: **Jefe** (acceso total), **Cajero** (venta, historial, aseo), **Mucama/Aseo** (solo aseo).
+- PIN de 4 a 8 dígitos (SHA-256). Nombre de usuario = identificador de login.
+- Solo se muestran usuarios activos — los desactivados no aparecen en ninguna pantalla.
+- Desactivar preserva historial de ventas (soft delete).
+
+### Aseo y housekeeping
+- Vista `/llavero/aseo` accesible sin JWT con PIN de aseo (`app.pin.aseo`, default 1441).
+- **Panel de aseo** (`/llavero/panel-aseo`, solo jefe): asigna habitaciones en estado aseo a cualquier usuario con rol Aseo, Cajero o Jefe.
+- Polling automático cada 30 segundos en la vista de aseo.
+- Historial del día con hora de completado.
+- Al completar aseo completo → habitación pasa automáticamente a Libre.
+
+### Reportería y estadísticas
+- **Estadísticas de ocupación** (`/llavero/estadisticas`): tasa de ocupación por mes, ingresos por tipo de habitación, días de la semana con más check-ins, comparativo mes/mes anterior.
+- **Reporte de ventas** (`/llavero/reporte`): filtro por rango de fechas y tipo (hostal/minimarket), desglose por método de pago, exportación a CSV.
+- **Widget de stock bajo** en el dashboard: productos bajo el mínimo definido aparecen destacados con botón a inventario.
+
+### Confirmación de depósito (reservas)
+- Al confirmar una reserva pendiente, el staff puede ingresar la referencia del depósito recibido.
+- Se envía un email al huésped con el asunto "¡Reserva confirmada!" que incluye los datos de la estadía y la referencia del depósito.
+
+### Sitio público (mimaravillahostal.com)
+- Habitaciones cargadas dinámicamente desde la API (fotos, precios, disponibilidad reales).
+- Trust band con número real de habitaciones del sistema.
+- Sección de ubicación con dirección (Vicuña 461, La Serena), mapa embed y botón WhatsApp.
+- Sección de política de cancelación.
+- Precio mínimo dinámico en los CTAs.
+- Botón WhatsApp flotante en todas las páginas.
+- SEO: title dinámico por página, Open Graph completo para WhatsApp/redes sociales.
+- Preload del hero para eliminar el flash blanco inicial.
 
 ### Fotos de habitaciones
 - Subida de fotos desde el panel de Llavero (JEFE).
@@ -262,7 +292,7 @@ spring.datasource.password=postgres
 
 # ===== JWT =====
 jwt.secret=<base64-min-32-chars>
-jwt.expiration=86400000
+jwt.expiration=7200000
 
 # ===== CLAVES OPERATIVAS =====
 llavero.codigo.supervisor=7777
@@ -292,18 +322,15 @@ app.registro.habilitado=false
 
 ## Usuarios iniciales
 
-Al arrancar con BD vacía, el `DataInitializer` crea estos usuarios:
+El `DataInitializer` se ejecuta en cada arranque y garantiza estos 3 usuarios base (desactivando cualquier otro):
 
 | Nombre | PIN | Rol |
 |---|---|---|
-| Abelardo Cruchaga | 1271 | Jefe |
-| Salma Cruchaga | 1271 | Jefe |
-| Cesar Cruchaga | 1271 | Jefe |
-| cajero1 | 1891 | Cajero |
-| cajero2 | 1891 | Cajero |
-| cajero3 | 1891 | Cajero |
+| `admin` | `1271` | Jefe |
+| `cajero` | `1891` | Cajero |
+| `mucama` | `1441` | Aseo |
 
-**Cambiar los PINes después del primer login** desde *Usuarios* (solo jefe).
+**Cambiar nombres y PINes después del primer login** desde *Gestión de Usuarios* (solo jefe). El nombre del usuario es su identificador de login — se recomienda usar el formato compacto (ej: `scruchaga`).
 
 ---
 
@@ -425,11 +452,24 @@ Sistema hotelero/
 ### Admin (solo jefe)
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/api/admin/metricas` | Métricas históricas |
+| GET | `/api/admin/metricas` | Métricas + productos bajo stock |
+| GET | `/api/admin/estadisticas` | Ocupación, ingresos, días semana |
+| GET | `/api/admin/reporte` | Reporte filtrable por fecha/tipo |
 | GET | `/api/admin/estado-actual` | Estado en tiempo real |
 | POST | `/api/admin/resumen-dia/enviar` | Disparar correo del día |
-| GET/POST | `/api/admin/usuarios` | Listar / crear usuarios |
+| GET/POST | `/api/admin/usuarios` | Listar (solo activos) / crear |
 | PUT/DELETE | `/api/admin/usuarios/{id}` | Editar / desactivar usuario |
+| GET | `/api/admin/estadias` | Estadías activas |
+| POST | `/api/admin/estadias/{id}/cargo` | Agregar cargo individual |
+| POST | `/api/admin/estadias/{id}/cargos-batch` | Agregar múltiples cargos |
+| POST | `/api/admin/estadias/{id}/checkout` | Hacer check-out |
+| PUT | `/api/admin/reservas/{id}/confirmar` | Confirmar + referencia depósito |
+
+### Tests automatizados
+```bash
+cd backend && mvn test
+```
+22 tests de integración cubriendo: auth (login, brute force, roles), ventas (hostal, minimarket, estadías), reservas (crear, confirmar, cancelar) y habitaciones (estados, métricas).
 
 ---
 

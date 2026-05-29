@@ -17,7 +17,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const esLogin = err.config?.url?.includes('/auth/login')
+    if (err.response?.status === 401 && !esLogin) {
       const tenia = !!localStorage.getItem('llavero_sesion')
       localStorage.removeItem('llavero_sesion')
       if (tenia) {
@@ -87,7 +88,7 @@ export const marcarDteError = (id, mensaje) => api.put(`/dte/${id}/error`, { men
 // Reservas (admin/staff)
 export const getReservas           = () => api.get('/admin/reservas')
 export const crearReservaAdmin     = (data) => api.post('/admin/reservas', data)
-export const confirmarReserva      = (id) => api.put(`/admin/reservas/${id}/confirmar`)
+export const confirmarReserva      = (id, body = {}) => api.put(`/admin/reservas/${id}/confirmar`, body)
 export const completarReserva      = (id) => api.put(`/admin/reservas/${id}/completar`)
 export const cancelarReservaAdmin  = (id) => api.put(`/admin/reservas/${id}/cancelar`)
 export const checkinReserva        = (id) => api.post(`/admin/reservas/${id}/checkin`)
@@ -96,6 +97,7 @@ export const getReservasProximas   = () => api.get('/staff/reservas/proximas')
 // Estadías activas
 export const getEstadiasActivas   = () => api.get('/admin/estadias')
 export const agregarCargo         = (ventaId, data) => api.post(`/admin/estadias/${ventaId}/cargo`, data)
+export const agregarCargosBatch   = (ventaId, items) => api.post(`/admin/estadias/${ventaId}/cargos-batch`, items)
 export const checkoutEstadia      = (ventaId, data) => api.post(`/admin/estadias/${ventaId}/checkout`, data)
 
 // Aseo — panel del jefe
@@ -114,6 +116,7 @@ export const completarAsignacion = (id) => api.put(`/aseo/asignaciones/${id}/com
 export const getMetricas        = () => api.get('/admin/metricas')
 export const getEstadoActual    = () => api.get('/admin/estado-actual')
 export const getEstadisticas    = () => api.get('/admin/estadisticas')
+export const getReporte         = (desde, hasta, tipo = 'todos') => api.get('/admin/reporte', { params: { desde, hasta, tipo } })
 export const enviarResumenDia   = () => api.post('/admin/resumen-dia/enviar')
 export const getUsuarios        = () => api.get('/admin/usuarios')
 export const crearUsuario       = (data) => api.post('/admin/usuarios', data)
